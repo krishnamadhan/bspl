@@ -268,7 +268,9 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                       {Math.round(player.stamina)}%
                     </p>
                     {isBowler && (
-                      <p className="text-xs text-yellow-400">Ov {bowlingOrder.indexOf(player.id) + 1}</p>
+                      <p className="text-xs text-yellow-400">
+                        Ov {bowlingOrder.map((b, i) => b === player.id ? i + 1 : null).filter(Boolean).join('+')}
+                      </p>
                     )}
                   </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -91,7 +91,8 @@ export default function DraftBoard({
   minSquad,
   maxSquad,
 }: DraftBoardProps) {
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [rosterIds, setRosterIds] = useState<Set<string>>(
@@ -208,7 +209,7 @@ export default function DraftBoard({
       await supabase.from('bspl_teams').update({ budget_remaining: newBudget }).eq('id', myTeam.id)
     }
     setLoadingId(null)
-  }, [myTeam, draftOpen, rosterIds, budgetLeft, maxSquad, squadStats, supabase])
+  }, [myTeam, draftOpen, rosterIds, budgetLeft, maxSquad, squadStats])
 
   const removePlayer = useCallback(async (player: DraftPlayer) => {
     if (!myTeam || !draftOpen || !rosterIds.has(player.id)) return
@@ -238,7 +239,7 @@ export default function DraftBoard({
       await supabase.from('bspl_teams').update({ budget_remaining: newBudget }).eq('id', myTeam.id)
     }
     setLoadingId(null)
-  }, [myTeam, draftOpen, rosterIds, purchases, budgetLeft, supabase])
+  }, [myTeam, draftOpen, rosterIds, purchases, budgetLeft])
 
   // ── Empty states ───────────────────────────────────────────────────────────
   if (!season) {
