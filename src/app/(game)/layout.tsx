@@ -42,7 +42,7 @@ export default async function GameLayout({ children }: { children: React.ReactNo
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 pb-24 sm:pb-6">
         {children}
       </main>
     </div>

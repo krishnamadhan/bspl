@@ -62,7 +62,7 @@ export async function POST(
           .eq('is_submitted', true)
           .maybeSingle()
 
-        if (prevLineup?.playing_xi?.length === 11) {
+        if (prevLineup?.playing_xi?.length === 11 && prevLineup?.bowling_order?.length === 5) {
           playing_xi   = prevLineup.playing_xi
           bowling_order = prevLineup.bowling_order
         }

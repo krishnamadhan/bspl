@@ -109,16 +109,17 @@ export function buildSimTeam(
   rosterRows: Array<{ player_id: string; players: unknown }>,
   staminaMap: Map<string, { stamina: number; confidence: number }>,
 ): SimTeam {
-  const simPlayers: SimPlayer[] = rosterRows.map(r => {
-    // PostgREST join may return array or object
+  const simPlayers: SimPlayer[] = rosterRows.flatMap(r => {
+    // PostgREST join may return array or object; skip if join returned null
     const playerRow = Array.isArray(r.players) ? r.players[0] : r.players
+    if (!playerRow) return []
     const stamData = staminaMap.get(`${teamId}:${r.player_id}`)
-    return {
+    return [{
       player:     mapDbRowToPlayer(playerRow as Record<string, unknown>),
       stamina:    stamData?.stamina    ?? 100,
       confidence: stamData?.confidence ?? 1.0,
       team_id:    teamId,
-    }
+    }]
   })
 
   return {

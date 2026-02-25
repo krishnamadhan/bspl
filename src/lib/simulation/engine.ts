@@ -126,7 +126,11 @@ function simulateInnings(
     if (isSecondInnings && totalRuns > targetRuns) break
 
     const bowlerId = bowlingTeam.bowling_order[over - 1]
-    const bowlerSim = bowlingTeam.players.find(p => p.player.id === bowlerId)!
+    // Fallback: if bowling order is short or player not found, use the first available bowler
+    const bowlerSim = bowlingTeam.players.find(p => p.player.id === bowlerId)
+      ?? bowlingTeam.players.find(p => p.player.role === 'bowler' || p.player.role === 'all-rounder')
+      ?? bowlingTeam.players[0]
+    if (!bowlerSim) break  // no players at all — abort innings
 
     const overBalls: BallOutcome[] = []
     let overRuns = 0
@@ -137,7 +141,9 @@ function simulateInnings(
       if (totalWickets >= TOTAL_WICKETS) break
       if (isSecondInnings && totalRuns > targetRuns) break
 
-      const batterSim = battingTeam.players.find(p => p.player.id === striker)!
+      const batterSim = battingTeam.players.find(p => p.player.id === striker)
+        ?? battingTeam.players[0]
+      if (!batterSim) break
       const runsNeeded = isSecondInnings ? targetRuns - totalRuns + 1 : 0
       const ballsLeft = (TOTAL_OVERS - over) * 6 + (6 - legalBalls)
 

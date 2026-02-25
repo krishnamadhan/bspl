@@ -60,7 +60,7 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
         .eq('is_submitted', true)
         .maybeSingle()
 
-      if (prev?.playing_xi?.length === 11) {
+      if (prev?.playing_xi?.length === 11 && prev?.bowling_order?.length === 5) {
         return { team_id: teamId, ...prev, is_submitted: true }
       }
     }

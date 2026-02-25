@@ -275,6 +275,46 @@ export default function DraftBoard({
       {/* ── LEFT: Player Browser ── */}
       <div className="space-y-4">
 
+        {/* ── Mobile sticky budget bar — always visible while scrolling ── */}
+        {draftOpen && (
+          <div className="lg:hidden sticky top-14 z-30 -mx-4 px-4 py-2.5 bg-gray-950/95 backdrop-blur-sm border-b border-gray-800">
+            <div className="flex items-center justify-between gap-3">
+              {/* Budget + squad count */}
+              <div className="flex items-center gap-4">
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide">Budget left</p>
+                  <p className={`text-sm font-bold leading-none mt-0.5 ${budgetLeft < 10 ? 'text-red-400' : 'text-yellow-400'}`}>
+                    Rs{budgetLeft.toFixed(1)}Cr
+                  </p>
+                </div>
+                <div className="w-px h-7 bg-gray-800" />
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide">Squad</p>
+                  <p className={`text-sm font-bold leading-none mt-0.5 ${myRoster.length >= minSquad ? 'text-green-400' : 'text-white'}`}>
+                    {myRoster.length}/{maxSquad}
+                  </p>
+                </div>
+              </div>
+              {/* Composition pills */}
+              <div className="flex gap-2 text-xs">
+                <span className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded ${squadStats.wk >= 1 ? 'text-green-400 bg-green-400/10' : 'text-amber-400 bg-amber-400/10'}`}>
+                  🧤{squadStats.wk}
+                </span>
+                <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-gray-400 bg-gray-800">🏏{squadStats.bat}</span>
+                <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-gray-400 bg-gray-800">⭐{squadStats.ar}</span>
+                <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-gray-400 bg-gray-800">🎯{squadStats.bowl}</span>
+              </div>
+            </div>
+            {/* Budget progress bar */}
+            <div className="mt-2 w-full bg-gray-800 rounded-full h-0.5">
+              <div
+                className={`h-0.5 rounded-full transition-all duration-300 ${budgetPct > 90 ? 'bg-red-500' : budgetPct > 70 ? 'bg-yellow-400' : 'bg-green-400'}`}
+                style={{ width: `${budgetPct}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         <div>
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold">Draft</h1>
