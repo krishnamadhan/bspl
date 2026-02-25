@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import TeamRoster from '@/components/team/TeamRoster'
+import CreateTeamForm from '@/components/team/CreateTeamForm'
 
 export const metadata = { title: 'My Team · BSPL' }
 
@@ -24,15 +25,24 @@ export default async function TeamPage() {
         .select('id, name, color, budget_remaining, is_locked')
         .eq('owner_id', user.id)
         .eq('season_id', season.id)
+        .eq('is_bot', false)
         .maybeSingle()
     : { data: null }
 
   if (!myTeam) {
+    // Draft is open → let the user create their team
+    if (season?.status === 'draft_open') {
+      return <CreateTeamForm seasonName={season.name} />
+    }
+    // Draft closed but no team → informational
     return (
       <div className="text-center py-24 space-y-3">
         <p className="text-5xl">🏏</p>
-        <h2 className="text-xl font-semibold">No team assigned</h2>
-        <p className="text-gray-400 text-sm">Ask the admin to assign your team before the draft opens.</p>
+        <h2 className="text-xl font-semibold">No team this season</h2>
+        <p className="text-gray-400 text-sm">
+          The draft is currently <strong>{season?.status?.replace('_', ' ') ?? 'closed'}</strong>.
+          Wait for the next season to register.
+        </p>
       </div>
     )
   }

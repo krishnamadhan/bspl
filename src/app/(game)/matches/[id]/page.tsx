@@ -325,6 +325,7 @@ export default async function MatchDetailPage({
         .select('id, name, color')
         .eq('owner_id', user.id)
         .eq('season_id', season.id)
+        .eq('is_bot', false)
         .maybeSingle()
     : { data: null }
 

@@ -169,6 +169,7 @@ export default async function MatchesPage() {
         .select('id')
         .eq('owner_id', user.id)
         .eq('season_id', season.id)
+        .eq('is_bot', false)
         .maybeSingle()
     : { data: null }
 

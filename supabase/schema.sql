@@ -75,10 +75,14 @@ CREATE TABLE IF NOT EXISTS bspl_venues (
   -- Dew factor (0.0–1.0, used with dew_evening condition)
   dew_factor            NUMERIC(3,2) NOT NULL DEFAULT 0.5,
 
-  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  UNIQUE (name)
 );
 
--- Add FK now that venues exists
+-- Add FK now that venues exists (idempotent)
+ALTER TABLE players
+  DROP CONSTRAINT IF EXISTS fk_player_home_venue;
 ALTER TABLE players
   ADD CONSTRAINT fk_player_home_venue
   FOREIGN KEY (home_venue_id) REFERENCES bspl_venues(id) ON DELETE SET NULL;
@@ -106,11 +110,16 @@ CREATE TABLE IF NOT EXISTS bspl_teams (
   color                 TEXT NOT NULL DEFAULT '#3b82f6',  -- hex
   budget_remaining      NUMERIC(6,2) NOT NULL DEFAULT 100,
   is_locked             BOOLEAN NOT NULL DEFAULT FALSE,
+  is_bot                BOOLEAN NOT NULL DEFAULT FALSE,  -- bot/test teams bypass owner uniqueness
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-  UNIQUE (season_id, owner_id),    -- one team per user per season
   UNIQUE (season_id, name)         -- unique team names per season
 );
+
+-- One real team per user per season (bot teams exempt)
+CREATE UNIQUE INDEX IF NOT EXISTS bspl_teams_owner_season_real
+  ON bspl_teams (season_id, owner_id)
+  WHERE is_bot = FALSE;
 
 -- ─── 6. Rosters (shared players — multiple teams can have same player) ────
 CREATE TABLE IF NOT EXISTS bspl_rosters (
@@ -273,7 +282,26 @@ ALTER TABLE bspl_ball_log       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bspl_points         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bspl_player_stats   ENABLE ROW LEVEL SECURITY;
 
--- Public read for reference data
+-- Public read for reference data (idempotent)
+DROP POLICY IF EXISTS "players public read"   ON players;
+DROP POLICY IF EXISTS "venues public read"    ON bspl_venues;
+DROP POLICY IF EXISTS "seasons public read"   ON bspl_seasons;
+DROP POLICY IF EXISTS "teams public read"     ON bspl_teams;
+DROP POLICY IF EXISTS "rosters public read"   ON bspl_rosters;
+DROP POLICY IF EXISTS "matches public read"   ON bspl_matches;
+DROP POLICY IF EXISTS "innings public read"   ON bspl_innings;
+DROP POLICY IF EXISTS "ball_log public read"  ON bspl_ball_log;
+DROP POLICY IF EXISTS "points public read"    ON bspl_points;
+DROP POLICY IF EXISTS "stats public read"     ON bspl_player_stats;
+DROP POLICY IF EXISTS "stamina own team read" ON bspl_stamina;
+DROP POLICY IF EXISTS "lineup own read"       ON bspl_lineups;
+DROP POLICY IF EXISTS "lineup own write"      ON bspl_lineups;
+DROP POLICY IF EXISTS "lineup own update"     ON bspl_lineups;
+DROP POLICY IF EXISTS "team own write"        ON bspl_teams;
+DROP POLICY IF EXISTS "team own update"       ON bspl_teams;
+DROP POLICY IF EXISTS "roster own write"      ON bspl_rosters;
+DROP POLICY IF EXISTS "roster own delete"     ON bspl_rosters;
+
 CREATE POLICY "players public read"   ON players           FOR SELECT USING (true);
 CREATE POLICY "venues public read"    ON bspl_venues       FOR SELECT USING (true);
 CREATE POLICY "seasons public read"   ON bspl_seasons      FOR SELECT USING (true);
@@ -286,30 +314,40 @@ CREATE POLICY "points public read"    ON bspl_points       FOR SELECT USING (tru
 CREATE POLICY "stats public read"     ON bspl_player_stats FOR SELECT USING (true);
 
 -- Stamina: only owner can see their own team's stamina
-CREATE POLICY "stamina own team read" ON bspl_stamina      FOR SELECT
-  USING (
-    team_id IN (
-      SELECT id FROM bspl_teams WHERE owner_id = auth.uid()
-    )
-  );
+CREATE POLICY "stamina own team read" ON bspl_stamina FOR SELECT
+  USING (team_id IN (SELECT id FROM bspl_teams WHERE owner_id = auth.uid()));
 
 -- Lineups: only owner can read/write their own lineup
-CREATE POLICY "lineup own read"  ON bspl_lineups FOR SELECT
+CREATE POLICY "lineup own read"   ON bspl_lineups FOR SELECT
   USING (team_id IN (SELECT id FROM bspl_teams WHERE owner_id = auth.uid()));
-CREATE POLICY "lineup own write" ON bspl_lineups FOR INSERT
+CREATE POLICY "lineup own write"  ON bspl_lineups FOR INSERT
   WITH CHECK (team_id IN (SELECT id FROM bspl_teams WHERE owner_id = auth.uid()));
 CREATE POLICY "lineup own update" ON bspl_lineups FOR UPDATE
   USING (team_id IN (SELECT id FROM bspl_teams WHERE owner_id = auth.uid()));
 
 -- Teams: owner can insert/update their own team
-CREATE POLICY "team own write"   ON bspl_teams FOR INSERT WITH CHECK (owner_id = auth.uid());
-CREATE POLICY "team own update"  ON bspl_teams FOR UPDATE USING (owner_id = auth.uid());
+CREATE POLICY "team own write"  ON bspl_teams FOR INSERT WITH CHECK (owner_id = auth.uid());
+CREATE POLICY "team own update" ON bspl_teams FOR UPDATE USING (owner_id = auth.uid());
 
 -- Rosters: owner can manage their own team's roster
-CREATE POLICY "roster own write" ON bspl_rosters FOR INSERT
+CREATE POLICY "roster own write"  ON bspl_rosters FOR INSERT
   WITH CHECK (team_id IN (SELECT id FROM bspl_teams WHERE owner_id = auth.uid()));
 CREATE POLICY "roster own delete" ON bspl_rosters FOR DELETE
   USING (team_id IN (SELECT id FROM bspl_teams WHERE owner_id = auth.uid()));
+
+-- ============================================================
+-- Deduplicate venues (keep oldest row per name, drop extras)
+-- ============================================================
+DELETE FROM bspl_venues
+WHERE id NOT IN (
+  SELECT DISTINCT ON (name) id
+  FROM bspl_venues
+  ORDER BY name, created_at ASC
+);
+
+-- Ensure unique constraint exists (idempotent)
+ALTER TABLE bspl_venues DROP CONSTRAINT IF EXISTS bspl_venues_name_key;
+ALTER TABLE bspl_venues ADD CONSTRAINT bspl_venues_name_key UNIQUE (name);
 
 -- ============================================================
 -- SEED: IPL Venues

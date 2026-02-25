@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import DraftBoard from '@/components/draft/DraftBoard'
+import CreateTeamForm from '@/components/team/CreateTeamForm'
 
 export const metadata = { title: 'Draft · BSPL' }
 
@@ -24,6 +25,7 @@ export default async function DraftPage() {
         .select('id, name, color, budget_remaining, is_locked')
         .eq('owner_id', user.id)
         .eq('season_id', season.id)
+        .eq('is_bot', false)
         .maybeSingle()
     : { data: null }
 
@@ -43,6 +45,11 @@ export default async function DraftPage() {
 
   const draftOpen =
     season?.status === 'draft_open' && !!myTeam && !myTeam.is_locked
+
+  // Show create-team form if draft is open but user has no team yet
+  if (!myTeam && season?.status === 'draft_open') {
+    return <CreateTeamForm seasonName={season.name} />
+  }
 
   return (
     <DraftBoard

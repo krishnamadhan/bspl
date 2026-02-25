@@ -13,6 +13,13 @@ interface MatchRow {
   _submittedCount: number
 }
 
+interface SeasonInfo {
+  id: string
+  name: string
+  status: string
+  teamCount: number
+}
+
 // Raw shape returned by Supabase join (array or object, both happen)
 interface RawMatch {
   id: string
@@ -52,9 +59,10 @@ function ActionButton({
 export default function AdminPage() {
   const supabase = createClient()
   const [authState, setAuthState] = useState<'loading' | 'ok' | 'denied'>('loading')
-  const [matches, setMatches] = useState<MatchRow[]>([])
+  const [matches, setMatches]     = useState<MatchRow[]>([])
   const [scheduled, setScheduled] = useState<MatchRow[]>([])
-  const [toast, setToast]     = useState<{ msg: string; ok: boolean } | null>(null)
+  const [seasonInfo, setSeasonInfo] = useState<SeasonInfo | null>(null)
+  const [toast, setToast]         = useState<{ msg: string; ok: boolean } | null>(null)
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
@@ -68,6 +76,24 @@ export default function AdminPage() {
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok })
     setTimeout(() => setToast(null), 4000)
+  }
+
+  const loadSeasonInfo = async () => {
+    const { data: season } = await supabase
+      .from('bspl_seasons')
+      .select('id, name, status')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (!season) { setSeasonInfo(null); return }
+
+    const { count } = await supabase
+      .from('bspl_teams')
+      .select('*', { count: 'exact', head: true })
+      .eq('season_id', season.id)
+
+    setSeasonInfo({ id: season.id, name: season.name, status: season.status, teamCount: count ?? 0 })
   }
 
   const loadMatches = async () => {
@@ -120,7 +146,7 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    if (authState === 'ok') loadMatches()
+    if (authState === 'ok') { loadMatches(); loadSeasonInfo() }
   }, [authState]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const post = async (url: string) => {
@@ -164,6 +190,17 @@ export default function AdminPage() {
       try {
         const json = await post('/api/admin/generate-schedule')
         showToast(json.message ?? 'Schedule generated', true)
+        loadMatches()
+      } catch (e) { showToast((e as Error).message, false) }
+    })
+  }
+
+  const handleSetupTestSeason = () => {
+    startTransition(async () => {
+      try {
+        const json = await post('/api/admin/setup-test-season')
+        showToast(json.message ?? 'Test season setup complete', true)
+        loadSeasonInfo()
         loadMatches()
       } catch (e) { showToast((e as Error).message, false) }
     })
@@ -279,6 +316,62 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Testing Tools */}
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-semibold">Testing Tools</h2>
+          <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded font-medium">DEV</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Season status card */}
+          <div className="bg-gray-800 rounded-lg p-4">
+            <p className="text-sm font-medium text-gray-300 mb-2">Season Status</p>
+            {seasonInfo ? (
+              <div className="space-y-1 text-sm">
+                <p className="font-semibold">{seasonInfo.name}</p>
+                <p className="text-gray-400">
+                  Status:{' '}
+                  <span className={`font-medium ${
+                    seasonInfo.status === 'draft_open'   ? 'text-yellow-400' :
+                    seasonInfo.status === 'in_progress'  ? 'text-green-400'  :
+                                                          'text-gray-300'
+                  }`}>
+                    {seasonInfo.status.replace('_', ' ')}
+                  </span>
+                </p>
+                <p className="text-gray-400">
+                  Teams: <span className="text-white font-semibold">{seasonInfo.teamCount}</span>
+                </p>
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No active season found.</p>
+            )}
+          </div>
+
+          {/* Setup dummy teams card */}
+          <div className="bg-gray-800 rounded-lg p-4">
+            <p className="text-sm font-medium text-gray-300 mb-1">Setup Dummy Teams</p>
+            <p className="text-xs text-gray-500 mb-3">
+              Creates 6 preset teams and auto-drafts 20 players per team (round-robin by price)
+              into the current <code className="text-yellow-400/80">draft_open</code> season.
+              Safe to re-run — skips teams that already exist.
+            </p>
+            <ActionButton
+              label={isPending ? 'Setting up...' : 'Setup Test Season'}
+              onClick={handleSetupTestSeason}
+              disabled={isPending || !seasonInfo || seasonInfo.status !== 'draft_open'}
+              variant="yellow"
+            />
+            {seasonInfo && seasonInfo.status !== 'draft_open' && (
+              <p className="text-xs text-yellow-500/70 mt-2">
+                Season must be in <strong>draft_open</strong> status.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Quick actions */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

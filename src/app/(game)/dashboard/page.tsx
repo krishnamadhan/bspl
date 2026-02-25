@@ -57,6 +57,7 @@ export default async function DashboardPage() {
         .select('id, name, color, budget_remaining, is_locked')
         .eq('owner_id', user.id)
         .eq('season_id', season.id)
+        .eq('is_bot', false)
         .maybeSingle()
     : { data: null }
 
@@ -242,11 +243,20 @@ export default async function DashboardPage() {
             </Link>
           )}
 
-          {!myTeam && (
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 text-center">
-              <p className="text-gray-400">You haven't been assigned a team for this season yet.</p>
-              <p className="text-gray-600 text-sm mt-1">Ask the admin to set up your team.</p>
-            </div>
+          {!myTeam && season.status === 'draft_open' && (
+            <Link
+              href="/team"
+              className="flex items-center justify-between gap-4 bg-green-400/10 border border-green-400/30 rounded-xl px-5 py-4 hover:bg-green-400/15 transition"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-green-400 text-xl">🏏</span>
+                <div>
+                  <p className="font-semibold text-green-300">Register your team to join the season</p>
+                  <p className="text-xs text-green-400/70 mt-0.5">Draft is open — pick a name & colour to get started</p>
+                </div>
+              </div>
+              <span className="text-green-400 font-bold text-sm flex-shrink-0">Create Team →</span>
+            </Link>
           )}
 
           {/* ── Next match ─────────────────────────────────────────────────── */}
