@@ -107,8 +107,10 @@ export default function DraftBoard({
   // Filters
   const [search, setSearch]     = useState('')
   const [roleFilter, setRole]   = useState<string>('all')
+  const [tierFilter, setTier]   = useState<string>('all')
   const [teamFilter, setTeam]   = useState<string>('all')
   const [sortBy, setSort]       = useState<'price' | 'sr' | 'economy' | 'name'>('price')
+  const [showOwned, setShowOwned] = useState(false)
 
   // ── Derived data ───────────────────────────────────────────────────────────
   const iplTeams = useMemo(
@@ -120,7 +122,9 @@ export default function DraftBoard({
     const q = search.toLowerCase()
     let list = players.filter(p => {
       if (roleFilter !== 'all' && p.role !== roleFilter) return false
+      if (tierFilter !== 'all' && p.price_tier !== tierFilter) return false
       if (teamFilter !== 'all' && p.ipl_team !== teamFilter) return false
+      if (showOwned && !rosterIds.has(p.id)) return false
       if (q && !p.name.toLowerCase().includes(q)) return false
       return true
     })
@@ -131,7 +135,7 @@ export default function DraftBoard({
       return a.name.localeCompare(b.name)
     })
     return list
-  }, [players, roleFilter, teamFilter, search, sortBy])
+  }, [players, roleFilter, tierFilter, teamFilter, search, sortBy, showOwned, rosterIds])
 
   const myRoster = useMemo(
     () => players.filter(p => rosterIds.has(p.id)),
@@ -298,14 +302,43 @@ export default function DraftBoard({
           </div>
         )}
 
-        {/* Filters */}
+        {/* ── Tier filter pills ── */}
+        <div className="flex flex-wrap gap-1.5">
+          {([
+            { key: 'all',     label: 'All',           cls: 'border-gray-600 text-gray-300' },
+            { key: 'elite',   label: '⚡ Elite',       cls: 'border-yellow-400/50 text-yellow-300' },
+            { key: 'premium', label: '🔥 Premium',     cls: 'border-orange-400/50 text-orange-300' },
+            { key: 'good',    label: '✅ Good',        cls: 'border-green-400/50 text-green-300' },
+            { key: 'value',   label: '💎 Value',       cls: 'border-blue-400/50 text-blue-300' },
+            { key: 'budget',  label: '🪙 Budget',      cls: 'border-gray-500/50 text-gray-400' },
+          ] as const).map(({ key, label, cls }) => (
+            <button
+              key={key}
+              onClick={() => setTier(key)}
+              className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                tierFilter === key
+                  ? `${cls} bg-white/10`
+                  : 'border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-300'
+              }`}
+            >
+              {label}
+              {key !== 'all' && (
+                <span className="ml-1 text-gray-600">
+                  {players.filter(p => p.price_tier === key).length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Role + search + sort row ── */}
         <div className="flex flex-wrap gap-2">
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search player…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400 w-40"
+            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400 w-36"
           />
           <select
             value={roleFilter}
@@ -316,7 +349,7 @@ export default function DraftBoard({
             <option value="batsman">🏏 Batsmen</option>
             <option value="bowler">🎯 Bowlers</option>
             <option value="all-rounder">⭐ All-rounders</option>
-            <option value="wicket-keeper">🧤 Wicket-keepers</option>
+            <option value="wicket-keeper">🧤 Keepers</option>
           </select>
           <select
             value={teamFilter}
@@ -331,11 +364,23 @@ export default function DraftBoard({
             onChange={e => setSort(e.target.value as typeof sortBy)}
             className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-yellow-400"
           >
-            <option value="price">Price</option>
-            <option value="sr">Batting SR</option>
-            <option value="economy">Economy</option>
-            <option value="name">Name</option>
+            <option value="price">↓ Price</option>
+            <option value="sr">↓ Bat SR</option>
+            <option value="economy">↑ Economy</option>
+            <option value="name">A–Z Name</option>
           </select>
+          {draftOpen && rosterIds.size > 0 && (
+            <button
+              onClick={() => setShowOwned(v => !v)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+                showOwned
+                  ? 'bg-yellow-400/10 border-yellow-400/30 text-yellow-300'
+                  : 'bg-gray-900 border-gray-700 text-gray-500 hover:text-gray-300'
+              }`}
+            >
+              {showOwned ? '✓ My Squad' : 'My Squad'}
+            </button>
+          )}
         </div>
 
         {/* Notice */}
