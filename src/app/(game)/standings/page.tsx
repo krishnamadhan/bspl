@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 
 export const metadata = { title: 'Standings · BSPL' }
 
@@ -47,22 +48,38 @@ export default async function StandingsPage() {
     )
   }
 
-  // Standings + team info
-  const { data: rawStandings } = await supabase
-    .from('bspl_points')
-    .select(`
-      team_id, played, won, lost, no_result, points,
-      runs_for, runs_against, nrr,
-      team:bspl_teams (name, color)
-    `)
+  // All teams in this season
+  const { data: allTeams } = await supabase
+    .from('bspl_teams')
+    .select('id, name, color')
     .eq('season_id', season.id)
-    .order('points',  { ascending: false })
-    .order('nrr',     { ascending: false })
 
-  const standings = (rawStandings ?? []).map(r => ({
-    ...r,
-    team: unpack(r.team as { name: string; color: string } | { name: string; color: string }[] | null),
-  }))
+  // Points rows (only teams that have played)
+  const { data: pointsRows } = await supabase
+    .from('bspl_points')
+    .select('team_id, played, won, lost, no_result, points, runs_for, runs_against, nrr')
+    .eq('season_id', season.id)
+
+  const pointsMap = new Map((pointsRows ?? []).map(p => [p.team_id, p]))
+
+  // Merge — every team shows up, unplayed teams get 0s
+  const standings = (allTeams ?? [])
+    .map(t => {
+      const p = pointsMap.get(t.id)
+      return {
+        team_id:      t.id,
+        team:         t,
+        played:       p?.played       ?? 0,
+        won:          p?.won          ?? 0,
+        lost:         p?.lost         ?? 0,
+        no_result:    p?.no_result    ?? 0,
+        points:       p?.points       ?? 0,
+        runs_for:     p?.runs_for     ?? 0,
+        runs_against: p?.runs_against ?? 0,
+        nrr:          p?.nrr          ?? 0,
+      }
+    })
+    .sort((a, b) => b.points - a.points || b.nrr - a.nrr)
 
   // ── Form guide: last-5 results per team ─────────────────────────────────────
   const { data: completedMatches } = await supabase
@@ -137,7 +154,7 @@ export default async function StandingsPage() {
       <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
         {standings.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
-            No matches played yet — standings will appear here after the first game.
+            No teams registered yet.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -191,16 +208,16 @@ export default async function StandingsPage() {
 
                         {/* Team */}
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
+                          <Link href={`/teams/${row.team_id}`} className="flex items-center gap-2 hover:text-yellow-400 transition-colors group">
                             <div
                               className="w-3 h-3 rounded-full flex-shrink-0"
                               style={{ backgroundColor: row.team?.color ?? '#6b7280' }}
                             />
-                            <span className="font-semibold">{row.team?.name ?? '—'}</span>
+                            <span className="font-semibold group-hover:underline">{row.team?.name ?? '—'}</span>
                             {isQualifier && (
                               <span className="text-yellow-400/60 text-xs hidden sm:inline">Q</span>
                             )}
-                          </div>
+                          </Link>
                         </td>
 
                         {/* P W L */}

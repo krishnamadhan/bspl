@@ -109,8 +109,11 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     .replace(bowlingFirst.team_id, teamName.get(bowlingFirst.team_id) ?? bowlingFirst.team_id)
 
   // ── 9a. Update match ────────────────────────────────────────────────────────
+  // Set to 'live' so watchers see the ball-by-ball replay with commentary.
+  // Status transitions to 'completed' when the last watcher's replay finishes
+  // (MatchReplay calls POST /api/match/[id]/complete) or admin finalizes.
   await db.from('bspl_matches').update({
-    status:                'completed',
+    status:                'live',
     toss_winner_team_id:   tossWinnerId,
     toss_decision:         tossDecision,
     batting_first_team_id: battingFirstId,

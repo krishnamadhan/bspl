@@ -20,6 +20,7 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   scheduled:   { label: 'Scheduled',   cls: 'bg-gray-700 text-gray-300' },
   lineup_open: { label: 'Lineup Open', cls: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' },
   locked:      { label: 'Locked',      cls: 'bg-orange-500/20 text-orange-300' },
+  live:        { label: 'LIVE',        cls: 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' },
   completed:   { label: 'Completed',   cls: 'bg-green-500/20 text-green-300' },
 }
 
@@ -334,8 +335,8 @@ export default async function MatchDetailPage({
 
   const matchDate = new Date(rawMatch.scheduled_date)
 
-  // ─── COMPLETED ─────────────────────────────────────────────────────────────
-  if (rawMatch.status === 'completed') {
+  // ─── LIVE or COMPLETED ─────────────────────────────────────────────────────
+  if (rawMatch.status === 'live' || rawMatch.status === 'completed') {
     const { data: inningsRows } = await supabase
       .from('bspl_innings')
       .select('id, innings_number, batting_team_id, bowling_team_id, total_runs, total_wickets, extras, overs_completed')
@@ -489,11 +490,13 @@ export default async function MatchDetailPage({
 
     return (
       <div className="max-w-3xl mx-auto">
+        <MatchStatusPoller matchId={id} currentStatus={rawMatch.status} />
         <MatchReplay
           innings1={inn1Replay}
           innings2={inn2Replay}
           playerNames={names}
           resultSummary={rawMatch.result_summary ?? 'Match completed'}
+          completeUrl={rawMatch.status === 'live' ? `/api/match/${id}/complete` : undefined}
         >
           {scorecard}
         </MatchReplay>
@@ -590,7 +593,14 @@ export default async function MatchDetailPage({
         </div>
 
         <div>
-          <h2 className="text-lg font-bold mb-4">Submit Your Lineup</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold">Submit Your Lineup</h2>
+            {existingLineup?.is_submitted && (
+              <span className="text-xs bg-green-500/20 text-green-300 border border-green-500/30 px-3 py-1 rounded-full font-medium">
+                ✓ Lineup submitted
+              </span>
+            )}
+          </div>
           <LineupSubmitter
             matchId={id}
             myTeamId={myTeam.id}

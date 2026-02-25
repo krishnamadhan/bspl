@@ -19,16 +19,22 @@ interface MatchRow {
   id: string
   match_number: number
   status: string
+  team_a_id: string
+  team_b_id: string
   team_a: { name: string } | null
   team_b: { name: string } | null
   venue:  { name: string } | null
   lineups_submitted: number
+  /** Names of teams that haven't submitted a lineup yet */
+  pending_teams: string[]
 }
 
 interface RawMatch {
   id: string
   match_number: number
   status: string
+  team_a_id: string
+  team_b_id: string
   team_a: { name: string } | { name: string }[] | null
   team_b: { name: string } | { name: string }[] | null
   venue:  { name: string } | { name: string }[] | null
@@ -148,9 +154,9 @@ export default function AdminPage() {
     if (!seasonInfo) return
     const { data: raw } = await supabase
       .from('bspl_matches')
-      .select('id, match_number, status, team_a:bspl_teams!team_a_id(name), team_b:bspl_teams!team_b_id(name), venue:bspl_venues(name)')
+      .select('id, match_number, status, team_a_id, team_b_id, team_a:bspl_teams!team_a_id(name), team_b:bspl_teams!team_b_id(name), venue:bspl_venues(name)')
       .eq('season_id', seasonInfo.id)
-      .in('status', ['scheduled', 'lineup_open'])
+      .in('status', ['scheduled', 'lineup_open', 'live'])
       .order('match_number')
       .limit(30)
 
@@ -158,23 +164,38 @@ export default function AdminPage() {
 
     const { data: lineupRows } = await supabase
       .from('bspl_lineups')
-      .select('match_id, is_submitted')
+      .select('match_id, team_id, is_submitted')
       .in('match_id', raw.map(m => m.id))
 
-    const submitCount = new Map<string, number>()
+    // Build set of team IDs that have submitted, per match
+    const submittedByMatch = new Map<string, Set<string>>()
     lineupRows?.forEach(l => {
-      if (l.is_submitted) submitCount.set(l.match_id, (submitCount.get(l.match_id) ?? 0) + 1)
+      if (l.is_submitted) {
+        if (!submittedByMatch.has(l.match_id)) submittedByMatch.set(l.match_id, new Set())
+        submittedByMatch.get(l.match_id)!.add(l.team_id)
+      }
     })
 
-    setMatches((raw as RawMatch[]).map(m => ({
-      id:                m.id,
-      match_number:      m.match_number,
-      status:            m.status,
-      team_a:            unpack(m.team_a),
-      team_b:            unpack(m.team_b),
-      venue:             unpack(m.venue),
-      lineups_submitted: submitCount.get(m.id) ?? 0,
-    })))
+    setMatches((raw as RawMatch[]).map(m => {
+      const submitted = submittedByMatch.get(m.id) ?? new Set<string>()
+      const teamA = unpack(m.team_a)
+      const teamB = unpack(m.team_b)
+      const pending: string[] = []
+      if (!submitted.has(m.team_a_id) && teamA) pending.push(teamA.name)
+      if (!submitted.has(m.team_b_id) && teamB) pending.push(teamB.name)
+      return {
+        id:                m.id,
+        match_number:      m.match_number,
+        status:            m.status,
+        team_a_id:         m.team_a_id,
+        team_b_id:         m.team_b_id,
+        team_a:            teamA,
+        team_b:            teamB,
+        venue:             unpack(m.venue),
+        lineups_submitted: submitted.size,
+        pending_teams:     pending,
+      }
+    }))
   }
 
   useEffect(() => {
@@ -264,6 +285,12 @@ export default function AdminPage() {
     await loadMatches()
   })
 
+  const handleFinalize = (matchId: string) => handle(async () => {
+    await post(`/api/match/${matchId}/complete`)
+    showToast('Match finalized', true)
+    await loadMatches()
+  })
+
   // ── Auth states ─────────────────────────────────────────────────────────────
   if (authState === 'loading') {
     return <div className="flex items-center justify-center py-24 text-gray-400">Verifying access…</div>
@@ -280,6 +307,7 @@ export default function AdminPage() {
 
   const statusMeta = STATUS_LABEL[seasonInfo?.status ?? ''] ?? STATUS_LABEL.completed
   const lineupOpenMatches = matches.filter(m => m.status === 'lineup_open')
+  const liveMatches       = matches.filter(m => m.status === 'live')
   const scheduledMatches  = matches.filter(m => m.status === 'scheduled')
   const readyToRun        = lineupOpenMatches.filter(m => m.lineups_submitted === 2)
 
@@ -429,7 +457,7 @@ export default function AdminPage() {
       </section>
 
       {/* ── 2. Match Schedule ── */}
-      {seasonInfo && (lineupOpenMatches.length > 0 || scheduledMatches.length > 0) && (
+      {seasonInfo && (liveMatches.length > 0 || lineupOpenMatches.length > 0 || scheduledMatches.length > 0) && (
         <section className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
             <h2 className="font-semibold text-lg">Matches</h2>
@@ -456,6 +484,31 @@ export default function AdminPage() {
           </div>
 
           <div className="divide-y divide-gray-800/60">
+            {/* Live matches */}
+            {liveMatches.map(m => (
+              <div key={m.id} className="flex items-center gap-4 px-6 py-4">
+                <div className="w-8 text-center">
+                  <span className="text-xs font-mono text-gray-500">M{m.match_number}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">
+                    {m.team_a?.name ?? '?'} <span className="text-gray-500">vs</span> {m.team_b?.name ?? '?'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">{m.venue?.name}</p>
+                </div>
+                <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded border border-red-500/30 animate-pulse">
+                  ● LIVE
+                </span>
+                <Btn
+                  label={isPending ? '…' : '⏩ Finalize'}
+                  onClick={() => handleFinalize(m.id)}
+                  disabled={isPending}
+                  variant="gray"
+                  size="sm"
+                />
+              </div>
+            ))}
+
             {/* Lineup open matches */}
             {lineupOpenMatches.map(m => {
               const ready = m.lineups_submitted === 2
@@ -470,9 +523,12 @@ export default function AdminPage() {
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {m.venue?.name} ·{' '}
-                      <span className={m.lineups_submitted === 2 ? 'text-green-400' : 'text-yellow-400'}>
-                        {m.lineups_submitted}/2 lineups
-                      </span>
+                      {ready
+                        ? <span className="text-green-400">Both lineups in ✓</span>
+                        : <span className="text-yellow-400">
+                            Waiting: {m.pending_teams.join(', ')}
+                          </span>
+                      }
                     </p>
                   </div>
                   <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">

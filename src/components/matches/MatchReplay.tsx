@@ -28,6 +28,8 @@ interface Props {
   playerNames:   Record<string, string>
   resultSummary: string
   children:      React.ReactNode
+  /** If provided, POSTed when replay finishes (transitions live → completed) */
+  completeUrl?:  string
 }
 
 // ── Commentary ────────────────────────────────────────────────────────────────
@@ -325,7 +327,7 @@ function Intermission({
 type Phase = 'inn1' | 'intermission' | 'inn2' | 'done'
 
 export default function MatchReplay({
-  innings1, innings2, playerNames, resultSummary, children,
+  innings1, innings2, playerNames, resultSummary, children, completeUrl,
 }: Props) {
   // If no ball data, skip straight to scorecard
   const hasBalls = innings1.balls.length > 0
@@ -365,6 +367,13 @@ export default function MatchReplay({
   }, [phase, revealed, innings1.balls, innings2.balls])
 
   const skip = useCallback(() => setPhase('done'), [])
+
+  // When replay finishes, transition match live → completed on the server
+  useEffect(() => {
+    if (phase === 'done' && completeUrl) {
+      fetch(completeUrl, { method: 'POST' }).catch(() => {})
+    }
+  }, [phase, completeUrl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Done: show result banner + full scorecard ───────────────────────────────
   if (phase === 'done') {

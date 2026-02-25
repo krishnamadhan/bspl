@@ -40,6 +40,7 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   scheduled:   { label: 'Scheduled',   cls: 'bg-gray-700 text-gray-300' },
   lineup_open: { label: 'Lineup Open', cls: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' },
   locked:      { label: 'Locked',      cls: 'bg-orange-500/20 text-orange-300' },
+  live:        { label: '● LIVE',      cls: 'bg-red-500/20 text-red-400 border border-red-500/30' },
   completed:   { label: 'Completed',   cls: 'bg-green-500/20 text-green-300' },
 }
 
@@ -204,7 +205,7 @@ export default async function MatchesPage() {
     inningsMap[inn.match_id].push(inn)
   }
 
-  const active   = matches.filter(m => m.status === 'lineup_open' || m.status === 'locked')
+  const active   = matches.filter(m => ['lineup_open', 'locked', 'live'].includes(m.status))
   const upcoming = matches.filter(m => m.status === 'scheduled')
   const done     = [...matches.filter(m => m.status === 'completed')].reverse()
 

@@ -70,12 +70,16 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
     if (bowlingOrder.length >= 5) break
     bowlingOrder.push(p.player_id)
   }
+  // Fill remaining overs: allow up to ceil(5/bowlers) per bowler as emergency fallback
+  const maxOversPerBowler = canBowl.length > 0 ? Math.ceil(5 / canBowl.length) : 5
   let idx = 0
   while (bowlingOrder.length < 5 && canBowl.length > 0) {
     const p = canBowl[idx % canBowl.length]
-    if (bowlingOrder.filter(b => b === p.player_id).length < 2) bowlingOrder.push(p.player_id)
+    if (bowlingOrder.filter(b => b === p.player_id).length < maxOversPerBowler) {
+      bowlingOrder.push(p.player_id)
+    }
     idx++
-    if (idx > 20) break
+    if (idx > 40) break
   }
 
   return {
