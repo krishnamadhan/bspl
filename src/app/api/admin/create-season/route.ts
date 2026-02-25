@@ -20,6 +20,22 @@ export async function POST(req: NextRequest) {
 
   const db = adminClient()
 
+  // Block creating a new season if a non-completed season already exists
+  const { data: activeSeason } = await db
+    .from('bspl_seasons')
+    .select('id, name, status')
+    .neq('status', 'completed')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (activeSeason) {
+    return NextResponse.json(
+      { error: `Season "${activeSeason.name}" is still active (${activeSeason.status}). End or delete it before creating a new one.` },
+      { status: 409 },
+    )
+  }
+
   const { data, error } = await db
     .from('bspl_seasons')
     .insert({

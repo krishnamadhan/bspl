@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
+import Link from 'next/link'
 import LineupSubmitter, { type SquadPlayer } from '@/components/matches/LineupSubmitter'
 import MatchReplay, { type ReplayBall, type ReplayInnings } from '@/components/matches/MatchReplay'
 import MatchStatusPoller from '@/components/matches/MatchStatusPoller'
@@ -416,10 +417,10 @@ export default async function MatchDetailPage({
 
           <div className="flex items-center justify-around gap-4 mb-4">
             <div className="text-center">
-              <div className="flex items-center gap-2 justify-center mb-1">
-                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: batFirst?.color ?? '#888' }} />
-                <span className="font-bold">{batFirst?.name}</span>
-              </div>
+              <Link href={`/teams/${batFirst?.id}`} className="flex items-center gap-2 justify-center mb-1 hover:text-yellow-400 transition group">
+                <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: batFirst?.color ?? '#888' }} />
+                <span className="font-bold group-hover:underline">{batFirst?.name}</span>
+              </Link>
               <p className="text-3xl font-bold tabular-nums">
                 {inn1?.total_runs ?? '—'}
                 <span className="text-gray-400 text-xl">/{inn1?.total_wickets ?? '—'}</span>
@@ -433,10 +434,10 @@ export default async function MatchDetailPage({
             <span className="text-gray-700 text-2xl font-bold">vs</span>
 
             <div className="text-center">
-              <div className="flex items-center gap-2 justify-center mb-1">
-                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: batSecond?.color ?? '#888' }} />
-                <span className="font-bold">{batSecond?.name}</span>
-              </div>
+              <Link href={`/teams/${batSecond?.id}`} className="flex items-center gap-2 justify-center mb-1 hover:text-yellow-400 transition group">
+                <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: batSecond?.color ?? '#888' }} />
+                <span className="font-bold group-hover:underline">{batSecond?.name}</span>
+              </Link>
               <p className="text-3xl font-bold tabular-nums">
                 {inn2?.total_runs ?? '—'}
                 <span className="text-gray-400 text-xl">/{inn2?.total_wickets ?? '—'}</span>
@@ -563,8 +564,17 @@ export default async function MatchDetailPage({
             {[teamA, teamB].map(team => (
               <div key={team?.id} className="text-center">
                 <div className="w-8 h-8 rounded-full mx-auto mb-1.5" style={{ backgroundColor: team?.color ?? '#888' }} />
-                <p className="font-bold">{team?.name}</p>
-                {team?.id === myTeam.id && <p className="text-xs text-yellow-400">← You</p>}
+                {team?.id === myTeam.id ? (
+                  <p className="font-bold">{team?.name}</p>
+                ) : (
+                  <Link href={`/teams/${team?.id}`} className="font-bold hover:text-yellow-400 hover:underline transition">
+                    {team?.name}
+                  </Link>
+                )}
+                {team?.id === myTeam.id
+                  ? <p className="text-xs text-yellow-400">← You</p>
+                  : <p className="text-xs text-gray-500">View Squad →</p>
+                }
               </div>
             ))}
           </div>
@@ -627,8 +637,13 @@ export default async function MatchDetailPage({
           {[teamA, teamB].map((team, i) => (
             <div key={i} className="text-center">
               <div className="w-12 h-12 rounded-full mx-auto mb-2" style={{ backgroundColor: team?.color ?? '#888' }} />
-              <p className="font-bold text-xl">{team?.name ?? '—'}</p>
-              {team?.id === myTeam?.id && <p className="text-xs text-yellow-400 mt-1">Your team</p>}
+              <Link href={`/teams/${team?.id}`} className="font-bold text-xl hover:text-yellow-400 hover:underline transition">
+                {team?.name ?? '—'}
+              </Link>
+              {team?.id === myTeam?.id
+                ? <p className="text-xs text-yellow-400 mt-1">Your team</p>
+                : <p className="text-xs text-gray-500 mt-1">View Squad</p>
+              }
             </div>
           ))}
           <span className="text-gray-700 text-3xl font-bold">vs</span>

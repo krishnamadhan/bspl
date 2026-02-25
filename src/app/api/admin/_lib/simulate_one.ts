@@ -39,7 +39,33 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     .select('*')
     .eq('match_id', matchId)
 
-  function autoLineup(teamId: string, rosters: typeof rostersA) {
+  async function prevOrAutoLineup(teamId: string, rosters: typeof rostersA) {
+    // 1. Try previous submitted lineup (last completed match for this team)
+    const { data: prevMatch } = await db
+      .from('bspl_matches')
+      .select('id')
+      .eq('season_id', match.season_id)
+      .eq('status', 'completed')
+      .or(`team_a_id.eq.${teamId},team_b_id.eq.${teamId}`)
+      .order('match_number', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (prevMatch) {
+      const { data: prev } = await db
+        .from('bspl_lineups')
+        .select('playing_xi, bowling_order, toss_choice')
+        .eq('match_id', prevMatch.id)
+        .eq('team_id', teamId)
+        .eq('is_submitted', true)
+        .maybeSingle()
+
+      if (prev?.playing_xi?.length === 11) {
+        return { team_id: teamId, ...prev, is_submitted: true }
+      }
+    }
+
+    // 2. Auto-pick from roster
     const roster = buildRosterForPick(rosters ?? [])
     const { xi, bowlingOrder } = pickXI(roster)
     return { team_id: teamId, playing_xi: xi, bowling_order: bowlingOrder, toss_choice: 'bat', is_submitted: true }
@@ -48,8 +74,10 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
   const rawA = lineups?.find((l: { team_id: string }) => l.team_id === match.team_a_id)
   const rawB = lineups?.find((l: { team_id: string }) => l.team_id === match.team_b_id)
 
-  const lineupA = rawA?.is_submitted ? rawA : autoLineup(match.team_a_id, rostersA)
-  const lineupB = rawB?.is_submitted ? rawB : autoLineup(match.team_b_id, rostersB)
+  const [lineupA, lineupB] = await Promise.all([
+    rawA?.is_submitted ? Promise.resolve(rawA) : prevOrAutoLineup(match.team_a_id, rostersA),
+    rawB?.is_submitted ? Promise.resolve(rawB) : prevOrAutoLineup(match.team_b_id, rostersB),
+  ])
 
   // ── 5. Load venue ──────────────────────────────────────────────────────────
   const { data: venueRow } = await db

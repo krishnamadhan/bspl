@@ -5,13 +5,14 @@ import { useState, useEffect, useCallback } from 'react'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface ReplayBall {
-  over:        number
-  ball:        number
-  batsman_id:  string
-  bowler_id:   string
-  outcome:     string
-  runs_scored: number
-  is_wicket:   boolean
+  over:         number
+  ball:         number
+  batsman_id:   string
+  bowler_id:    string
+  outcome:      string
+  runs_scored:  number
+  is_wicket:    boolean
+  wicket_type?: string | null
 }
 
 export interface ReplayInnings {
