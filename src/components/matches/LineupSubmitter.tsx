@@ -122,8 +122,16 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
       setNotice({ type: 'error', msg: `Select exactly 11 players (${selectedXI.length}/11 chosen).` })
       return
     }
+    if (wkCount !== 1) {
+      setNotice({ type: 'error', msg: `Select exactly 1 wicket-keeper (${wkCount} in XI).` })
+      return
+    }
+    if (bowlerCount < 3) {
+      setNotice({ type: 'error', msg: `Need at least 3 bowlers/all-rounders in XI (${bowlerCount} selected).` })
+      return
+    }
     if (bowlingOrder.length !== 5) {
-      setNotice({ type: 'error', msg: `Assign exactly 5 bowlers for 5 overs (${bowlingOrder.length}/5 set).` })
+      setNotice({ type: 'error', msg: `Assign exactly 5 overs (${bowlingOrder.length}/5 set).` })
       return
     }
     if (!tossChoice) {
@@ -168,9 +176,16 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
     return ro !== 0 ? ro : b.stamina - a.stamina
   })
 
-  const xiComplete    = selectedXI.length === 11
-  const bowlComplete  = bowlingOrder.length === 5
-  const readyToSubmit = xiComplete && bowlComplete && tossChoice !== null
+  const wkCount      = selectedXI.filter(id => playerMap[id]?.role === 'wicket-keeper').length
+  const bowlerCount  = selectedXI.filter(id => {
+    const r = playerMap[id]?.role
+    return r === 'bowler' || r === 'all-rounder'
+  }).length
+
+  const xiComplete       = selectedXI.length === 11
+  const bowlComplete     = bowlingOrder.length === 5
+  const constraintsMet   = wkCount === 1 && bowlerCount >= 3
+  const readyToSubmit    = xiComplete && bowlComplete && tossChoice !== null && constraintsMet
 
   return (
     <div className="space-y-4">
@@ -191,12 +206,24 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
           {selectedXI.length}/11 players
         </span>
         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${bowlComplete ? 'bg-green-500/20 text-green-300' : 'bg-gray-800 text-gray-400'}`}>
-          {bowlingOrder.length}/5 bowlers
+          {bowlingOrder.length}/5 overs
         </span>
         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${tossChoice ? 'bg-green-500/20 text-green-300' : 'bg-gray-800 text-gray-400'}`}>
           {tossChoice ? `Toss: ${tossChoice === 'bat' ? 'Bat First' : 'Bowl First'}` : 'Toss: not set'}
         </span>
       </div>
+
+      {/* XI constraints */}
+      {selectedXI.length > 0 && (
+        <div className="flex gap-4 text-xs">
+          <span className={wkCount === 1 ? 'text-green-400' : 'text-amber-400'}>
+            {wkCount === 1 ? '✓' : '!'} {wkCount}/1 wicket-keeper
+          </span>
+          <span className={bowlerCount >= 3 ? 'text-green-400' : 'text-amber-400'}>
+            {bowlerCount >= 3 ? '✓' : '!'} {bowlerCount}/3+ bowlers/AR
+          </span>
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-2">
 
@@ -426,7 +453,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
           {!readyToSubmit && !loading && (
             <p className="text-xs text-gray-600 text-center">
-              Select 11 players · Assign all 5 overs (max 2 per bowler) · Choose toss preference
+              11 players (1 WK · 3+ bowlers/AR) · 5 overs (max 2 per bowler) · Toss preference
             </p>
           )}
         </div>

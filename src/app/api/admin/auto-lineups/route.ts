@@ -1,97 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin, adminClient } from '../_lib/helpers'
-
-// Auto-picks best XI + bowling order for bot teams that haven't submitted a lineup.
-// Called per-match or for all open matches.
-
-function pickXI(roster: Array<{
-  player_id: string
-  batting_sr: number
-  bowling_economy: number | null
-  wicket_prob: number | null
-  price_cr: number
-  role: string
-}>): { xi: string[]; bowlingOrder: string[] } {
-
-  // Sort by price descending — best players first
-  const sorted = [...roster].sort((a, b) => b.price_cr - a.price_cr)
-
-  const xi: typeof sorted = []
-  let wk   = 0
-  let bowl = 0  // bowlers + all-rounders
-
-  // Pass 1: ensure 1 WK from best WKs
-  for (const p of sorted) {
-    if (xi.length >= 11) break
-    if (p.role === 'wicket-keeper' && wk === 0) {
-      xi.push(p); wk++
-    }
-  }
-
-  // Pass 2: add batsmen/all-rounders, keep at least 4 bowling slots
-  for (const p of sorted) {
-    if (xi.length >= 11) break
-    if (xi.find(x => x.player_id === p.player_id)) continue
-    if (p.role === 'batsman') {
-      // Don't add batsman if we'd need more than 7 batting slots anyway
-      const bowlersLeft = sorted
-        .filter(x => !xi.find(y => y.player_id === x.player_id) && x.player_id !== p.player_id)
-        .filter(x => x.role === 'bowler' || x.role === 'all-rounder')
-        .length
-      const slotsLeft = 11 - xi.length - 1
-      if (bowlersLeft < 4 - bowl && slotsLeft < 4 - bowl) continue
-      xi.push(p)
-    } else if (p.role === 'all-rounder') {
-      xi.push(p); bowl++
-    }
-  }
-
-  // Pass 3: fill remaining slots with best available (bowlers first, then others)
-  for (const p of sorted) {
-    if (xi.length >= 11) break
-    if (xi.find(x => x.player_id === p.player_id)) continue
-    if (p.role === 'bowler') { xi.push(p); bowl++ }
-  }
-
-  // Pass 4: fill any remaining gaps
-  for (const p of sorted) {
-    if (xi.length >= 11) break
-    if (!xi.find(x => x.player_id === p.player_id)) xi.push(p)
-  }
-
-  // ── Bowling order: pick 5 overs from best bowlers/AR ──────────────────────
-  const canBowl = xi
-    .filter(p => p.role === 'bowler' || p.role === 'all-rounder')
-    .sort((a, b) => {
-      // Prefer lower economy; fall back to wicket_prob
-      const ae = a.bowling_economy ?? 99
-      const be = b.bowling_economy ?? 99
-      if (ae !== be) return ae - be
-      return (b.wicket_prob ?? 0) - (a.wicket_prob ?? 0)
-    })
-
-  const bowlingOrder: string[] = []
-
-  // Assign up to 5 overs — bowlers get 1 over first, then fill gaps with extra overs
-  for (const p of canBowl) {
-    if (bowlingOrder.length >= 5) break
-    bowlingOrder.push(p.player_id)
-  }
-  // If fewer than 5 unique bowlers, let top bowlers bowl a 2nd over
-  let idx = 0
-  while (bowlingOrder.length < 5 && canBowl.length > 0) {
-    const p = canBowl[idx % canBowl.length]
-    const alreadyBowling = bowlingOrder.filter(b => b === p.player_id).length
-    if (alreadyBowling < 2) bowlingOrder.push(p.player_id)
-    idx++
-    if (idx > 20) break  // safety
-  }
-
-  return {
-    xi:           xi.slice(0, 11).map(p => p.player_id),
-    bowlingOrder: bowlingOrder.slice(0, 5),
-  }
-}
+import { pickXI, buildRosterForPick } from '../_lib/pick_xi'
 
 export async function POST() {
   const user = await requireAdmin()
@@ -154,23 +63,11 @@ export async function POST() {
     : { data: [] }
 
   // Group roster by team
-  const rosterByTeam = new Map<string, Array<{
-    player_id: string; batting_sr: number; bowling_economy: number | null
-    wicket_prob: number | null; price_cr: number; role: string
-  }>>()
-
+  const rosterByTeam = new Map<string, ReturnType<typeof buildRosterForPick>>()
   for (const r of rosters ?? []) {
-    const p = Array.isArray(r.players) ? r.players[0] : r.players as any
-    if (!p) continue
     if (!rosterByTeam.has(r.team_id)) rosterByTeam.set(r.team_id, [])
-    rosterByTeam.get(r.team_id)!.push({
-      player_id:       r.player_id,
-      role:            p.role,
-      batting_sr:      Number(p.batting_sr),
-      bowling_economy: p.bowling_economy != null ? Number(p.bowling_economy) : null,
-      wicket_prob:     p.wicket_prob     != null ? Number(p.wicket_prob)     : null,
-      price_cr:        Number(p.price_cr),
-    })
+    const picks = buildRosterForPick([r])
+    if (picks.length) rosterByTeam.get(r.team_id)!.push(...picks)
   }
 
   // ── Submit lineups ─────────────────────────────────────────────────────────

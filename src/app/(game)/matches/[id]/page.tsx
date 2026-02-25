@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import LineupSubmitter, { type SquadPlayer } from '@/components/matches/LineupSubmitter'
 import MatchReplay, { type ReplayBall, type ReplayInnings } from '@/components/matches/MatchReplay'
+import MatchStatusPoller from '@/components/matches/MatchStatusPoller'
 
 export const metadata = { title: 'Match Detail · BSPL' }
 
@@ -547,6 +548,7 @@ export default async function MatchDetailPage({
 
     return (
       <div className="space-y-5 max-w-3xl mx-auto">
+        <MatchStatusPoller matchId={id} currentStatus={rawMatch.status} />
         {/* Match info card */}
         <div className="bg-gray-900 rounded-xl border border-yellow-400/25 p-5">
           <div className="flex items-center gap-2 mb-4">
@@ -603,6 +605,7 @@ export default async function MatchDetailPage({
   // ─── SCHEDULED / LOCKED / lineup_open (not my team) ───────────────────────
   return (
     <div className="max-w-2xl mx-auto">
+      <MatchStatusPoller matchId={id} currentStatus={rawMatch.status} />
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-6">
         <div className="flex items-center gap-2">
           <span className="text-xs text-gray-500 font-mono">Match {rawMatch.match_number}</span>

@@ -5,6 +5,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { buildSimTeam, buildSimVenue, mergeBestBowling } from './helpers'
 import { simulateMatch } from '@/lib/simulation/engine'
+import { pickXI, buildRosterForPick } from './pick_xi'
 
 export async function simulateOne(matchId: string, db: SupabaseClient): Promise<string> {
   // ── 1. Load match ──────────────────────────────────────────────────────────
@@ -26,20 +27,31 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     .in('id', [match.team_a_id, match.team_b_id])
   const teamName = new Map(teamRows?.map((t: { id: string; name: string }) => [t.id, t.name]) ?? [])
 
-  // ── 3. Load lineups (both must be submitted) ───────────────────────────────
+  // ── 3. Load rosters for both teams ─────────────────────────────────────────
+  const [{ data: rostersA }, { data: rostersB }] = await Promise.all([
+    db.from('bspl_rosters').select('player_id, players(*)').eq('team_id', match.team_a_id),
+    db.from('bspl_rosters').select('player_id, players(*)').eq('team_id', match.team_b_id),
+  ])
+
+  // ── 4. Load lineups; auto-pick if not submitted ────────────────────────────
   const { data: lineups } = await db
     .from('bspl_lineups')
     .select('*')
     .eq('match_id', matchId)
 
-  const lineupA = lineups?.find((l: { team_id: string }) => l.team_id === match.team_a_id)
-  const lineupB = lineups?.find((l: { team_id: string }) => l.team_id === match.team_b_id)
-
-  if (!lineupA?.is_submitted || !lineupB?.is_submitted) {
-    throw new Error('Both lineups must be submitted before simulating')
+  function autoLineup(teamId: string, rosters: typeof rostersA) {
+    const roster = buildRosterForPick(rosters ?? [])
+    const { xi, bowlingOrder } = pickXI(roster)
+    return { team_id: teamId, playing_xi: xi, bowling_order: bowlingOrder, toss_choice: 'bat', is_submitted: true }
   }
 
-  // ── 4. Load venue ──────────────────────────────────────────────────────────
+  const rawA = lineups?.find((l: { team_id: string }) => l.team_id === match.team_a_id)
+  const rawB = lineups?.find((l: { team_id: string }) => l.team_id === match.team_b_id)
+
+  const lineupA = rawA?.is_submitted ? rawA : autoLineup(match.team_a_id, rostersA)
+  const lineupB = rawB?.is_submitted ? rawB : autoLineup(match.team_b_id, rostersB)
+
+  // ── 5. Load venue ──────────────────────────────────────────────────────────
   const { data: venueRow } = await db
     .from('bspl_venues')
     .select('*')
@@ -48,12 +60,6 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
   if (!venueRow) throw new Error('Venue not found')
 
   const simVenue = buildSimVenue(venueRow, match.condition)
-
-  // ── 5. Load rosters + stamina for both teams ───────────────────────────────
-  const [{ data: rostersA }, { data: rostersB }] = await Promise.all([
-    db.from('bspl_rosters').select('player_id, players(*)').eq('team_id', match.team_a_id),
-    db.from('bspl_rosters').select('player_id, players(*)').eq('team_id', match.team_b_id),
-  ])
 
   const allPlayerIds = [
     ...(rostersA?.map((r: { player_id: string }) => r.player_id) ?? []),
