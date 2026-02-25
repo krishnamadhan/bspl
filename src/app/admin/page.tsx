@@ -404,10 +404,11 @@ export default function AdminPage() {
   // ── Derived values ───────────────────────────────────────────────────────────
   const activeSeason       = seasonInfo && seasonInfo.status !== 'completed' ? seasonInfo : null
   const statusMeta         = SEASON_STATUS[seasonInfo?.status ?? ''] ?? SEASON_STATUS.completed
-  const liveMatches        = matches.filter(m => m.status === 'live')
+  const liveMatches        = matches.filter(m => m.status === 'live')   // backward compat for stuck live matches
   const lineupOpenMatches  = matches.filter(m => m.status === 'lineup_open')
   const scheduledMatches   = matches.filter(m => m.status === 'scheduled')
-  const readyToRun         = lineupOpenMatches.filter(m => m.lineups_submitted === 2)
+  // All lineup_open matches can be run — simulate auto-fills any missing lineup
+  const readyToRun         = lineupOpenMatches
   const botTeams           = teams.filter(t => t.is_bot)
   const realTeams          = teams.filter(t => !t.is_bot)
 
@@ -669,8 +670,8 @@ export default function AdminPage() {
               {lineupOpenMatches.length > 0 && (
                 <Btn label={isPending ? '…' : '🤖 Auto Bot Lineups'} onClick={handleAutoLineups} disabled={isPending} variant="gray" size="sm" />
               )}
-              {readyToRun.length > 0 && (
-                <Btn label={isPending ? 'Running…' : `▶ Run All (${readyToRun.length})`} onClick={handleSimulateAll} disabled={isPending} variant="yellow" size="sm" />
+              {lineupOpenMatches.length > 0 && (
+                <Btn label={isPending ? 'Running…' : `▶ Run All (${lineupOpenMatches.length})`} onClick={handleSimulateAll} disabled={isPending} variant="yellow" size="sm" />
               )}
             </div>
           }
@@ -699,7 +700,7 @@ export default function AdminPage() {
 
             {/* Lineup-open matches */}
             {lineupOpenMatches.map(m => {
-              const ready = m.lineups_submitted === 2
+              const allIn = m.lineups_submitted === 2
               return (
                 <div key={m.id} className="flex items-center gap-4 px-6 py-4">
                   <span className="text-xs font-mono text-gray-500 w-10">M{m.match_number}</span>
@@ -709,17 +710,17 @@ export default function AdminPage() {
                     </p>
                     <p className="text-xs mt-0.5">
                       {m.venue?.name} ·{' '}
-                      {ready
+                      {allIn
                         ? <span className="text-green-400">Both lineups in ✓</span>
-                        : <span className="text-yellow-400">Waiting: {m.pending_teams.join(', ')}</span>}
+                        : <span className="text-yellow-400">Pending: {m.pending_teams.join(', ')} (will auto-fill)</span>}
                     </p>
                   </div>
                   <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">Lineups Open</span>
                   <Btn
-                    label={isPending ? '…' : ready ? '▶ Run' : 'Waiting'}
+                    label={isPending ? '…' : '▶ Run'}
                     onClick={() => handleSimulate(m.id)}
-                    disabled={isPending || !ready}
-                    variant={ready ? 'yellow' : 'gray'}
+                    disabled={isPending}
+                    variant="yellow"
                     size="sm"
                   />
                 </div>
