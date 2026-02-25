@@ -388,6 +388,20 @@ export default function AdminPage() {
   const handleAutoLineups  = () => handle(async () => { const j = await post('/api/admin/auto-lineups'); showToast(j.message ?? 'Bot lineups submitted', true); await loadMatches() })
   const handleFinalize     = (id: string) => handle(async () => { await post(`/api/match/${id}/complete`); showToast('Match finalized', true); await loadMatches() })
   const handleSetupTest    = () => handle(async () => { const j = await post('/api/admin/setup-test-season'); showToast(j.message ?? 'Test season set up', true); await loadSeasons(); await loadTeams() })
+  const handleRunSeason    = () => setConfirm({
+    title: 'Run Full Season?',
+    body: 'Opens all remaining scheduled matches, auto-fills bot lineups, and simulates every match in sequence. Cannot be undone.',
+    label: 'Run Full Season',
+    variant: 'yellow',
+    fn: () => handle(async () => {
+      const j = await post('/api/admin/run-season')
+      const msg = `Done: ${j.simulated} simulated${j.errors > 0 ? `, ${j.errors} errors` : ''}`
+      showToast(msg, j.errors === 0)
+      setConfirm(null)
+      await loadSeasons()
+      await loadMatches()
+    }),
+  })
 
   // ── Auth states ─────────────────────────────────────────────────────────────
   if (authState === 'loading') return (
@@ -672,6 +686,9 @@ export default function AdminPage() {
               )}
               {lineupOpenMatches.length > 0 && (
                 <Btn label={isPending ? 'Running…' : `▶ Run All (${lineupOpenMatches.length})`} onClick={handleSimulateAll} disabled={isPending} variant="yellow" size="sm" />
+              )}
+              {scheduledMatches.length > 0 && (
+                <Btn label={isPending ? 'Running…' : `⚡ Run Full Season (${scheduledMatches.length + lineupOpenMatches.length} left)`} onClick={handleRunSeason} disabled={isPending} variant="green" size="sm" />
               )}
             </div>
           }
