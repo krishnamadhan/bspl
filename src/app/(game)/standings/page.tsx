@@ -1,3 +1,4 @@
+import React from 'react'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
@@ -181,10 +182,10 @@ export default async function StandingsPage() {
                   const form         = [...(formGuide[row.team_id] ?? [])].reverse() // oldest→newest
 
                   return (
-                    <>
+                    <React.Fragment key={row.team_id}>
                       {/* Divider after position 4 */}
                       {isFirstElim && standings.length > 4 && (
-                        <tr key="divider" className="border-t-2 border-yellow-400/20">
+                        <tr className="border-t-2 border-yellow-400/20">
                           <td colSpan={10} className="px-4 py-1">
                             <span className="text-xs text-yellow-400/50 font-medium">
                               ── Elimination zone ──
@@ -194,7 +195,6 @@ export default async function StandingsPage() {
                       )}
 
                       <tr
-                        key={row.team_id}
                         className={`border-b border-gray-800/50 transition-colors hover:bg-gray-800/30 ${
                           isQualifier ? 'bg-yellow-400/3' : ''
                         }`}
@@ -258,7 +258,7 @@ export default async function StandingsPage() {
                           </div>
                         </td>
                       </tr>
-                    </>
+                    </React.Fragment>
                   )
                 })}
               </tbody>

@@ -633,20 +633,28 @@ export default async function MatchDetailPage({
         </div>
 
         {/* Teams */}
-        <div className="flex items-center justify-around gap-4">
-          {[teamA, teamB].map((team, i) => (
-            <div key={i} className="text-center">
-              <div className="w-12 h-12 rounded-full mx-auto mb-2" style={{ backgroundColor: team?.color ?? '#888' }} />
-              <Link href={`/teams/${team?.id}`} className="font-bold text-xl hover:text-yellow-400 hover:underline transition">
-                {team?.name ?? '—'}
-              </Link>
-              {team?.id === myTeam?.id
-                ? <p className="text-xs text-yellow-400 mt-1">Your team</p>
-                : <p className="text-xs text-gray-500 mt-1">View Squad</p>
-              }
-            </div>
-          ))}
-          <span className="text-gray-700 text-3xl font-bold">vs</span>
+        <div className="flex items-center gap-4">
+          <div className="flex-1 text-center">
+            <div className="w-12 h-12 rounded-full mx-auto mb-2" style={{ backgroundColor: teamA?.color ?? '#888' }} />
+            <Link href={`/teams/${teamA?.id}`} className="font-bold text-xl hover:text-yellow-400 hover:underline transition block">
+              {teamA?.name ?? '—'}
+            </Link>
+            {teamA?.id === myTeam?.id
+              ? <p className="text-xs text-yellow-400 mt-1">Your team</p>
+              : <p className="text-xs text-gray-500 mt-1">View Squad</p>
+            }
+          </div>
+          <span className="text-gray-700 text-3xl font-bold flex-shrink-0">vs</span>
+          <div className="flex-1 text-center">
+            <div className="w-12 h-12 rounded-full mx-auto mb-2" style={{ backgroundColor: teamB?.color ?? '#888' }} />
+            <Link href={`/teams/${teamB?.id}`} className="font-bold text-xl hover:text-yellow-400 hover:underline transition block">
+              {teamB?.name ?? '—'}
+            </Link>
+            {teamB?.id === myTeam?.id
+              ? <p className="text-xs text-yellow-400 mt-1">Your team</p>
+              : <p className="text-xs text-gray-500 mt-1">View Squad</p>
+            }
+          </div>
         </div>
 
         {/* Details grid */}
