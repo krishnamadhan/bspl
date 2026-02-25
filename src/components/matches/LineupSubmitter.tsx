@@ -1,0 +1,419 @@
+'use client'
+
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+
+export type SquadPlayer = {
+  id: string
+  name: string
+  role: 'batsman' | 'bowler' | 'all-rounder' | 'wicket-keeper'
+  bowler_type: string | null
+  batting_sr: number
+  bowling_economy: number | null
+  stamina: number
+  confidence: number
+}
+
+type ExistingLineup = {
+  playing_xi: string[]
+  bowling_order: string[]
+  toss_choice: string | null
+  is_submitted: boolean
+} | null
+
+interface Props {
+  matchId: string
+  myTeamId: string
+  squad: SquadPlayer[]
+  existingLineup: ExistingLineup
+}
+
+const ROLE_META: Record<string, { label: string; cls: string }> = {
+  'wicket-keeper': { label: 'WK',   cls: 'bg-purple-500/20 text-purple-300' },
+  batsman:         { label: 'BAT',  cls: 'bg-blue-500/20 text-blue-300' },
+  'all-rounder':   { label: 'AR',   cls: 'bg-green-500/20 text-green-300' },
+  bowler:          { label: 'BOWL', cls: 'bg-red-500/20 text-red-300' },
+}
+
+const ROLE_ORDER: Record<string, number> = {
+  'wicket-keeper': 0, batsman: 1, 'all-rounder': 2, bowler: 3,
+}
+
+function staminaColor(s: number) {
+  return s >= 65 ? 'text-green-400' : s >= 40 ? 'text-yellow-400' : 'text-red-400'
+}
+
+function canBowl(p: SquadPlayer) {
+  return p.role === 'bowler' || p.role === 'all-rounder'
+}
+
+export default function LineupSubmitter({ matchId, myTeamId, squad, existingLineup }: Props) {
+  const [selectedXI, setSelectedXI] = useState<string[]>(existingLineup?.playing_xi ?? [])
+  const [bowlingOrder, setBowlingOrder] = useState<string[]>(existingLineup?.bowling_order ?? [])
+  const [tossChoice, setTossChoice] = useState<'bat' | 'bowl' | null>(
+    (existingLineup?.toss_choice as 'bat' | 'bowl') ?? null
+  )
+  const [loading, setLoading] = useState(false)
+  const [notice, setNotice] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+
+  const playerMap = Object.fromEntries(squad.map(p => [p.id, p]))
+
+  // ── Squad actions ──────────────────────────────────────────────────────────
+
+  function togglePlayer(id: string) {
+    setNotice(null)
+    if (selectedXI.includes(id)) {
+      setBowlingOrder(bo => bo.filter(b => b !== id))
+      setSelectedXI(xi => xi.filter(x => x !== id))
+    } else {
+      if (selectedXI.length >= 11) {
+        setNotice({ type: 'error', msg: 'XI is full — remove a player first.' })
+        return
+      }
+      setSelectedXI(xi => [...xi, id])
+    }
+  }
+
+  function toggleBowler(id: string) {
+    setNotice(null)
+    if (!selectedXI.includes(id)) return
+    setBowlingOrder(bo => {
+      if (bo.includes(id)) return bo.filter(b => b !== id)
+      if (bo.length >= 5) {
+        setNotice({ type: 'error', msg: 'Only 5 overs — max 5 bowlers.' })
+        return bo
+      }
+      return [...bo, id]
+    })
+  }
+
+  function moveBatting(idx: number, dir: -1 | 1) {
+    const next = idx + dir
+    if (next < 0 || next >= selectedXI.length) return
+    setSelectedXI(xi => {
+      const a = [...xi]
+      ;[a[idx], a[next]] = [a[next], a[idx]]
+      return a
+    })
+  }
+
+  function moveBowling(idx: number, dir: -1 | 1) {
+    const next = idx + dir
+    if (next < 0 || next >= bowlingOrder.length) return
+    setBowlingOrder(bo => {
+      const a = [...bo]
+      ;[a[idx], a[next]] = [a[next], a[idx]]
+      return a
+    })
+  }
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
+
+  async function handleSubmit() {
+    if (selectedXI.length !== 11) {
+      setNotice({ type: 'error', msg: `Select exactly 11 players (${selectedXI.length}/11 chosen).` })
+      return
+    }
+    if (bowlingOrder.length !== 5) {
+      setNotice({ type: 'error', msg: `Assign exactly 5 bowlers for 5 overs (${bowlingOrder.length}/5 set).` })
+      return
+    }
+    if (!tossChoice) {
+      setNotice({ type: 'error', msg: 'Choose your toss preference (bat or bowl).' })
+      return
+    }
+
+    setLoading(true)
+    setNotice(null)
+
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('bspl_lineups')
+      .upsert(
+        {
+          match_id:     matchId,
+          team_id:      myTeamId,
+          playing_xi:   selectedXI,
+          bowling_order: bowlingOrder,
+          toss_choice:  tossChoice,
+          is_submitted:  true,
+          submitted_at:  new Date().toISOString(),
+        },
+        { onConflict: 'match_id,team_id' }
+      )
+
+    setLoading(false)
+    if (error) {
+      setNotice({ type: 'error', msg: error.message })
+    } else {
+      setNotice({
+        type: 'success',
+        msg: existingLineup?.is_submitted ? 'Lineup updated successfully!' : 'Lineup submitted!',
+      })
+    }
+  }
+
+  // ── Derived ────────────────────────────────────────────────────────────────
+
+  const sortedSquad = [...squad].sort((a, b) => {
+    const ro = (ROLE_ORDER[a.role] ?? 4) - (ROLE_ORDER[b.role] ?? 4)
+    return ro !== 0 ? ro : b.stamina - a.stamina
+  })
+
+  const xiComplete    = selectedXI.length === 11
+  const bowlComplete  = bowlingOrder.length === 5
+  const readyToSubmit = xiComplete && bowlComplete && tossChoice !== null
+
+  return (
+    <div className="space-y-4">
+      {/* Notice banner */}
+      {notice && (
+        <div className={`px-4 py-3 rounded-lg text-sm ${
+          notice.type === 'success'
+            ? 'bg-green-500/10 text-green-300 border border-green-500/20'
+            : 'bg-red-500/10 text-red-300 border border-red-500/20'
+        }`}>
+          {notice.msg}
+        </div>
+      )}
+
+      {/* Progress pills */}
+      <div className="flex gap-2 flex-wrap">
+        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${xiComplete ? 'bg-green-500/20 text-green-300' : 'bg-gray-800 text-gray-400'}`}>
+          {selectedXI.length}/11 players
+        </span>
+        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${bowlComplete ? 'bg-green-500/20 text-green-300' : 'bg-gray-800 text-gray-400'}`}>
+          {bowlingOrder.length}/5 bowlers
+        </span>
+        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${tossChoice ? 'bg-green-500/20 text-green-300' : 'bg-gray-800 text-gray-400'}`}>
+          {tossChoice ? `Toss: ${tossChoice === 'bat' ? 'Bat First' : 'Bowl First'}` : 'Toss: not set'}
+        </span>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+
+        {/* ── Left: Squad grid ─────────────────────────────────── */}
+        <div className="space-y-2">
+          <h2 className="font-semibold text-sm text-gray-300 uppercase tracking-wide">
+            Your Squad
+          </h2>
+          <div className="space-y-1.5 max-h-[520px] overflow-y-auto pr-0.5">
+            {sortedSquad.map(player => {
+              const isIn     = selectedXI.includes(player.id)
+              const isBowler = bowlingOrder.includes(player.id)
+              const meta     = ROLE_META[player.role] ?? ROLE_META.batsman
+
+              return (
+                <div
+                  key={player.id}
+                  onClick={() => togglePlayer(player.id)}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition border ${
+                    isIn
+                      ? 'border-yellow-400/40 bg-yellow-400/8'
+                      : 'border-gray-800 bg-gray-900 hover:border-gray-700'
+                  }`}
+                >
+                  {/* Role badge */}
+                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${meta.cls}`}>
+                    {meta.label}
+                  </span>
+
+                  {/* Name + stats */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{player.name}</p>
+                    <p className="text-xs text-gray-500">
+                      SR {player.batting_sr.toFixed(0)}
+                      {player.bowling_economy != null ? ` · Econ ${player.bowling_economy.toFixed(1)}` : ''}
+                    </p>
+                  </div>
+
+                  {/* Stamina + bowling over label */}
+                  <div className="text-right flex-shrink-0">
+                    <p className={`text-xs font-mono ${staminaColor(player.stamina)}`}>
+                      {Math.round(player.stamina)}%
+                    </p>
+                    {isBowler && (
+                      <p className="text-xs text-yellow-400">Ov {bowlingOrder.indexOf(player.id) + 1}</p>
+                    )}
+                  </div>
+
+                  {/* Tick */}
+                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                    isIn ? 'border-yellow-400 bg-yellow-400' : 'border-gray-600'
+                  }`}>
+                    {isIn && <span className="text-gray-950 text-xs font-black leading-none">✓</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ── Right: XI + Bowling order + Toss ─────────────────── */}
+        <div className="space-y-5">
+
+          {/* Batting order */}
+          <div className="space-y-2">
+            <h2 className="font-semibold text-sm text-gray-300 uppercase tracking-wide">
+              Batting Order
+            </h2>
+
+            {selectedXI.length === 0 ? (
+              <p className="text-gray-600 text-sm py-4 text-center">
+                Tap players on the left to add them
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                {selectedXI.map((id, idx) => {
+                  const p = playerMap[id]
+                  if (!p) return null
+                  const isBowling = bowlingOrder.includes(id)
+                  const bowlPos   = bowlingOrder.indexOf(id)
+
+                  return (
+                    <div
+                      key={id}
+                      className="flex items-center gap-2 px-3 py-2 bg-gray-900 rounded-lg border border-gray-800"
+                    >
+                      <span className="text-gray-500 text-xs w-5 text-center font-mono flex-shrink-0">
+                        {idx + 1}
+                      </span>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{p.name}</p>
+                      </div>
+
+                      {/* Bowl toggle (only for bowlers/AR) */}
+                      {canBowl(p) && (
+                        <button
+                          onClick={e => { e.stopPropagation(); toggleBowler(id) }}
+                          className={`text-xs px-2 py-0.5 rounded transition flex-shrink-0 ${
+                            isBowling
+                              ? 'bg-yellow-400/20 text-yellow-300'
+                              : 'bg-gray-800 text-gray-500 hover:text-gray-300'
+                          }`}
+                        >
+                          {isBowling ? `Ov ${bowlPos + 1}` : 'Bowl'}
+                        </button>
+                      )}
+
+                      {/* Up/down */}
+                      <div className="flex gap-0.5 flex-shrink-0">
+                        <button
+                          onClick={e => { e.stopPropagation(); moveBatting(idx, -1) }}
+                          disabled={idx === 0}
+                          className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs w-5 text-center"
+                        >↑</button>
+                        <button
+                          onClick={e => { e.stopPropagation(); moveBatting(idx, 1) }}
+                          disabled={idx === selectedXI.length - 1}
+                          className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs w-5 text-center"
+                        >↓</button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Bowling order */}
+          <div className="space-y-2">
+            <h2 className="font-semibold text-sm text-gray-300 uppercase tracking-wide">
+              Bowling Order{' '}
+              <span className={`font-normal ${bowlComplete ? 'text-green-400' : 'text-gray-500'}`}>
+                ({bowlingOrder.length}/5)
+              </span>
+            </h2>
+
+            <div className="space-y-1.5">
+              {[0, 1, 2, 3, 4].map(i => {
+                const bid    = bowlingOrder[i]
+                const bowler = bid ? playerMap[bid] : null
+
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 px-3 py-2 bg-gray-900 rounded-lg border border-gray-800"
+                  >
+                    <span className="text-yellow-400/50 text-xs font-mono w-10 flex-shrink-0">
+                      Over {i + 1}
+                    </span>
+
+                    {bowler ? (
+                      <>
+                        <span className="text-sm flex-1 truncate">{bowler.name}</span>
+                        <div className="flex gap-0.5 flex-shrink-0">
+                          <button
+                            onClick={() => moveBowling(i, -1)}
+                            disabled={i === 0}
+                            className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs w-5 text-center"
+                          >↑</button>
+                          <button
+                            onClick={() => moveBowling(i, 1)}
+                            disabled={i >= bowlingOrder.length - 1}
+                            className="text-gray-600 hover:text-gray-300 disabled:opacity-20 text-xs w-5 text-center"
+                          >↓</button>
+                        </div>
+                        <button
+                          onClick={() => toggleBowler(bid)}
+                          className="text-gray-600 hover:text-red-400 text-xs flex-shrink-0 ml-1"
+                          title="Remove bowler"
+                        >✕</button>
+                      </>
+                    ) : (
+                      <span className="text-gray-600 text-xs italic">
+                        — tap "Bowl" on a player above
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Toss choice */}
+          <div className="space-y-2">
+            <h2 className="font-semibold text-sm text-gray-300 uppercase tracking-wide">
+              If You Win the Toss
+            </h2>
+            <div className="flex gap-3">
+              {(['bat', 'bowl'] as const).map(choice => (
+                <button
+                  key={choice}
+                  onClick={() => setTossChoice(choice)}
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition ${
+                    tossChoice === choice
+                      ? 'bg-yellow-400 text-gray-950'
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  {choice === 'bat' ? '🏏 Bat First' : '🎳 Bowl First'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button
+            onClick={handleSubmit}
+            disabled={loading || !readyToSubmit}
+            className="w-full py-3 bg-yellow-400 text-gray-950 font-bold rounded-xl hover:bg-yellow-300 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {loading
+              ? 'Submitting…'
+              : existingLineup?.is_submitted
+                ? 'Update Lineup'
+                : 'Submit Lineup'}
+          </button>
+
+          {!readyToSubmit && !loading && (
+            <p className="text-xs text-gray-600 text-center">
+              Select 11 players, assign 5 bowlers, and choose a toss preference to submit.
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,261 @@
+import { createClient } from '@/lib/supabase/server'
+
+export const metadata = { title: 'Standings · BSPL' }
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function unpack<T>(v: T | T[] | null | undefined): T | null {
+  return Array.isArray(v) ? (v[0] ?? null) : (v ?? null)
+}
+
+function nrrStr(nrr: number): string {
+  return nrr >= 0 ? `+${nrr.toFixed(3)}` : nrr.toFixed(3)
+}
+
+// ── Form dot component ────────────────────────────────────────────────────────
+
+function FormDot({ result }: { result: 'W' | 'L' }) {
+  return (
+    <span
+      title={result === 'W' ? 'Win' : 'Loss'}
+      className={`inline-block w-4 h-4 rounded-full flex-shrink-0 ${
+        result === 'W' ? 'bg-green-500' : 'bg-gray-600'
+      }`}
+    />
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default async function StandingsPage() {
+  const supabase = await createClient()
+
+  // Active season
+  const { data: season } = await supabase
+    .from('bspl_seasons')
+    .select('id, name, status')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!season) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Standings</h1>
+        <div className="text-center py-20 text-gray-500">No active season.</div>
+      </div>
+    )
+  }
+
+  // Standings + team info
+  const { data: rawStandings } = await supabase
+    .from('bspl_points')
+    .select(`
+      team_id, played, won, lost, no_result, points,
+      runs_for, runs_against, nrr,
+      team:bspl_teams (name, color)
+    `)
+    .eq('season_id', season.id)
+    .order('points',  { ascending: false })
+    .order('nrr',     { ascending: false })
+
+  const standings = (rawStandings ?? []).map(r => ({
+    ...r,
+    team: unpack(r.team as { name: string; color: string } | { name: string; color: string }[] | null),
+  }))
+
+  // ── Form guide: last-5 results per team ─────────────────────────────────────
+  const { data: completedMatches } = await supabase
+    .from('bspl_matches')
+    .select('id, team_a_id, team_b_id')
+    .eq('season_id', season.id)
+    .eq('status', 'completed')
+    .order('match_number', { ascending: false })   // newest first
+
+  const formGuide: Record<string, ('W' | 'L')[]> = {}
+
+  if (completedMatches?.length) {
+    const { data: formInnings } = await supabase
+      .from('bspl_innings')
+      .select('match_id, innings_number, batting_team_id, total_runs')
+      .in('match_id', completedMatches.map(m => m.id))
+
+    // Determine winner per match from innings scores
+    const winnerByMatch = new Map<string, string>()
+    completedMatches.forEach(m => {
+      const inn1 = formInnings?.find(i => i.match_id === m.id && i.innings_number === 1)
+      const inn2 = formInnings?.find(i => i.match_id === m.id && i.innings_number === 2)
+      if (inn1 && inn2) {
+        winnerByMatch.set(
+          m.id,
+          inn1.total_runs > inn2.total_runs ? inn1.batting_team_id : inn2.batting_team_id
+        )
+      }
+    })
+
+    // Build last-5 form per team (newest first → we'll reverse for display)
+    completedMatches.forEach(m => {
+      const winner = winnerByMatch.get(m.id)
+      if (!winner) return
+      for (const teamId of [m.team_a_id, m.team_b_id]) {
+        if (!formGuide[teamId]) formGuide[teamId] = []
+        if (formGuide[teamId].length < 5) {
+          formGuide[teamId].push(winner === teamId ? 'W' : 'L')
+        }
+      }
+    })
+  }
+
+  const matchesPlayed = completedMatches?.length ?? 0
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Standings</h1>
+        <div className="flex items-center gap-3 text-sm text-gray-400">
+          <span>{season.name}</span>
+          <span className="text-gray-600">·</span>
+          <span>{matchesPlayed} match{matchesPlayed !== 1 ? 'es' : ''} played</span>
+        </div>
+      </div>
+
+      {/* Legend */}
+      {standings.length > 0 && (
+        <div className="flex items-center gap-4 text-xs text-gray-500">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-full bg-green-500" /> Win
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-full bg-gray-600" /> Loss
+          </span>
+          <span className="ml-2 text-yellow-400/70">🟡 Top 4 qualify for playoffs</span>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+        {standings.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            No matches played yet — standings will appear here after the first game.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
+              <thead>
+                <tr className="border-b border-gray-800 text-gray-400 text-xs">
+                  <th className="text-left px-4 py-3 w-8">#</th>
+                  <th className="text-left px-4 py-3">Team</th>
+                  <th className="text-center px-3 py-3 w-10">P</th>
+                  <th className="text-center px-3 py-3 w-10">W</th>
+                  <th className="text-center px-3 py-3 w-10">L</th>
+                  <th className="text-center px-3 py-3 w-12">Pts</th>
+                  <th className="text-center px-3 py-3 w-16">NRR</th>
+                  <th className="text-center px-3 py-3 w-12 hidden sm:table-cell">RF</th>
+                  <th className="text-center px-3 py-3 w-12 hidden sm:table-cell">RA</th>
+                  <th className="text-center px-3 py-3 w-28">Form</th>
+                </tr>
+              </thead>
+              <tbody>
+                {standings.map((row, i) => {
+                  const isQualifier  = i < 4
+                  const isFirstElim  = i === 4
+                  const nrr          = Number(row.nrr ?? 0)
+                  const form         = [...(formGuide[row.team_id] ?? [])].reverse() // oldest→newest
+
+                  return (
+                    <>
+                      {/* Divider after position 4 */}
+                      {isFirstElim && standings.length > 4 && (
+                        <tr key="divider" className="border-t-2 border-yellow-400/20">
+                          <td colSpan={10} className="px-4 py-1">
+                            <span className="text-xs text-yellow-400/50 font-medium">
+                              ── Elimination zone ──
+                            </span>
+                          </td>
+                        </tr>
+                      )}
+
+                      <tr
+                        key={row.team_id}
+                        className={`border-b border-gray-800/50 transition-colors hover:bg-gray-800/30 ${
+                          isQualifier ? 'bg-yellow-400/3' : ''
+                        }`}
+                      >
+                        {/* Rank */}
+                        <td className="px-4 py-3">
+                          <span className={`text-sm font-bold ${isQualifier ? 'text-yellow-400' : 'text-gray-500'}`}>
+                            {i + 1}
+                          </span>
+                        </td>
+
+                        {/* Team */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: row.team?.color ?? '#6b7280' }}
+                            />
+                            <span className="font-semibold">{row.team?.name ?? '—'}</span>
+                            {isQualifier && (
+                              <span className="text-yellow-400/60 text-xs hidden sm:inline">Q</span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* P W L */}
+                        <td className="text-center px-3 py-3 text-gray-400">{row.played}</td>
+                        <td className="text-center px-3 py-3 font-medium text-green-400">{row.won}</td>
+                        <td className="text-center px-3 py-3 text-gray-500">{row.lost}</td>
+
+                        {/* Pts */}
+                        <td className="text-center px-3 py-3">
+                          <span className="font-bold text-yellow-400 text-base">{row.points}</span>
+                        </td>
+
+                        {/* NRR */}
+                        <td className="text-center px-3 py-3">
+                          <span className={`text-xs font-mono font-semibold ${
+                            nrr > 0 ? 'text-green-400' : nrr < 0 ? 'text-red-400' : 'text-gray-400'
+                          }`}>
+                            {nrrStr(nrr)}
+                          </span>
+                        </td>
+
+                        {/* RF / RA (hidden on mobile) */}
+                        <td className="text-center px-3 py-3 text-gray-500 text-xs hidden sm:table-cell">
+                          {row.runs_for ?? 0}
+                        </td>
+                        <td className="text-center px-3 py-3 text-gray-500 text-xs hidden sm:table-cell">
+                          {row.runs_against ?? 0}
+                        </td>
+
+                        {/* Form guide */}
+                        <td className="text-center px-3 py-3">
+                          <div className="flex items-center justify-center gap-1">
+                            {form.length === 0 ? (
+                              <span className="text-gray-700 text-xs">—</span>
+                            ) : (
+                              form.map((r, idx) => <FormDot key={idx} result={r} />)
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    </>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Column legend */}
+      {standings.length > 0 && (
+        <p className="text-xs text-gray-600 text-right">
+          P=Played · W=Won · L=Lost · Pts=Points · NRR=Net Run Rate · RF=Runs For · RA=Runs Against · Form=Last {Math.min(5, matchesPlayed)} results
+        </p>
+      )}
+    </div>
+  )
+}
