@@ -71,7 +71,7 @@ export async function POST() {
   // ── 3. Reload all teams in this season ───────────────────────────────────────
   const { data: allTeams } = await db
     .from('bspl_teams')
-    .select('id, name, budget_remaining')
+    .select('id, name, budget_remaining, is_bot')
     .eq('season_id', season.id)
     .order('created_at', { ascending: true })
 
@@ -102,9 +102,10 @@ export async function POST() {
     existingByTeam.get(r.team_id)!.add(r.player_id)
   }
 
-  // Only draft for teams that have fewer than SQUAD_SIZE players
+  // Only draft for BOT teams that have fewer than SQUAD_SIZE players
+  // Never touch a real user's team (is_bot = false)
   const teamsToDraft = allTeams.filter(
-    t => (existingByTeam.get(t.id)?.size ?? 0) < SQUAD_SIZE,
+    t => t.is_bot === true && (existingByTeam.get(t.id)?.size ?? 0) < SQUAD_SIZE,
   )
 
   if (!teamsToDraft.length) {

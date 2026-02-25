@@ -78,13 +78,21 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
     setNotice(null)
     if (!selectedXI.includes(id)) return
     setBowlingOrder(bo => {
-      if (bo.includes(id)) return bo.filter(b => b !== id)
+      const count = bo.filter(b => b === id).length
+      if (count >= 2) {
+        // Already bowling 2 overs — remove all slots for this bowler
+        return bo.filter(b => b !== id)
+      }
       if (bo.length >= 5) {
-        setNotice({ type: 'error', msg: 'Only 5 overs — max 5 bowlers.' })
+        setNotice({ type: 'error', msg: 'All 5 overs already assigned.' })
         return bo
       }
       return [...bo, id]
     })
+  }
+
+  function removeBowlerSlot(idx: number) {
+    setBowlingOrder(bo => bo.filter((_, i) => i !== idx))
   }
 
   function moveBatting(idx: number, dir: -1 | 1) {
@@ -284,18 +292,27 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                       </div>
 
                       {/* Bowl toggle (only for bowlers/AR) */}
-                      {canBowl(p) && (
-                        <button
-                          onClick={e => { e.stopPropagation(); toggleBowler(id) }}
-                          className={`text-xs px-2 py-0.5 rounded transition flex-shrink-0 ${
-                            isBowling
-                              ? 'bg-yellow-400/20 text-yellow-300'
-                              : 'bg-gray-800 text-gray-500 hover:text-gray-300'
-                          }`}
-                        >
-                          {isBowling ? `Ov ${bowlPos + 1}` : 'Bowl'}
-                        </button>
-                      )}
+                      {canBowl(p) && (() => {
+                        const overCount = bowlingOrder.filter(b => b === id).length
+                        const overNums  = bowlingOrder
+                          .map((b, i) => b === id ? i + 1 : null)
+                          .filter(Boolean)
+                        return (
+                          <button
+                            onClick={e => { e.stopPropagation(); toggleBowler(id) }}
+                            className={`text-xs px-2 py-0.5 rounded transition flex-shrink-0 ${
+                              overCount > 0
+                                ? overCount === 2
+                                  ? 'bg-orange-400/20 text-orange-300'
+                                  : 'bg-yellow-400/20 text-yellow-300'
+                                : 'bg-gray-800 text-gray-500 hover:text-gray-300'
+                            }`}
+                            title={overCount === 2 ? 'Click to remove from bowling' : overCount === 1 ? 'Click to add 2nd over' : 'Assign to bowl'}
+                          >
+                            {overCount === 0 ? 'Bowl' : `Ov ${overNums.join('+')} (${overCount})`}
+                          </button>
+                        )
+                      })()}
 
                       {/* Up/down */}
                       <div className="flex gap-0.5 flex-shrink-0">
@@ -356,9 +373,9 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                           >↓</button>
                         </div>
                         <button
-                          onClick={() => toggleBowler(bid)}
+                          onClick={() => removeBowlerSlot(i)}
                           className="text-gray-600 hover:text-red-400 text-xs flex-shrink-0 ml-1"
-                          title="Remove bowler"
+                          title="Remove this over"
                         >✕</button>
                       </>
                     ) : (
@@ -409,7 +426,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
           {!readyToSubmit && !loading && (
             <p className="text-xs text-gray-600 text-center">
-              Select 11 players, assign 5 bowlers, and choose a toss preference to submit.
+              Select 11 players · Assign all 5 overs (max 2 per bowler) · Choose toss preference
             </p>
           )}
         </div>
