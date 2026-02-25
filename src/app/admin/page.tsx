@@ -258,6 +258,12 @@ export default function AdminPage() {
     await loadMatches()
   })
 
+  const handleAutoLineups = () => handle(async () => {
+    const json = await post('/api/admin/auto-lineups')
+    showToast(json.message ?? 'Bot lineups submitted', true)
+    await loadMatches()
+  })
+
   // ── Auth states ─────────────────────────────────────────────────────────────
   if (authState === 'loading') {
     return <div className="flex items-center justify-center py-24 text-gray-400">Verifying access…</div>
@@ -427,15 +433,26 @@ export default function AdminPage() {
         <section className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
             <h2 className="font-semibold text-lg">Matches</h2>
-            {readyToRun.length > 0 && (
-              <Btn
-                label={isPending ? 'Running…' : `▶ Run All Ready (${readyToRun.length})`}
-                onClick={handleSimulateAll}
-                disabled={isPending}
-                variant="yellow"
-                size="sm"
-              />
-            )}
+            <div className="flex gap-2">
+              {lineupOpenMatches.length > 0 && (
+                <Btn
+                  label={isPending ? '…' : '🤖 Auto Bot Lineups'}
+                  onClick={handleAutoLineups}
+                  disabled={isPending}
+                  variant="gray"
+                  size="sm"
+                />
+              )}
+              {readyToRun.length > 0 && (
+                <Btn
+                  label={isPending ? 'Running…' : `▶ Run All Ready (${readyToRun.length})`}
+                  onClick={handleSimulateAll}
+                  disabled={isPending}
+                  variant="yellow"
+                  size="sm"
+                />
+              )}
+            </div>
           </div>
 
           <div className="divide-y divide-gray-800/60">
