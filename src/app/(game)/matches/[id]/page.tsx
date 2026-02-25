@@ -387,6 +387,7 @@ export default async function MatchDetailPage({
       outcome:     b.outcome,
       runs_scored: b.runs_scored,
       is_wicket:   b.is_wicket,
+      wicket_type: b.wicket_type,
     })
 
     const inn1Replay: ReplayInnings = {

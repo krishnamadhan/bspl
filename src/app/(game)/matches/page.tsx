@@ -127,9 +127,9 @@ function MatchCard({
           </div>
         </div>
 
-        {/* Result or date */}
-        {match.status === 'completed' && match.result_summary ? (
-          <p className="text-xs text-green-400 mt-2 text-center font-medium">{match.result_summary}</p>
+        {/* Result or date — result hidden to avoid spoiling the replay */}
+        {match.status === 'completed' ? (
+          <p className="text-xs text-gray-500 mt-2 text-center">Tap to watch replay →</p>
         ) : (
           <p className="text-xs text-gray-500 mt-2 text-center">
             {new Date(match.scheduled_date).toLocaleDateString('en-IN', {
