@@ -30,6 +30,113 @@ interface Props {
   children:      React.ReactNode
 }
 
+// ── Commentary ────────────────────────────────────────────────────────────────
+
+function shortName(full: string): string {
+  if (!full) return '?'
+  const parts = full.trim().split(/\s+/)
+  return parts.length > 1 ? parts[parts.length - 1] : full
+}
+
+function getBallCommentary(
+  ball: ReplayBall,
+  playerNames: Record<string, string>,
+): string {
+  const batter = shortName(playerNames[ball.batsman_id] ?? 'Batter')
+  const bowler = shortName(playerNames[ball.bowler_id] ?? 'Bowler')
+  // Deterministic pick so same ball = same line on every replay
+  const seed = ball.over * 100 + ball.ball
+  const pick = <T,>(arr: T[]): T => arr[Math.abs(seed) % arr.length]
+
+  if (ball.is_wicket) {
+    switch (ball.wicket_type) {
+      case 'bowled':
+        return pick([
+          `BOWLED! ${bowler} is through ${batter}! Off stump sent cartwheeling!`,
+          `Timber! ${batter} is clean bowled by ${bowler}! What a delivery!`,
+          `${bowler} hits the top of off stump — ${batter} can't believe it!`,
+        ])
+      case 'lbw':
+        return pick([
+          `LBW! Plumb in front! ${batter} has to walk. ${bowler} strikes!`,
+          `That's out! ${batter} misses the sweep and is hit on the pad. LBW!`,
+          `${bowler} traps ${batter} in front of the wicket. LBW — no question!`,
+        ])
+      case 'caught':
+        return pick([
+          `CAUGHT! ${batter} holes out in the deep! ${bowler} gets the breakthrough!`,
+          `Up in the air… and taken! ${batter} is dismissed caught.`,
+          `${batter} mistimes the shot and is caught! ${bowler} is delighted!`,
+          `Skied to mid-on — and it's pouched! ${batter} departs.`,
+        ])
+      default:
+        return `OUT! ${batter} is dismissed. ${bowler} celebrates!`
+    }
+  }
+
+  if (ball.outcome === 'Wd') return `Wide from ${bowler} — drifts down leg, extra run conceded.`
+  if (ball.outcome === 'Nb') return `No ball! Free hit on the next delivery.`
+
+  if (ball.outcome === '6')
+    return pick([
+      `${batter} launches it over long-on! MAXIMUM! Enormous hit!`,
+      `SIX! ${batter} slog-sweeps it into the stands! Crowd goes wild!`,
+      `What a shot! ${batter} deposits ${bowler} over mid-wicket! Six!`,
+      `Cleared the ropes at long-off! ${batter} is in sublime touch!`,
+      `${batter} steps out and SMOKES it over extra cover! Maximum!`,
+      `Pure muscle from ${batter}! Straight back over ${bowler}'s head! Six!`,
+      `${batter} picks the length and goes big — all the way into the crowd!`,
+    ])
+
+  if (ball.outcome === '4')
+    return pick([
+      `${batter} drives through the covers — FOUR! Gorgeous timing!`,
+      `Cut hard past point — races away to the boundary!`,
+      `${batter} flicks it through mid-wicket. Four more!`,
+      `Glanced fine, all the way to the rope. Beautiful.`,
+      `${batter} plays the pull shot — streaks to the boundary!`,
+      `Slashed over gully, no fielder there! FOUR!`,
+      `${batter} drives elegantly through the off side. FOUR!`,
+      `${batter} gets forward and chips it to the rope — four!`,
+      `Tucked off the pads, races through square leg. Boundary!`,
+    ])
+
+  if (ball.outcome === '3')
+    return pick([
+      `Good running between the wickets — they pinch three!`,
+      `Hit to deep mid-wicket, three runs with excellent running.`,
+    ])
+
+  if (ball.outcome === '2')
+    return pick([
+      `Worked to mid-on — they run hard and come back for two.`,
+      `Pushed through the gap, comfortable two.`,
+      `${batter} drives and they turn back for a second. Two runs.`,
+      `Driven to deep cover, two easy runs.`,
+    ])
+
+  if (ball.outcome === '1')
+    return pick([
+      `Nudged to fine leg — quick single to rotate the strike.`,
+      `Pushed to mid-off, easy one. Good cricket.`,
+      `Dabbed past point for a single.`,
+      `${batter} works it into the on-side — one run.`,
+      `Tucked away for a single. Strike rotated.`,
+      `Flicked off the pads, just a single.`,
+    ])
+
+  // dot ball
+  return pick([
+    `${bowler} beats ${batter} outside off! Good carry — dot ball.`,
+    `Defended back solidly by ${batter}. Dot.`,
+    `Tight line from ${bowler} — no room to hit. Maiden ball.`,
+    `${batter} tries the pull but mistimes it straight to mid-on. Dot.`,
+    `Good length delivery — ${batter} can't get it away. Pressure building.`,
+    `${bowler} is on target — ${batter} plays and misses! Dot ball.`,
+    `Well bowled! ${batter} is tied down. Dot.`,
+  ])
+}
+
 // ── Visual helpers ────────────────────────────────────────────────────────────
 
 const BALL_CLS: Record<string, string> = {
@@ -326,6 +433,49 @@ export default function MatchReplay({
         bowler={bowler}
         playerNames={playerNames}
       />
+
+      {/* Commentary feed */}
+      {visibleBalls.length > 0 && lastRevealed && (() => {
+        const feed = visibleBalls.slice(-5).reverse()
+        const latest = feed[0]
+        const prev   = feed.slice(1)
+
+        const latestBg =
+          latest.is_wicket    ? 'bg-red-500/10 border-red-500/20'   :
+          latest.outcome === '6' ? 'bg-green-500/10 border-green-500/20' :
+          latest.outcome === '4' ? 'bg-blue-500/10 border-blue-500/20'  :
+          'bg-gray-900 border-gray-800'
+
+        return (
+          <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+            {/* Latest ball */}
+            <div className={`flex items-start gap-3 px-4 py-3 border-b border-gray-800 transition-colors ${latestBg}`}>
+              <BallDot outcome={latest.outcome} pulse />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white leading-snug">
+                  {getBallCommentary(latest, playerNames)}
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Over {latest.over}.{latest.ball}
+                </p>
+              </div>
+            </div>
+
+            {/* Previous balls */}
+            {prev.map((ball, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-2 border-b border-gray-800/40 last:border-0">
+                <BallDot outcome={ball.outcome} />
+                <p className="text-xs text-gray-400 flex-1 min-w-0 truncate">
+                  {getBallCommentary(ball, playerNames)}
+                </p>
+                <span className="text-xs text-gray-600 flex-shrink-0 ml-2 font-mono">
+                  {ball.over}.{ball.ball}
+                </span>
+              </div>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* Over-by-over timeline */}
       {overNums.length > 0 && (
