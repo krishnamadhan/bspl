@@ -407,9 +407,12 @@ export default function MatchReplay({
   const [flash,      setFlash]      = useState<FlashEvent | null>(null)
   const [playerCard, setPlayerCard] = useState<PlayerCard | null>(null)
 
-  // Ball-by-ball ticker
+  // Ball-by-ball ticker — pauses while a flash overlay is showing
   useEffect(() => {
     if (phase === 'done') return
+
+    // Hold while flash is up: the match freezes until the overlay clears
+    if (flash) return
 
     if (phase === 'intermission') {
       const t = setTimeout(() => { setRevealed(0); setPhase('inn2') }, 3200)
@@ -429,14 +432,15 @@ export default function MatchReplay({
     }
 
     const ball    = balls[revealed]
-    const delay   = ball.is_wicket ? 1100
-                  : ball.outcome === '6' ? 900
-                  : ball.outcome === '4' ? 750
-                  : 520
+    // Slowed-down pacing so each ball is easy to process
+    const delay   = ball.is_wicket ? 1600
+                  : ball.outcome === '6' ? 1300
+                  : ball.outcome === '4' ? 1050
+                  : 820
 
     const t = setTimeout(() => setRevealed(r => r + 1), delay)
     return () => clearTimeout(t)
-  }, [phase, revealed, innings1.balls, innings2.balls])
+  }, [phase, revealed, flash, innings1.balls, innings2.balls])
 
   // Detect ball events → set flash and player intro cards
   useEffect(() => {
