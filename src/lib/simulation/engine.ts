@@ -61,16 +61,24 @@ function simulateBall(
   //   adjSR > 135 → above-average scoring matchup
   const REFERENCE_RPB = 9.0 / 6  // 1.5 rpb = 9 rpo = IPL average conceded
   const adjSR = battingSR * (runsPerBall / REFERENCE_RPB)
-  const k = Math.max(0.3, adjSR / 135.0)  // normalised factor (1.0 = IPL average)
+  // k floor: batter quality sets a minimum — elite batsmen never go fully passive
+  // even against world-class bowlers (prevents Kohli-at-SR-45 scenarios)
+  const kRaw = adjSR / 135.0
+  const batterFloor = Math.max(0.3, (battingSR / 135.0) * 0.55)  // 55% of batter's true ceiling
+  const k = Math.max(batterFloor, kRaw)
 
   // Probabilities calibrated to match real T20 ball-outcome distribution:
-  //   k=1.0 (SR≈135): dots 38%, sixes 6.5%, fours 14%, twos 6%, threes 1.5%, singles 34%
-  //   → expected SR ≈ 145  (matches IPL league average first-innings scoring)
-  //   k=1.25 (Head-class, SR≈170): dots 34%, sixes 10%, fours 17.5% → SR ≈ 175
-  //   k=0.75 (tail-ender, SR≈100): dots 44%, sixes 3.5%, fours 10.5% → SR ≈ 115
-  const pDot  = Math.min(0.65, Math.max(0.12, 0.38 / Math.pow(k, 0.45)))
-  const pSix  = Math.min(0.20, Math.max(0.005, 0.065 * Math.pow(k, 1.8)))
-  const pFour = Math.min(0.28, Math.max(0.03,  0.14  * Math.pow(k, 1.0)))
+  //   k=1.0 (SR≈135): dots 42%, sixes 5.5%, fours 13%, twos 6%, threes 1.5%, singles ~32%
+  //   → expected SR ≈ 136  (tight IPL average — reduces runaway high-variance overs)
+  //   k=1.25 (Head-class, SR≈170): dots 38%, sixes 8%, fours 16% → SR ≈ 155
+  //   k=0.75 (tail-ender, SR≈100): dots 48%, sixes 2.5%, fours 9% → SR ≈ 100
+  //   Key changes vs previous version:
+  //   - Higher base dots (0.38→0.42) and steeper dot floor (0.18) = more realistic rhythm
+  //   - Sixes grow slower (k^1.8→k^1.3) and lower base (0.065→0.055) = no 19-run overs
+  //   - Fours slightly reduced ceiling (0.28→0.24) = less boundary clustering
+  const pDot  = Math.min(0.65, Math.max(0.18, 0.42 / Math.pow(k, 0.40)))
+  const pSix  = Math.min(0.14, Math.max(0.005, 0.055 * Math.pow(k, 1.3)))
+  const pFour = Math.min(0.24, Math.max(0.04,  0.13  * Math.pow(k, 0.9)))
   const pTwo  = 0.06
   const pThree = 0.015
   // Singles absorb the remainder — naturally high for average players, lower for extremes
