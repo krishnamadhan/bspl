@@ -361,11 +361,14 @@ export default function AdminPage() {
   }, [seasonInfo?.id, seasonInfo?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-poll every 20s when there are lineup-open matches (players are actively submitting)
+  // Note: lineupOpenMatches is derived from `matches` below; use the source directly in the
+  // dep array to avoid a forward-reference TypeScript error (const used before declaration).
   useEffect(() => {
-    if (!seasonInfo || lineupOpenMatches.length === 0) return
+    const openCount = matches.filter(m => m.status === 'lineup_open').length
+    if (!seasonInfo || openCount === 0) return
     const interval = setInterval(() => { loadMatches() }, 20000)
     return () => clearInterval(interval)
-  }, [seasonInfo?.id, lineupOpenMatches.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [seasonInfo?.id, matches]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── API helpers ─────────────────────────────────────────────────────────────
   const post = async (url: string, body?: object) => {

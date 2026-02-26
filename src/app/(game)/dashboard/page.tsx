@@ -62,24 +62,11 @@ export default async function DashboardPage() {
     : { data: null }
 
   // ── All remaining queries in parallel (most need season.id or myTeam.id) ──
-  // Wrapped in try/catch so a network timeout or query error degrades gracefully
-  // instead of crashing the entire SSR page.
-  let squadCount: number | null = null
-  let myPoints: Record<string, number> | null = null
-  let rawStandings: unknown[] | null = null
-  let rawNextMatch: unknown = null
-  let rawRecent: unknown[] | null = null
-  let myStats: unknown[] | null = null
-
-  try {
-  const [
-    { count: _squadCount },
-    { data: _myPoints },
-    { data: _rawStandings },
-    { data: _rawNextMatch },
-    { data: _rawRecent },
-    { data: _myStats },
-  ] = await Promise.all([
+  // .catch(()=>null) so a network timeout degrades gracefully instead of
+  // crashing the entire SSR page. Null fallback renders empty/stub UI.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const parallelFallback: any[] = Array(6).fill({ count: 0, data: null, error: null })
+  const parallelResults = await Promise.all([
     // Squad size
     myTeam
       ? supabase.from('bspl_rosters').select('id', { count: 'exact', head: true }).eq('team_id', myTeam.id)
@@ -137,16 +124,16 @@ export default async function DashboardPage() {
           .select('total_runs, wickets, batting_sr, bowling_economy, best_bowling, players(name, role)')
           .eq('team_id', myTeam.id).eq('season_id', season.id).gt('matches', 0)
       : Promise.resolve({ data: [], error: null }),
-  ])
-  squadCount   = _squadCount
-  myPoints     = _myPoints as typeof myPoints
-  rawStandings = _rawStandings as typeof rawStandings
-  rawNextMatch = _rawNextMatch
-  rawRecent    = _rawRecent as typeof rawRecent
-  myStats      = _myStats as typeof myStats
-  } catch {
-    // Queries failed (e.g. network timeout) — render with empty/null data
-  }
+  ]).catch(() => parallelFallback)
+
+  const [
+    { count: squadCount },
+    { data: myPoints },
+    { data: rawStandings },
+    { data: rawNextMatch },
+    { data: rawRecent },
+    { data: myStats },
+  ] = parallelResults
 
   // ── Lineup status for next match ───────────────────────────────────────────
   const nextMatch = rawNextMatch as any
