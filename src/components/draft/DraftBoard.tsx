@@ -458,14 +458,12 @@ export default function DraftBoard({
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-sm truncate">{player.name}</span>
-                    <span className="text-xs text-gray-500 shrink-0">{player.ipl_team}</span>
+                  <p className="font-medium text-sm truncate">{player.name}</p>
+                  <div className="flex gap-3 mt-0.5 text-xs text-gray-500 flex-wrap">
+                    <span className="shrink-0">{player.ipl_team}</span>
                     {player.bowler_type && (
-                      <span className="text-xs text-gray-600 shrink-0">{player.bowler_type}</span>
+                      <span className="shrink-0 text-gray-600">{player.bowler_type}</span>
                     )}
-                  </div>
-                  <div className="flex gap-4 mt-0.5 text-xs text-gray-500 flex-wrap">
                     {player.batting_sr > 0 && (
                       <span>SR <span className="text-gray-300">{player.batting_sr.toFixed(0)}</span></span>
                     )}
