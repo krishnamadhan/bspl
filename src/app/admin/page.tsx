@@ -186,6 +186,7 @@ export default function AdminPage() {
 
   // Dev tools
   const [devOpen, setDevOpen] = useState(false)
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -310,6 +311,7 @@ export default function AdminPage() {
       .order('match_number')
       .limit(50)
 
+    setLastRefreshed(new Date())
     if (!raw?.length) { setMatches([]); return }
 
     const { data: lineupRows } = await supabase
@@ -357,6 +359,13 @@ export default function AdminPage() {
   useEffect(() => {
     if (seasonInfo) { loadTeams(); loadMatches(); loadPlayoffBracket() }
   }, [seasonInfo?.id, seasonInfo?.status]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-poll every 20s when there are lineup-open matches (players are actively submitting)
+  useEffect(() => {
+    if (!seasonInfo || lineupOpenMatches.length === 0) return
+    const interval = setInterval(() => { loadMatches() }, 20000)
+    return () => clearInterval(interval)
+  }, [seasonInfo?.id, lineupOpenMatches.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── API helpers ─────────────────────────────────────────────────────────────
   const post = async (url: string, body?: object) => {
@@ -595,7 +604,10 @@ export default function AdminPage() {
                 </>
               )}
               {activeSeason.status === 'in_progress' && (
-                <Btn label="🔓 Reopen Draft" onClick={handleReopenDraft} disabled={isPending} variant="gray" />
+                <>
+                  <Btn label="🏆 Start Playoffs" onClick={handleStartPlayoffs} disabled={isPending} variant="green" />
+                  <Btn label="🔓 Reopen Draft" onClick={handleReopenDraft} disabled={isPending} variant="gray" />
+                </>
               )}
               <div className="flex-1" />
               <Btn label="End Season" onClick={handleEndSeason} disabled={isPending} variant="gray" size="sm" />
@@ -763,7 +775,14 @@ export default function AdminPage() {
         <Section
           title="Matches"
           headerRight={
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => loadMatches()}
+                className="text-xs text-gray-400 hover:text-white transition px-2 py-1 rounded-lg border border-gray-700 hover:border-gray-500 flex items-center gap-1"
+                title={lastRefreshed ? `Last refreshed: ${lastRefreshed.toLocaleTimeString()}` : 'Refresh lineup status'}
+              >
+                ↻ {lastRefreshed ? lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Refresh'}
+              </button>
               {lineupOpenMatches.length > 0 && (
                 <Btn label={isPending ? '…' : '🤖 Auto Bot Lineups'} onClick={handleAutoLineups} disabled={isPending} variant="gray" size="sm" />
               )}

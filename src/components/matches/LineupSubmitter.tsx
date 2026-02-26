@@ -43,6 +43,14 @@ function staminaColor(s: number) {
   return s >= 65 ? 'text-green-400' : s >= 40 ? 'text-yellow-400' : 'text-red-400'
 }
 
+function confidenceMeta(c: number): { label: string; color: string } {
+  if (c >= 1.20) return { label: '↑↑ Superb', color: 'text-green-300' }
+  if (c >= 1.10) return { label: '↑ Hot',     color: 'text-green-400' }
+  if (c >= 0.95) return { label: 'Normal',    color: 'text-gray-500'  }
+  if (c >= 0.85) return { label: '↓ Off',     color: 'text-yellow-400'}
+  return               { label: '↓↓ Cold',    color: 'text-red-400'   }
+}
+
 function canBowl(p: SquadPlayer) {
   return p.role === 'bowler' || p.role === 'all-rounder'
 }
@@ -284,13 +292,28 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                     </p>
                   </div>
 
-                  {/* Stamina + bowling over label */}
-                  <div className="text-right flex-shrink-0">
-                    <p className={`text-xs font-mono ${staminaColor(player.stamina)}`}>
-                      {Math.round(player.stamina)}%
-                    </p>
+                  {/* Stamina + confidence + bowling overs */}
+                  <div className="text-right flex-shrink-0 space-y-0.5 min-w-[64px]">
+                    {/* Stamina bar */}
+                    <div className="flex items-center gap-1 justify-end">
+                      <div className="w-10 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${player.stamina >= 65 ? 'bg-green-500' : player.stamina >= 40 ? 'bg-yellow-400' : 'bg-red-500'}`}
+                          style={{ width: `${player.stamina}%` }}
+                        />
+                      </div>
+                      <span className={`text-xs font-mono leading-none ${staminaColor(player.stamina)}`}>
+                        {Math.round(player.stamina)}%
+                      </span>
+                    </div>
+                    {/* Confidence */}
+                    {(() => {
+                      const cm = confidenceMeta(player.confidence)
+                      return <p className={`text-[10px] leading-none ${cm.color}`}>{cm.label}</p>
+                    })()}
+                    {/* Bowling overs assigned */}
                     {isBowler && (
-                      <p className="text-xs text-yellow-400">
+                      <p className="text-[10px] text-yellow-400 leading-none">
                         Ov {bowlingOrder.map((b, i) => b === player.id ? i + 1 : null).filter(Boolean).join('+')}
                       </p>
                     )}

@@ -22,19 +22,33 @@ export async function POST() {
 
   const db = adminClient()
 
-  // ── 1. Find the draft_locked season ────────────────────────────────────────
+  // ── 1. Find the active season (draft_locked OR in_progress) ────────────────
   const { data: season } = await db
     .from('bspl_seasons')
     .select('id, name, status')
-    .eq('status', 'draft_locked')
+    .in('status', ['draft_locked', 'in_progress'])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
   if (!season) {
     return NextResponse.json(
-      { error: 'No draft_locked season found. Lock the draft first.' },
+      { error: 'No active season found. Season must be in_progress or draft_locked.' },
       { status: 404 },
+    )
+  }
+
+  // Guard: don't create playoff matches if they already exist
+  const { count: existing } = await db
+    .from('bspl_matches')
+    .select('id', { count: 'exact', head: true })
+    .eq('season_id', season.id)
+    .in('match_type', ['qualifier1', 'eliminator', 'qualifier2', 'final'])
+
+  if ((existing ?? 0) > 0) {
+    return NextResponse.json(
+      { error: 'Playoffs already started for this season.' },
+      { status: 400 },
     )
   }
 
