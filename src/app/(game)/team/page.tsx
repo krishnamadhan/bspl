@@ -90,6 +90,7 @@ export default async function TeamPage() {
           venue:bspl_venues!venue_id (name, city, pitch_type)
         `)
         .or(`team_a_id.eq.${myTeam.id},team_b_id.eq.${myTeam.id}`)
+        .eq('season_id', season.id)
         .neq('status', 'completed')
         .order('scheduled_date', { ascending: true })
         .limit(1)

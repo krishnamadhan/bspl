@@ -19,6 +19,8 @@ export interface BSPLMatch {
   toss_decision: 'bat' | 'bowl' | null
   batting_first_team_id: string | null
   result_summary: string | null // e.g. "RCB won by 9 runs"
+  winner_team_id: string | null
+  match_type: 'league' | 'qualifier1' | 'eliminator' | 'qualifier2' | 'final'
 }
 
 export interface Innings {

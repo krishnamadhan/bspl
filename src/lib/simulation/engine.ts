@@ -238,14 +238,17 @@ function simulateInnings(
     .map(([id, s]) => {
       const player = bowlingTeam.players.find(p => p.player.id === id)
       if (!player) return null  // skip orphaned stat keys (shouldn't happen after effectiveBowlerId fix)
-      const overs = s.balls / 6
+      const fullOvers = Math.floor(s.balls / 6)
+      const remBalls  = s.balls % 6
+      const overs     = fullOvers + remBalls / 10   // cricket notation: 1.4 = 1 over + 4 balls
+      const oversForEcon = fullOvers + remBalls / 6  // decimal overs for economy calculation
       return {
         player_id: id,
         player_name: player.player.name,
-        overs: Math.round(overs * 10) / 10,
+        overs,
         runs: s.runs,
         wickets: s.wickets,
-        economy: overs > 0 ? Math.round((s.runs / overs) * 10) / 10 : 0,
+        economy: oversForEcon > 0 ? Math.round((s.runs / oversForEcon) * 10) / 10 : 0,
         wides: s.wides,
         no_balls: s.noBalls,
       }

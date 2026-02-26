@@ -79,6 +79,7 @@ export async function POST(_req: NextRequest) {
       condition,
       scheduled_date: matchDate.toISOString(),
       status:         index === 0 ? 'lineup_open' : 'scheduled',
+      match_type:     'league',
     }
   })
 

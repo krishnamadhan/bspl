@@ -578,7 +578,7 @@ export default function MatchReplay({
             </span>
             <span className="text-gray-600 text-xs">
               Innings {phase === 'inn1' ? 1 : 2}
-              {revealed > 0 && ` · Over ${Math.ceil(legalBalls / 6)}.${legalBalls % 6}`}
+              {revealed > 0 && ` · Over ${legalBalls % 6 === 0 ? legalBalls / 6 : Math.floor(legalBalls / 6)}.${legalBalls % 6}`}
             </span>
           </div>
           <button
