@@ -458,7 +458,7 @@ export default function DraftBoard({
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{player.name}</p>
+                  <p className="font-medium text-sm text-white truncate">{player.name}</p>
                   <div className="flex gap-3 mt-0.5 text-xs text-gray-500 flex-wrap">
                     <span className="shrink-0">{player.ipl_team}</span>
                     {player.bowler_type && (
