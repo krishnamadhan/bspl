@@ -1,4 +1,4 @@
-import type { SimTeam, SimVenue, InningsResult, MatchResult, BallLog, StaminaUpdate, ConfidenceUpdate } from './types'
+import type { SimPlayer, SimTeam, SimVenue, InningsResult, MatchResult, BallLog, StaminaUpdate, ConfidenceUpdate } from './types'
 import type { BallOutcome, BattingScorecard, BowlingScorecard, OverSummary } from '@/types'
 import {
   effectiveBattingSR,
@@ -25,7 +25,7 @@ function seededRandom(seed: number): () => number {
 
 // ─── Single ball outcome ──────────────────────────────────────────────────────
 function simulateBall(
-  batter: ReturnType<typeof getBatterState>,
+  batter: SimPlayer,
   bowlerSim: Parameters<typeof effectiveBowlerWicketProb>[0],
   batterSim: Parameters<typeof effectiveBattingSR>[0],
   venue: SimVenue,
@@ -67,18 +67,16 @@ function simulateBall(
   const batterFloor = Math.max(0.3, (battingSR / 135.0) * 0.55)  // 55% of batter's true ceiling
   const k = Math.max(batterFloor, kRaw)
 
-  // Probabilities calibrated to match real T20 ball-outcome distribution:
-  //   k=1.0 (SR≈135): dots 42%, sixes 5.5%, fours 13%, twos 6%, threes 1.5%, singles ~32%
-  //   → expected SR ≈ 136  (tight IPL average — reduces runaway high-variance overs)
-  //   k=1.25 (Head-class, SR≈170): dots 38%, sixes 8%, fours 16% → SR ≈ 155
-  //   k=0.75 (tail-ender, SR≈100): dots 48%, sixes 2.5%, fours 9% → SR ≈ 100
-  //   Key changes vs previous version:
-  //   - Higher base dots (0.38→0.42) and steeper dot floor (0.18) = more realistic rhythm
-  //   - Sixes grow slower (k^1.8→k^1.3) and lower base (0.065→0.055) = no 19-run overs
-  //   - Fours slightly reduced ceiling (0.28→0.24) = less boundary clustering
-  const pDot  = Math.min(0.65, Math.max(0.18, 0.42 / Math.pow(k, 0.40)))
-  const pSix  = Math.min(0.14, Math.max(0.005, 0.055 * Math.pow(k, 1.3)))
-  const pFour = Math.min(0.24, Math.max(0.04,  0.13  * Math.pow(k, 0.9)))
+  // Probabilities calibrated for T5 (powerplay-only) format:
+  //   Batters attack from ball 1 — fewer dots, more boundaries, more wickets than T20 baseline.
+  //   k=1.0 (SR≈135 neutral): dots 36%, sixes 6.5%, fours 14.5%, twos 6%, threes 1.5%, singles ~35%
+  //   → expected SR ≈ 148  (T5 average: every over counts)
+  //   k=1.25 (Head-class, SR≈170): dots 32%, sixes 9%, fours 17% → SR ≈ 165
+  //   k=0.75 (tail-ender, SR≈100): dots 43%, sixes 3%, fours 10% → SR ≈ 115
+  //   Lower dot cap (0.48) ensures even tail-enders can't play out balls in a 5-over format.
+  const pDot  = Math.min(0.48, Math.max(0.15, 0.36 / Math.pow(k, 0.45)))
+  const pSix  = Math.min(0.10, Math.max(0.008, 0.065 * Math.pow(k, 1.3)))
+  const pFour = Math.min(0.18, Math.max(0.05,  0.145 * Math.pow(k, 0.9)))
   const pTwo  = 0.06
   const pThree = 0.015
   // Singles absorb the remainder — naturally high for average players, lower for extremes
@@ -90,10 +88,6 @@ function simulateBall(
   if (r3 < pDot + pSix + pFour + pTwo)        return { outcome: '2', runs: 2, isWicket: false, wicketType: null }
   if (r3 < pDot + pSix + pFour + pTwo + pThree) return { outcome: '3', runs: 3, isWicket: false, wicketType: null }
   return { outcome: '1', runs: 1, isWicket: false, wicketType: null }
-}
-
-function getBatterState(team: SimTeam, playerId: string) {
-  return team.players.find(p => p.player.id === playerId)!
 }
 
 // ─── Simulate one innings ─────────────────────────────────────────────────────
@@ -139,6 +133,11 @@ function simulateInnings(
       ?? bowlingTeam.players.find(p => p.player.role === 'bowler' || p.player.role === 'all-rounder')
       ?? bowlingTeam.players[0]
     if (!bowlerSim) break  // no players at all — abort innings
+    // Always track stats against the actual player bowling (handles fallback + missing-join cases)
+    const effectiveBowlerId = bowlerSim.player.id
+    if (!bowlerStats[effectiveBowlerId]) {
+      bowlerStats[effectiveBowlerId] = { runs: 0, balls: 0, wickets: 0, wides: 0, noBalls: 0 }
+    }
 
     const overBalls: BallOutcome[] = []
     let overRuns = 0
@@ -163,25 +162,25 @@ function simulateInnings(
 
       if (ball.outcome === 'Wd') {
         extras += 1
-        bowlerStats[bowlerId].wides++
-        bowlerStats[bowlerId].runs += 1
+        bowlerStats[effectiveBowlerId].wides++
+        bowlerStats[effectiveBowlerId].runs += 1
         // Wide doesn't count as legal ball — batter stays
         continue
       }
 
       legalBalls++
-      bowlerStats[bowlerId].balls++
-      bowlerStats[bowlerId].runs += ball.runs
+      bowlerStats[effectiveBowlerId].balls++
+      bowlerStats[effectiveBowlerId].runs += ball.runs
 
       if (ball.isWicket) {
         totalWickets++
         overWickets++
-        bowlerStats[bowlerId].wickets++
+        bowlerStats[effectiveBowlerId].wickets++
         batterStats[striker].balls++
         batterStats[striker].dismissed = true
         batterStats[striker].dismissal = ball.wicketType
 
-        ballLogs.push({ over, ball: legalBalls, batsman_id: striker, bowler_id: bowlerId, outcome: 'W', runs: 0, is_wicket: true, wicket_type: ball.wicketType })
+        ballLogs.push({ over, ball: legalBalls, batsman_id: striker, bowler_id: effectiveBowlerId, outcome: 'W', runs: 0, is_wicket: true, wicket_type: ball.wicketType })
 
         if (battingOrderIndex < battingTeam.batting_order.length) {
           striker = battingTeam.batting_order[battingOrderIndex++]
@@ -192,7 +191,7 @@ function simulateInnings(
         if (ball.outcome === '4') batterStats[striker].fours++
         if (ball.outcome === '6') batterStats[striker].sixes++
 
-        ballLogs.push({ over, ball: legalBalls, batsman_id: striker, bowler_id: bowlerId, outcome: ball.outcome, runs: ball.runs, is_wicket: false, wicket_type: null })
+        ballLogs.push({ over, ball: legalBalls, batsman_id: striker, bowler_id: effectiveBowlerId, outcome: ball.outcome, runs: ball.runs, is_wicket: false, wicket_type: null })
 
         // Rotate strike on odd runs
         if (ball.runs % 2 === 1) {
@@ -218,7 +217,8 @@ function simulateInnings(
     .filter(id => batterStats[id].balls > 0 || batterStats[id].position <= 2)
     .map(id => {
       const s = batterStats[id]
-      const player = battingTeam.players.find(p => p.player.id === id)!
+      const player = battingTeam.players.find(p => p.player.id === id)
+      if (!player) return null  // skip orphaned IDs (null join in buildSimTeam)
       return {
         player_id: id,
         player_name: player.player.name,
@@ -231,11 +231,13 @@ function simulateInnings(
         batting_position: s.position,
       }
     })
+    .filter((b): b is BattingScorecard => b !== null)
 
   const bowling: BowlingScorecard[] = Object.entries(bowlerStats)
     .filter(([, s]) => s.balls > 0 || s.wides > 0)
     .map(([id, s]) => {
-      const player = bowlingTeam.players.find(p => p.player.id === id)!
+      const player = bowlingTeam.players.find(p => p.player.id === id)
+      if (!player) return null  // skip orphaned stat keys (shouldn't happen after effectiveBowlerId fix)
       const overs = s.balls / 6
       return {
         player_id: id,
@@ -248,6 +250,7 @@ function simulateInnings(
         no_balls: s.noBalls,
       }
     })
+    .filter((b): b is BowlingScorecard => b !== null)
 
   return { total_runs: totalRuns, total_wickets: totalWickets, extras, overs: overSummaries, batting_scorecard: batting, bowling_scorecard: bowling, ball_log: ballLogs }
 }

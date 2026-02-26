@@ -27,6 +27,7 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
   }
 
   // Pass 2: add batsmen/all-rounders, preserving ≥4 bowling slots
+  // A batsman is skipped if adding them would make it impossible to fill 4 bowling slots
   for (const p of sorted) {
     if (xi.length >= 11) break
     if (xi.find(x => x.player_id === p.player_id)) continue
@@ -35,7 +36,10 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
         .filter(x => !xi.find(y => y.player_id === x.player_id) && x.player_id !== p.player_id)
         .filter(x => x.role === 'bowler' || x.role === 'all-rounder').length
       const slotsLeft = 11 - xi.length - 1
-      if (bowlersLeft < 4 - bowl && slotsLeft < 4 - bowl) continue
+      // Skip this batsman if we can't guarantee 4 bowling options in the XI
+      const bowlingInXI = bowl  // ARs already in
+      const bowlingNeeded = Math.max(0, 4 - bowlingInXI)
+      if (bowlersLeft < bowlingNeeded && slotsLeft <= bowlersLeft) continue
       xi.push(p)
     } else if (p.role === 'all-rounder') {
       xi.push(p); bowl++
@@ -55,7 +59,14 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
     if (!xi.find(x => x.player_id === p.player_id)) xi.push(p)
   }
 
-  // Bowling order: best 5 overs from bowlers/AR, max 2 overs per bowler
+  // Bowling order rules (enforced here and validated on lineup submission):
+  //   1. Max 2 overs per bowler
+  //   2. No bowler bowls consecutive overs
+  //   3. Minimum 4 different bowlers across 5 overs
+  //
+  // With 4+ canBowl: one bowler gets 2 overs (PP + death), rest get 1 each.
+  // With 3 canBowl:  best gets 2, others get 1+2 → only 3 different (edge case, pickXI tries to avoid this).
+  // With <4 canBowl: do best possible without violating no-consecutive.
   const canBowl = xi
     .filter(p => p.role === 'bowler' || p.role === 'all-rounder')
     .sort((a, b) => {
@@ -65,21 +76,32 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
       return (b.wicket_prob ?? 0) - (a.wicket_prob ?? 0)
     })
 
+  const MAX_OVERS_PER_BOWLER = 2
+  const oversAssigned: Record<string, number> = {}
   const bowlingOrder: string[] = []
-  for (const p of canBowl) {
-    if (bowlingOrder.length >= 5) break
-    bowlingOrder.push(p.player_id)
-  }
-  // Fill remaining overs: allow up to ceil(5/bowlers) per bowler as emergency fallback
-  const maxOversPerBowler = canBowl.length > 0 ? Math.ceil(5 / canBowl.length) : 5
-  let idx = 0
-  while (bowlingOrder.length < 5 && canBowl.length > 0) {
-    const p = canBowl[idx % canBowl.length]
-    if (bowlingOrder.filter(b => b === p.player_id).length < maxOversPerBowler) {
-      bowlingOrder.push(p.player_id)
+  let prevBowlerId: string | null = null
+
+  for (let slot = 0; slot < 5; slot++) {
+    // Eligible: under max overs AND not the same as previous over (no consecutive)
+    const eligible = canBowl.filter(p =>
+      (oversAssigned[p.player_id] ?? 0) < MAX_OVERS_PER_BOWLER &&
+      p.player_id !== prevBowlerId
+    )
+    if (eligible.length === 0) break
+
+    let pick: typeof canBowl[0]
+    if (slot === 0 || slot === 4) {
+      // Over 1 (powerplay) and over 5 (death): always best eligible bowler
+      pick = eligible[0]
+    } else {
+      // Middle overs: prioritise bowlers who haven't bowled yet to ensure min 4 different
+      const unused = eligible.filter(p => !(oversAssigned[p.player_id] ?? 0))
+      pick = unused.length > 0 ? unused[0] : eligible[0]
     }
-    idx++
-    if (idx > 40) break
+
+    bowlingOrder.push(pick.player_id)
+    oversAssigned[pick.player_id] = (oversAssigned[pick.player_id] ?? 0) + 1
+    prevBowlerId = pick.player_id
   }
 
   return {

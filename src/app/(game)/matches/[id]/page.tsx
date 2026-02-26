@@ -206,38 +206,40 @@ function InningsCard({
       {batting.length > 0 && (
         <div className="px-5 py-3 border-b border-gray-800">
           <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Batting</p>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-gray-500">
-                <th className="text-left pb-1">Batter</th>
-                <th className="text-center pb-1 w-10">R</th>
-                <th className="text-center pb-1 w-10">B</th>
-                <th className="text-center pb-1 w-10">4s</th>
-                <th className="text-center pb-1 w-10">6s</th>
-                <th className="text-center pb-1 w-14">SR</th>
-              </tr>
-            </thead>
-            <tbody>
-              {batting.map((b, i) => (
-                <tr key={i} className="border-t border-gray-800/50">
-                  <td className="py-1.5 pr-2">
-                    <span className="font-medium">{b.name}</span>
-                    {!b.dismissed && b.balls > 0 && (
-                      <span className="text-green-400 text-xs ml-1">*</span>
-                    )}
-                    {b.dismissed && b.wicketType && (
-                      <span className="text-gray-500 text-xs ml-1">{b.wicketType}</span>
-                    )}
-                  </td>
-                  <td className="text-center py-1.5 font-semibold">{b.runs}</td>
-                  <td className="text-center py-1.5 text-gray-400">{b.balls}</td>
-                  <td className="text-center py-1.5 text-gray-400">{b.fours}</td>
-                  <td className="text-center py-1.5 text-gray-400">{b.sixes}</td>
-                  <td className="text-center py-1.5 text-gray-400">{b.sr}</td>
+          <div className="overflow-x-auto -mx-1">
+            <table className="w-full text-sm min-w-[320px]">
+              <thead>
+                <tr className="text-xs text-gray-500">
+                  <th className="text-left pb-1 pl-1">Batter</th>
+                  <th className="text-center pb-1 w-10">R</th>
+                  <th className="text-center pb-1 w-10">B</th>
+                  <th className="text-center pb-1 w-8 hidden xs:table-cell">4s</th>
+                  <th className="text-center pb-1 w-8 hidden xs:table-cell">6s</th>
+                  <th className="text-center pb-1 w-14">SR</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {batting.map((b, i) => (
+                  <tr key={i} className="border-t border-gray-800/50">
+                    <td className="py-1.5 pr-2 pl-1">
+                      <span className="font-medium">{b.name}</span>
+                      {!b.dismissed && b.balls > 0 && (
+                        <span className="text-green-400 text-xs ml-1">*</span>
+                      )}
+                      {b.dismissed && b.wicketType && (
+                        <span className="text-gray-500 text-xs ml-1 hidden sm:inline">{b.wicketType}</span>
+                      )}
+                    </td>
+                    <td className="text-center py-1.5 font-semibold">{b.runs}</td>
+                    <td className="text-center py-1.5 text-gray-400">{b.balls}</td>
+                    <td className="text-center py-1.5 text-gray-400 hidden xs:table-cell">{b.fours}</td>
+                    <td className="text-center py-1.5 text-gray-400 hidden xs:table-cell">{b.sixes}</td>
+                    <td className="text-center py-1.5 text-gray-400">{b.sr}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -245,30 +247,32 @@ function InningsCard({
       {bowling.length > 0 && (
         <div className="px-5 py-3">
           <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Bowling</p>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-xs text-gray-500">
-                <th className="text-left pb-1">Bowler</th>
-                <th className="text-center pb-1 w-12">Ov</th>
-                <th className="text-center pb-1 w-10">R</th>
-                <th className="text-center pb-1 w-10">W</th>
-                <th className="text-center pb-1 w-14">Econ</th>
-                <th className="text-center pb-1 w-10">Wd</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bowling.map((b, i) => (
-                <tr key={i} className="border-t border-gray-800/50">
-                  <td className="py-1.5 pr-2 font-medium">{b.name}</td>
-                  <td className="text-center py-1.5 text-gray-400">{b.overs}</td>
-                  <td className="text-center py-1.5">{b.runs}</td>
-                  <td className="text-center py-1.5 font-semibold text-yellow-400">{b.wickets}</td>
-                  <td className="text-center py-1.5 text-gray-400">{b.econ.toFixed(1)}</td>
-                  <td className="text-center py-1.5 text-gray-500 text-xs">{b.wides || '—'}</td>
+          <div className="overflow-x-auto -mx-1">
+            <table className="w-full text-sm min-w-[280px]">
+              <thead>
+                <tr className="text-xs text-gray-500">
+                  <th className="text-left pb-1 pl-1">Bowler</th>
+                  <th className="text-center pb-1 w-10">Ov</th>
+                  <th className="text-center pb-1 w-10">R</th>
+                  <th className="text-center pb-1 w-10">W</th>
+                  <th className="text-center pb-1 w-14">Econ</th>
+                  <th className="text-center pb-1 w-8 hidden sm:table-cell">Wd</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {bowling.map((b, i) => (
+                  <tr key={i} className="border-t border-gray-800/50">
+                    <td className="py-1.5 pr-2 pl-1 font-medium">{b.name}</td>
+                    <td className="text-center py-1.5 text-gray-400">{b.overs}</td>
+                    <td className="text-center py-1.5">{b.runs}</td>
+                    <td className="text-center py-1.5 font-semibold text-yellow-400">{b.wickets}</td>
+                    <td className="text-center py-1.5 text-gray-400">{b.econ.toFixed(1)}</td>
+                    <td className="text-center py-1.5 text-gray-500 text-xs hidden sm:table-cell">{b.wides || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

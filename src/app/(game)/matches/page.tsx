@@ -13,6 +13,7 @@ type MatchRow = {
   scheduled_date: string
   condition: string
   status: string
+  match_type: string
   result_summary: string | null
   batting_first_team_id: string | null
   team_a: TeamSnap | TeamSnap[] | null
@@ -97,6 +98,10 @@ function MatchCard({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-600 font-mono">M{match.match_number}</span>
+            {match.match_type === 'qualifier1' && <span className="text-xs bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30">Q1</span>}
+            {match.match_type === 'eliminator' && <span className="text-xs bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded border border-red-500/30">EL</span>}
+            {match.match_type === 'qualifier2' && <span className="text-xs bg-orange-500/20 text-orange-300 px-1.5 py-0.5 rounded border border-orange-500/30">Q2</span>}
+            {match.match_type === 'final' && <span className="text-xs bg-yellow-400/20 text-yellow-300 px-1.5 py-0.5 rounded border border-yellow-400/30 font-bold">FINAL</span>}
             {isMyMatch && (
               <span className="text-xs text-yellow-400 bg-yellow-400/10 px-1.5 py-0.5 rounded">My Match</span>
             )}
@@ -178,7 +183,7 @@ export default async function MatchesPage() {
     ? await supabase
         .from('bspl_matches')
         .select(`
-          id, match_number, match_day, scheduled_date, condition, status,
+          id, match_number, match_day, scheduled_date, condition, status, match_type,
           result_summary, batting_first_team_id,
           team_a:bspl_teams!team_a_id (id, name, color),
           team_b:bspl_teams!team_b_id (id, name, color),

@@ -30,6 +30,7 @@ interface MatchRow {
   match_number: number
   match_day: number
   status: string
+  match_type: string
   team_a_id: string
   team_b_id: string
   team_a: { name: string } | null
@@ -37,6 +38,17 @@ interface MatchRow {
   venue: { name: string } | null
   lineups_submitted: number
   pending_teams: string[]
+  winner_team_id: string | null
+}
+
+interface PlayoffMatch {
+  id: string
+  match_number: number
+  match_type: string
+  status: string
+  team_a: string
+  team_b: string
+  winner: string | null
 }
 
 interface RawMatch {
@@ -44,11 +56,13 @@ interface RawMatch {
   match_number: number
   match_day: number
   status: string
+  match_type: string
   team_a_id: string
   team_b_id: string
   team_a: { name: string } | { name: string }[] | null
   team_b: { name: string } | { name: string }[] | null
   venue: { name: string } | { name: string }[] | null
+  winner_team_id: string | null
 }
 
 const unpack = <T,>(v: T | T[] | null): T | null =>
@@ -150,6 +164,7 @@ export default function AdminPage() {
   const [allSeasons, setAllSeasons]   = useState<{ id: string; name: string; status: string }[]>([])
   const [teams, setTeams]             = useState<TeamRow[]>([])
   const [matches, setMatches]         = useState<MatchRow[]>([])
+  const [playoffBracket, setPlayoffBracket] = useState<PlayoffMatch[]>([])
   const [toast, setToast]             = useState<{ msg: string; ok: boolean } | null>(null)
   const [isPending, startTransition]  = useTransition()
 
@@ -254,11 +269,42 @@ export default function AdminPage() {
     })))
   }
 
+  const loadPlayoffBracket = async () => {
+    if (!seasonInfo || seasonInfo.status !== 'playoffs') { setPlayoffBracket([]); return }
+
+    const { data: raw } = await supabase
+      .from('bspl_matches')
+      .select('id, match_number, match_type, status, winner_team_id, team_a_id, team_b_id, team_a:bspl_teams!team_a_id(name), team_b:bspl_teams!team_b_id(name)')
+      .eq('season_id', seasonInfo.id)
+      .in('match_type', ['qualifier1', 'eliminator', 'qualifier2', 'final'])
+      .order('match_number')
+
+    if (!raw) { setPlayoffBracket([]); return }
+
+    const teamNameMap = new Map<string, string>()
+    raw.forEach((m: Record<string, unknown>) => {
+      const ta = unpack(m.team_a as ({ name: string } | null))
+      const tb = unpack(m.team_b as ({ name: string } | null))
+      if (ta) teamNameMap.set(m.team_a_id as string, ta.name)
+      if (tb) teamNameMap.set(m.team_b_id as string, tb.name)
+    })
+
+    setPlayoffBracket(raw.map((m: Record<string, unknown>) => ({
+      id:         m.id as string,
+      match_number: m.match_number as number,
+      match_type: m.match_type as string,
+      status:     m.status as string,
+      team_a:     teamNameMap.get(m.team_a_id as string) ?? '?',
+      team_b:     teamNameMap.get(m.team_b_id as string) ?? '?',
+      winner:     m.winner_team_id ? (teamNameMap.get(m.winner_team_id as string) ?? null) : null,
+    })))
+  }
+
   const loadMatches = async () => {
     if (!seasonInfo) return
     const { data: raw } = await supabase
       .from('bspl_matches')
-      .select('id, match_number, match_day, status, team_a_id, team_b_id, team_a:bspl_teams!team_a_id(name), team_b:bspl_teams!team_b_id(name), venue:bspl_venues(name)')
+      .select('id, match_number, match_day, status, match_type, winner_team_id, team_a_id, team_b_id, team_a:bspl_teams!team_a_id(name), team_b:bspl_teams!team_b_id(name), venue:bspl_venues(name)')
       .eq('season_id', seasonInfo.id)
       .in('status', ['scheduled', 'lineup_open', 'live'])
       .order('match_number')
@@ -291,6 +337,8 @@ export default function AdminPage() {
         match_number:      m.match_number,
         match_day:         m.match_day,
         status:            m.status,
+        match_type:        m.match_type ?? 'league',
+        winner_team_id:    m.winner_team_id,
         team_a_id:         m.team_a_id,
         team_b_id:         m.team_b_id,
         team_a:            teamA,
@@ -307,8 +355,8 @@ export default function AdminPage() {
   }, [authState]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (seasonInfo) { loadTeams(); loadMatches() }
-  }, [seasonInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (seasonInfo) { loadTeams(); loadMatches(); loadPlayoffBracket() }
+  }, [seasonInfo?.id, seasonInfo?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── API helpers ─────────────────────────────────────────────────────────────
   const post = async (url: string, body?: object) => {
@@ -388,6 +436,38 @@ export default function AdminPage() {
   const handleAutoLineups  = () => handle(async () => { const j = await post('/api/admin/auto-lineups'); showToast(j.message ?? 'Bot lineups submitted', true); await loadMatches() })
   const handleFinalize     = (id: string) => handle(async () => { await post(`/api/match/${id}/complete`); showToast('Match finalized', true); await loadMatches() })
   const handleSetupTest    = () => handle(async () => { const j = await post('/api/admin/setup-test-season'); showToast(j.message ?? 'Test season set up', true); await loadSeasons(); await loadTeams() })
+
+  const handleResetStamina = () => setConfirm({
+    title: 'Reset All Stamina?',
+    body: 'Sets every player\'s stamina to 100 and confidence to 1.0. Do this before starting playoffs so everyone enters fresh.',
+    label: 'Reset Stamina',
+    variant: 'yellow',
+    fn: () => handle(async () => {
+      const j = await post('/api/admin/reset-stamina')
+      showToast(j.message, true); setConfirm(null)
+    }),
+  })
+
+  const handleStartPlayoffs = () => setConfirm({
+    title: 'Start Playoffs?',
+    body: 'Takes the top 4 teams from the league standings and creates two semi-final matches. Season moves to playoffs phase.',
+    label: 'Start Playoffs',
+    variant: 'yellow',
+    fn: () => handle(async () => {
+      const j = await post('/api/admin/start-playoffs')
+      showToast(j.message, true); setConfirm(null); await loadSeasons(); await loadMatches(); await loadPlayoffBracket()
+    }),
+  })
+
+  const handleScheduleQ2 = () => handle(async () => {
+    const j = await post('/api/admin/schedule-q2')
+    showToast(j.message, true); await loadMatches(); await loadPlayoffBracket()
+  })
+
+  const handleScheduleFinal = () => handle(async () => {
+    const j = await post('/api/admin/schedule-final')
+    showToast(j.message, true); await loadMatches(); await loadPlayoffBracket()
+  })
   const handleRunSeason    = () => setConfirm({
     title: 'Run Full Season?',
     body: 'Opens all remaining scheduled matches, auto-fills bot lineups, and simulates every match in sequence. Cannot be undone.',
@@ -422,7 +502,6 @@ export default function AdminPage() {
   const lineupOpenMatches  = matches.filter(m => m.status === 'lineup_open')
   const scheduledMatches   = matches.filter(m => m.status === 'scheduled')
   // All lineup_open matches can be run — simulate auto-fills any missing lineup
-  const readyToRun         = lineupOpenMatches
   const botTeams           = teams.filter(t => t.is_bot)
   const realTeams          = teams.filter(t => !t.is_bot)
 
@@ -503,11 +582,15 @@ export default function AdminPage() {
           {activeSeason && (
             <div className="flex flex-wrap gap-2">
               {activeSeason.status === 'draft_open' && (
-                <Btn label="🔒 Lock Draft" onClick={handleLockDraft} disabled={isPending} variant="gray" />
+                <>
+                  <Btn label="🔒 Lock Draft" onClick={handleLockDraft} disabled={isPending} variant="gray" />
+                  <Btn label="💪 Reset Stamina" onClick={handleResetStamina} disabled={isPending} variant="blue" />
+                </>
               )}
               {activeSeason.status === 'draft_locked' && (
                 <>
                   <Btn label="📅 Generate Schedule" onClick={handleGenSchedule} disabled={isPending} variant="yellow" />
+                  <Btn label="🏆 Start Playoffs" onClick={handleStartPlayoffs} disabled={isPending} variant="green" />
                   <Btn label="🔓 Reopen Draft" onClick={handleReopenDraft} disabled={isPending} variant="gray" />
                 </>
               )}
@@ -718,12 +801,17 @@ export default function AdminPage() {
             {/* Lineup-open matches */}
             {lineupOpenMatches.map(m => {
               const allIn = m.lineups_submitted === 2
+              const PLAYOFF_LABELS: Record<string, string> = { qualifier1: 'Q1', eliminator: 'EL', qualifier2: 'Q2', final: 'FINAL' }
+              const playoffLabel = PLAYOFF_LABELS[m.match_type] ?? null
               return (
                 <div key={m.id} className="flex items-center gap-4 px-6 py-4">
                   <span className="text-xs font-mono text-gray-500 w-10">M{m.match_number}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">
+                    <p className="font-medium text-sm flex items-center gap-2">
                       {m.team_a?.name ?? '?'} <span className="text-gray-500">vs</span> {m.team_b?.name ?? '?'}
+                      {playoffLabel && (
+                        <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">{playoffLabel}</span>
+                      )}
                     </p>
                     <p className="text-xs mt-0.5">
                       {m.venue?.name} ·{' '}
@@ -770,10 +858,91 @@ export default function AdminPage() {
         </Section>
       )}
 
-      {seasonInfo?.status === 'in_progress' && matches.length === 0 && (
+      {(seasonInfo?.status === 'in_progress' || seasonInfo?.status === 'playoffs') && matches.length === 0 && playoffBracket.length === 0 && (
         <div className="bg-gray-900 rounded-xl border border-gray-800 p-8 text-center text-gray-500 text-sm">
           All matches completed or none scheduled yet.
         </div>
+      )}
+
+      {/* ── 3b. Playoff Bracket ─────────────────────────────────────────────── */}
+      {seasonInfo?.status === 'playoffs' && (
+        <Section
+          title="Playoff Bracket"
+          badge={<span className="text-xs text-purple-400 font-semibold">IPL FORMAT</span>}
+          headerRight={(() => {
+            const q1   = playoffBracket.find(m => m.match_type === 'qualifier1')
+            const el   = playoffBracket.find(m => m.match_type === 'eliminator')
+            const q2   = playoffBracket.find(m => m.match_type === 'qualifier2')
+            const fin  = playoffBracket.find(m => m.match_type === 'final')
+            const q1Done = q1?.status === 'completed'
+            const elDone = el?.status === 'completed'
+            const q2Done = q2?.status === 'completed'
+            if (q1Done && elDone && !q2) {
+              return <Btn label={isPending ? '…' : 'Schedule Q2'} onClick={handleScheduleQ2} disabled={isPending} variant="green" size="sm" />
+            }
+            if (q1Done && q2Done && !fin) {
+              return <Btn label={isPending ? '…' : '🏆 Schedule Final'} onClick={handleScheduleFinal} disabled={isPending} variant="yellow" size="sm" />
+            }
+            return undefined
+          })()}
+        >
+          <div className="p-6 space-y-2">
+            {playoffBracket.length === 0 ? (
+              <p className="text-gray-500 text-sm">Playoff matches will appear here once started.</p>
+            ) : (
+              <>
+                {/* Legend */}
+                <p className="text-xs text-gray-500 mb-3">
+                  Q1 winner → Final · Q1 loser → Q2 · Eliminator winner → Q2 · Q2 winner → Final
+                </p>
+                {(() => {
+                  const LABELS: Record<string, { short: string; cls: string }> = {
+                    qualifier1: { short: 'Q1',    cls: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
+                    eliminator: { short: 'EL',    cls: 'bg-red-500/20 text-red-300 border-red-500/30' },
+                    qualifier2: { short: 'Q2',    cls: 'bg-orange-500/20 text-orange-300 border-orange-500/30' },
+                    final:      { short: 'FINAL', cls: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/30' },
+                  }
+                  const order = ['qualifier1', 'eliminator', 'qualifier2', 'final']
+                  return order.map(type => {
+                    const m = playoffBracket.find(x => x.match_type === type)
+                    const meta = LABELS[type]
+                    return (
+                      <div key={type} className={`rounded-xl border p-3 flex items-center gap-3 ${
+                        type === 'final' ? 'border-yellow-400/20 bg-yellow-400/5' : 'border-gray-800'
+                      }`}>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded border w-14 text-center flex-shrink-0 ${meta.cls}`}>
+                          {meta.short}
+                        </span>
+                        {m ? (
+                          <>
+                            <div className="flex-1 text-sm">
+                              {m.winner ? (
+                                <>
+                                  <span className="text-green-400 font-semibold">{m.winner}</span>
+                                  <span className="text-gray-500"> beat </span>
+                                  <span className="text-gray-500">{m.team_a === m.winner ? m.team_b : m.team_a}</span>
+                                </>
+                              ) : (
+                                <span className="text-gray-300">{m.team_a} vs {m.team_b}</span>
+                              )}
+                            </div>
+                            {m.status === 'completed' && <span className="text-xs text-green-400">Done</span>}
+                            {m.status === 'live' && <span className="text-xs text-red-400 animate-pulse">LIVE</span>}
+                            {m.status !== 'completed' && m.status !== 'live' && (
+                              <span className="text-xs text-gray-500 capitalize">{m.status.replace('_', ' ')}</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-gray-600 text-sm italic">Pending</span>
+                        )}
+                      </div>
+                    )
+                  })
+                })()}
+              </>
+            )}
+          </div>
+        </Section>
       )}
 
       {/* ── 4. Dev Tools ────────────────────────────────────────────────────── */}

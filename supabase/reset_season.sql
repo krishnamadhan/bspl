@@ -39,17 +39,21 @@ BEGIN
     SELECT id FROM bspl_matches WHERE season_id = v_season_id;
 
   -- ── Delete match-level data ─────────────────────────────────────────────────
-  DELETE FROM bspl_ball_log    WHERE match_id IN (SELECT id FROM _match_ids);
+  -- ball_log has innings_id, not match_id — join through bspl_innings
+  DELETE FROM bspl_ball_log
+   WHERE innings_id IN (
+     SELECT id FROM bspl_innings WHERE match_id IN (SELECT id FROM _match_ids)
+   );
   DELETE FROM bspl_innings     WHERE match_id IN (SELECT id FROM _match_ids);
   DELETE FROM bspl_lineups     WHERE match_id IN (SELECT id FROM _match_ids);
-  DELETE FROM bspl_player_stats WHERE match_id IN (SELECT id FROM _match_ids);
   DELETE FROM bspl_matches     WHERE id       IN (SELECT id FROM _match_ids);
 
   DROP TABLE _match_ids;
 
   -- ── Delete season-level aggregates ──────────────────────────────────────────
-  DELETE FROM bspl_points  WHERE season_id = v_season_id;
-  DELETE FROM bspl_stamina WHERE season_id = v_season_id;
+  DELETE FROM bspl_player_stats WHERE season_id = v_season_id;
+  DELETE FROM bspl_points        WHERE season_id = v_season_id;
+  DELETE FROM bspl_stamina       WHERE season_id = v_season_id;
 
   -- ── Reset season status ──────────────────────────────────────────────────────
   UPDATE bspl_seasons
@@ -72,7 +76,7 @@ END $$;
 --     Use when you want to re-run "Setup Test Season" with fresh player picks.
 --     Uncomment and run separately.
 -- ─────────────────────────────────────────────────────────────────────────────
-/*
+
 DO $$
 DECLARE v_season_id uuid;
 BEGIN
@@ -93,7 +97,7 @@ BEGIN
 
   RAISE NOTICE 'Bot team rosters cleared.';
 END $$;
-*/
+
 
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -101,7 +105,7 @@ END $$;
 --     Run [A] first, then this. Re-run "Setup Test Season" afterwards.
 --     Uncomment and run separately.
 -- ─────────────────────────────────────────────────────────────────────────────
-/*
+
 DO $$
 DECLARE v_season_id uuid;
 BEGIN
@@ -111,4 +115,4 @@ BEGIN
 
   RAISE NOTICE 'All bot teams deleted.';
 END $$;
-*/
+

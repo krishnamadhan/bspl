@@ -67,6 +67,38 @@ export function rrrPressureModifier(runsNeeded: number, ballsLeft: number): numb
   return 0.85
 }
 
+// ─── Experience / caliber modifier ───────────────────────────────────────────
+// price_cr proxies a player's experience and consistency — elite IPL regulars
+// (high price) outperform their raw average because of big-match temperament.
+// Applied as a multiplier on effective batting SR and bowling wicket probability.
+// Inverse applied on bowler economy (senior bowlers are tighter under pressure).
+//
+//   >= 14 Cr  (A-tier — Kohli / Bumrah caliber):  +6% output
+//   10–13 Cr  (B-tier — solid IPL regulars):       +3% output
+//    6–9  Cr  (C-tier — average IPL players):      neutral
+//   <  6  Cr  (D-tier — fringe/rookie players):    −3% output
+//
+export function experienceModifier(priceCr: number): number {
+  if (priceCr >= 14) return 1.06
+  if (priceCr >= 10) return 1.03
+  if (priceCr >= 6)  return 1.00
+  return 0.97
+}
+
+// Elite batters also handle RRR pressure better — they stay calmer in chases.
+// Returns a modifier [0.85 – 1.0] that's less punishing for experienced batters.
+export function rrrPressureWithExperience(
+  runsNeeded: number,
+  ballsLeft: number,
+  priceCr: number,
+): number {
+  const base = rrrPressureModifier(runsNeeded, ballsLeft)
+  if (base >= 1.0) return 1.0
+  // Elite players absorb some of the pressure penalty
+  const calm = priceCr >= 14 ? 0.50 : priceCr >= 10 ? 0.30 : priceCr >= 6 ? 0.10 : 0.0
+  return base + (1.0 - base) * calm
+}
+
 // ─── Effective batting SR ─────────────────────────────────────────────────────
 
 export function effectiveBattingSR(
@@ -94,12 +126,15 @@ export function effectiveBattingSR(
     ? cond.innings2_batting_sr_mod
     : cond.innings1_batting_sr_mod
 
-  // RRR pressure (2nd innings only)
+  // RRR pressure (2nd innings only) — elite batters handle it better
   const pressure = isSecondInnings
-    ? rrrPressureModifier(runsNeeded, ballsLeft)
+    ? rrrPressureWithExperience(runsNeeded, ballsLeft, batter.player.price_cr)
     : 1.0
 
-  return base * core * phase * matchup * home * pitchSrMod * condSrMod * pressure
+  // Experience / caliber: seasoned IPL players are more consistent
+  const experience = experienceModifier(batter.player.price_cr)
+
+  return base * core * phase * matchup * home * pitchSrMod * condSrMod * pressure * experience
 }
 
 // ─── Effective bowling wicket probability ────────────────────────────────────
@@ -139,7 +174,12 @@ export function effectiveBowlerWicketProb(
   const dewMod = isSecondInnings ? cond.innings2_bowler_economy_mod : 1.0
   const bowlerDewPenalty = 1 / dewMod  // higher economy = lower wicket prob
 
-  return Math.min(base * core * phase * matchup * home * pitchMod * condMod * bowlerDewPenalty, 0.35)
+  // Experience: seasoned bowlers are more consistent in taking wickets
+  const experience = experienceModifier(bowler.player.price_cr)
+
+  // T5 format: batters swing hard from ball 1, dismissal rate is inherently higher than T20
+  const T5_WICKET_BOOST = 1.5
+  return Math.min(base * core * phase * matchup * home * pitchMod * condMod * bowlerDewPenalty * T5_WICKET_BOOST * experience, 0.40)
 }
 
 // ─── Effective bowling economy (runs per ball) ────────────────────────────────
@@ -167,10 +207,13 @@ export function effectiveBowlerRunsPerBall(
 
   const condDewMod = isSecondInnings ? venue.condition.innings2_bowler_economy_mod : 1.0
 
+  // Experience: senior bowlers concede slightly less (inverse — higher experience = lower runs)
+  const experience = 1 / experienceModifier(bowler.player.price_cr)
+
   // Better bowler effectiveness = lower runs per ball
   const bowlerEffectiveness = bowlerCore * bowlerPhase
   // Adjust economy inversely: more effective bowler = lower economy
-  return baseRPB * (1 / bowlerEffectiveness) * pitchEconMod * condDewMod
+  return baseRPB * (1 / bowlerEffectiveness) * pitchEconMod * condDewMod * experience
 }
 
 // ─── Stamina calculation ──────────────────────────────────────────────────────

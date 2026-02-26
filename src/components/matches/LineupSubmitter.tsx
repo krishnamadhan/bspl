@@ -134,6 +134,28 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
       setNotice({ type: 'error', msg: `Assign exactly 5 overs (${bowlingOrder.length}/5 set).` })
       return
     }
+    // No bowler can bowl more than 2 overs
+    const overCount: Record<string, number> = {}
+    for (const id of bowlingOrder) overCount[id] = (overCount[id] ?? 0) + 1
+    for (const [id, cnt] of Object.entries(overCount)) {
+      if (cnt > 2) {
+        setNotice({ type: 'error', msg: `${playerMap[id]?.name ?? 'A bowler'} is assigned ${cnt} overs — max 2 allowed.` })
+        return
+      }
+    }
+    // No consecutive overs by the same bowler
+    for (let i = 0; i < bowlingOrder.length - 1; i++) {
+      if (bowlingOrder[i] === bowlingOrder[i + 1]) {
+        setNotice({ type: 'error', msg: `${playerMap[bowlingOrder[i]]?.name ?? 'Same bowler'} cannot bowl consecutive overs ${i + 1} and ${i + 2}.` })
+        return
+      }
+    }
+    // Minimum 4 different bowlers
+    const uniqueBowlers = new Set(bowlingOrder).size
+    if (uniqueBowlers < 4) {
+      setNotice({ type: 'error', msg: `At least 4 different bowlers must be used (currently ${uniqueBowlers}). Assign more bowlers across the 5 overs.` })
+      return
+    }
     if (!tossChoice) {
       setNotice({ type: 'error', msg: 'Choose your toss preference (bat or bowl).' })
       return
@@ -455,7 +477,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
           {!readyToSubmit && !loading && (
             <p className="text-xs text-gray-600 text-center">
-              11 players (1 WK · 3+ bowlers/AR) · 5 overs (max 2 per bowler) · Toss preference
+              11 players (1 WK · 3+ bowlers/AR) · 5 overs (max 2/bowler · no back-to-back · min 4 bowlers) · Toss preference
             </p>
           )}
         </div>

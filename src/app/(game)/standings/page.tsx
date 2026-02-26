@@ -82,46 +82,25 @@ export default async function StandingsPage() {
     })
     .sort((a, b) => b.points - a.points || b.nrr - a.nrr)
 
-  // ── Form guide: last-5 results per team ─────────────────────────────────────
+  // ── Form guide: last-5 league results per team ──────────────────────────────
   const { data: completedMatches } = await supabase
     .from('bspl_matches')
-    .select('id, team_a_id, team_b_id')
+    .select('id, team_a_id, team_b_id, winner_team_id')
     .eq('season_id', season.id)
     .eq('status', 'completed')
+    .eq('match_type', 'league')   // only league games count for form guide
     .order('match_number', { ascending: false })   // newest first
 
   const formGuide: Record<string, ('W' | 'L')[]> = {}
 
-  if (completedMatches?.length) {
-    const { data: formInnings } = await supabase
-      .from('bspl_innings')
-      .select('match_id, innings_number, batting_team_id, total_runs')
-      .in('match_id', completedMatches.map(m => m.id))
-
-    // Determine winner per match from innings scores
-    const winnerByMatch = new Map<string, string>()
-    completedMatches.forEach(m => {
-      const inn1 = formInnings?.find(i => i.match_id === m.id && i.innings_number === 1)
-      const inn2 = formInnings?.find(i => i.match_id === m.id && i.innings_number === 2)
-      if (inn1 && inn2) {
-        winnerByMatch.set(
-          m.id,
-          inn1.total_runs > inn2.total_runs ? inn1.batting_team_id : inn2.batting_team_id
-        )
+  for (const m of completedMatches ?? []) {
+    if (!m.winner_team_id) continue
+    for (const teamId of [m.team_a_id, m.team_b_id]) {
+      if (!formGuide[teamId]) formGuide[teamId] = []
+      if (formGuide[teamId].length < 5) {
+        formGuide[teamId].push(m.winner_team_id === teamId ? 'W' : 'L')
       }
-    })
-
-    // Build last-5 form per team (newest first → we'll reverse for display)
-    completedMatches.forEach(m => {
-      const winner = winnerByMatch.get(m.id)
-      if (!winner) return
-      for (const teamId of [m.team_a_id, m.team_b_id]) {
-        if (!formGuide[teamId]) formGuide[teamId] = []
-        if (formGuide[teamId].length < 5) {
-          formGuide[teamId].push(winner === teamId ? 'W' : 'L')
-        }
-      }
-    })
+    }
   }
 
   const matchesPlayed = completedMatches?.length ?? 0

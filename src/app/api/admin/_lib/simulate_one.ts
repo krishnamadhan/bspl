@@ -146,6 +146,7 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     toss_decision:         tossDecision,
     batting_first_team_id: battingFirstId,
     result_summary:        resultSummary,
+    winner_team_id:        result.winner_team_id,
   }).eq('id', matchId)
 
   // ── 9b. Insert innings rows ────────────────────────────────────────────────
