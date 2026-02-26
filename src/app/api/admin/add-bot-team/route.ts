@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     .select('color')
     .eq('season_id', season.id)
   const usedColors = new Set((existingTeams ?? []).map(t => t.color))
-  const color = BOT_COLORS.find(c => !usedColors.has(c)) ?? BOT_COLORS[existingTeams?.length ?? 0 % BOT_COLORS.length]
+  const color = BOT_COLORS.find(c => !usedColors.has(c)) ?? BOT_COLORS[(existingTeams?.length ?? 0) % BOT_COLORS.length]
 
   // Create the bot team
   const { data: newTeam, error: teamErr } = await db

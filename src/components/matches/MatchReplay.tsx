@@ -520,7 +520,15 @@ export default function MatchReplay({
   // When replay finishes, transition match live → completed on the server
   useEffect(() => {
     if (phase === 'done' && completeUrl) {
-      fetch(completeUrl, { method: 'POST' }).catch(() => {})
+      const tryComplete = async (retries = 2) => {
+        try {
+          const res = await fetch(completeUrl, { method: 'POST' })
+          if (!res.ok && retries > 0) setTimeout(() => tryComplete(retries - 1), 3000)
+        } catch {
+          if (retries > 0) setTimeout(() => tryComplete(retries - 1), 3000)
+        }
+      }
+      tryComplete()
     }
   }, [phase, completeUrl]) // eslint-disable-line react-hooks/exhaustive-deps
 
