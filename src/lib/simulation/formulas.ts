@@ -251,9 +251,12 @@ export function calculateBattingConfidenceDelta(runs: number, sr: number): numbe
 }
 
 // Bowling thresholds (per over bowled, averaged)
+// totalOvers is in cricket notation (e.g. 1.3 = 1 over + 3 balls = 1.5 actual overs)
 export function calculateBowlingConfidenceDelta(totalRuns: number, totalOvers: number, wickets: number): number {
   if (totalOvers === 0) return 0
-  const economy = (totalRuns / totalOvers)
+  // Convert cricket notation to decimal overs before computing economy
+  const decimalOvers = Math.floor(totalOvers) + (totalOvers % 1) * 10 / 6
+  const economy = totalRuns / decimalOvers
   if (economy < 8 || wickets >= 2) return 0.10   // Outstanding
   if (economy < 10 || wickets >= 1) return 0.05  // Good
   if (economy < 12) return 0                     // Average

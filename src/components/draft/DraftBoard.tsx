@@ -206,7 +206,14 @@ export default function DraftBoard({
       setBudgetLeft(budgetLeft)
       setNotice({ msg: 'Failed to add player — try again', type: 'error' })
     } else {
-      await supabase.from('bspl_teams').update({ budget_remaining: newBudget }).eq('id', myTeam.id)
+      const { error: budgetErr } = await supabase
+        .from('bspl_teams')
+        .update({ budget_remaining: newBudget })
+        .eq('id', myTeam.id)
+      if (budgetErr) {
+        // Player is added to roster but budget sync failed — warn user to refresh
+        setNotice({ msg: 'Player added, but budget sync failed — refresh the page to see accurate budget', type: 'error' })
+      }
     }
     setLoadingId(null)
   }, [myTeam, draftOpen, rosterIds, budgetLeft, maxSquad, squadStats])
@@ -236,7 +243,13 @@ export default function DraftBoard({
       setBudgetLeft(budgetLeft)
       setNotice({ msg: 'Failed to remove player — try again', type: 'error' })
     } else {
-      await supabase.from('bspl_teams').update({ budget_remaining: newBudget }).eq('id', myTeam.id)
+      const { error: budgetErr } = await supabase
+        .from('bspl_teams')
+        .update({ budget_remaining: newBudget })
+        .eq('id', myTeam.id)
+      if (budgetErr) {
+        setNotice({ msg: 'Player removed, but budget sync failed — refresh the page to see accurate budget', type: 'error' })
+      }
     }
     setLoadingId(null)
   }, [myTeam, draftOpen, rosterIds, purchases, budgetLeft])

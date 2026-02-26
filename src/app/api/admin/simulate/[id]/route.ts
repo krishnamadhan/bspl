@@ -17,6 +17,6 @@ export async function POST(
     return NextResponse.json({ ok: true, result: resultSummary })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Simulation failed'
-    return NextResponse.json({ error: message }, { status: 400 })
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

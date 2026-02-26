@@ -62,13 +62,23 @@ export default async function DashboardPage() {
     : { data: null }
 
   // ── All remaining queries in parallel (most need season.id or myTeam.id) ──
+  // Wrapped in try/catch so a network timeout or query error degrades gracefully
+  // instead of crashing the entire SSR page.
+  let squadCount: number | null = null
+  let myPoints: Record<string, number> | null = null
+  let rawStandings: unknown[] | null = null
+  let rawNextMatch: unknown = null
+  let rawRecent: unknown[] | null = null
+  let myStats: unknown[] | null = null
+
+  try {
   const [
-    { count: squadCount },
-    { data: myPoints },
-    { data: rawStandings },
-    { data: rawNextMatch },
-    { data: rawRecent },
-    { data: myStats },
+    { count: _squadCount },
+    { data: _myPoints },
+    { data: _rawStandings },
+    { data: _rawNextMatch },
+    { data: _rawRecent },
+    { data: _myStats },
   ] = await Promise.all([
     // Squad size
     myTeam
@@ -128,6 +138,15 @@ export default async function DashboardPage() {
           .eq('team_id', myTeam.id).eq('season_id', season.id).gt('matches', 0)
       : Promise.resolve({ data: [], error: null }),
   ])
+  squadCount   = _squadCount
+  myPoints     = _myPoints as typeof myPoints
+  rawStandings = _rawStandings as typeof rawStandings
+  rawNextMatch = _rawNextMatch
+  rawRecent    = _rawRecent as typeof rawRecent
+  myStats      = _myStats as typeof myStats
+  } catch {
+    // Queries failed (e.g. network timeout) — render with empty/null data
+  }
 
   // ── Lineup status for next match ───────────────────────────────────────────
   const nextMatch = rawNextMatch as any
@@ -283,11 +302,6 @@ export default async function DashboardPage() {
                   {lineupSubmitted && (
                     <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">
                       ✓ Lineup Submitted
-                    </span>
-                  )}
-                  {nextMatch.status === 'locked' && (
-                    <span className="text-xs bg-orange-500/20 text-orange-300 px-2 py-0.5 rounded-full">
-                      Locked
                     </span>
                   )}
                 </div>

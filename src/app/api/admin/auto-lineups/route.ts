@@ -99,7 +99,15 @@ export async function POST() {
   }
 
   if (upserts.length > 0) {
-    await db.from('bspl_lineups').upsert(upserts, { onConflict: 'match_id,team_id' })
+    const { error: upsertErr } = await db
+      .from('bspl_lineups')
+      .upsert(upserts, { onConflict: 'match_id,team_id' })
+    if (upsertErr) {
+      return NextResponse.json(
+        { ok: false, submitted: 0, error: `Lineup upsert failed: ${upsertErr.message}` },
+        { status: 500 },
+      )
+    }
   }
 
   return NextResponse.json({

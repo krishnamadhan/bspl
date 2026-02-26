@@ -125,13 +125,36 @@ export async function POST(req: NextRequest) {
     purchase_price: d.purchase_price,
   }))
   if (rosterRows.length > 0) {
-    await db.from('bspl_rosters').insert(rosterRows)
+    const { error: rosterErr } = await db.from('bspl_rosters').insert(rosterRows)
+    if (rosterErr) {
+      // Rollback: delete the team so we don't leave an orphaned team with 0 players
+      await db.from('bspl_teams').delete().eq('id', newTeam.id)
+      return NextResponse.json(
+        { error: `Failed to insert roster: ${rosterErr.message}` },
+        { status: 500 },
+      )
+    }
   }
 
   // Deduct budget
   const spent = drafted.reduce((sum, d) => sum + d.purchase_price, 0)
   const newBudget = Math.max(0, Number(season.budget_cr) - spent)
-  await db.from('bspl_teams').update({ budget_remaining: newBudget }).eq('id', newTeam.id)
+  const { error: budgetErr } = await db
+    .from('bspl_teams')
+    .update({ budget_remaining: newBudget })
+    .eq('id', newTeam.id)
+  if (budgetErr) {
+    // Non-fatal: roster is committed, but warn the caller
+    return NextResponse.json({
+      ok:              true,
+      team_id:         newTeam.id,
+      name:            newTeam.name,
+      color:           newTeam.color,
+      players_drafted: drafted.length,
+      message:         `Bot team "${teamName}" created with ${drafted.length} players (budget update failed — refresh to sync)`,
+      budget_warning:  budgetErr.message,
+    })
+  }
 
   return NextResponse.json({
     ok:              true,

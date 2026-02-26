@@ -39,6 +39,13 @@ export async function POST(
 
   if (botTeamIds.length > 0) {
     for (const teamId of botTeamIds) {
+      // Always fetch current roster first — needed for validation and auto-pick fallback
+      const { data: rosters } = await db
+        .from('bspl_rosters')
+        .select('player_id, players(*)')
+        .eq('team_id', teamId)
+      const rosterPlayerIds = new Set((rosters ?? []).map((r: { player_id: string }) => r.player_id))
+
       // Try to reuse previous submitted lineup first
       const { data: prevMatch } = await db
         .from('bspl_matches')
@@ -63,17 +70,19 @@ export async function POST(
           .maybeSingle()
 
         if (prevLineup?.playing_xi?.length === 11 && prevLineup?.bowling_order?.length === 5) {
-          playing_xi   = prevLineup.playing_xi
-          bowling_order = prevLineup.bowling_order
+          // Validate all player IDs are still in the current roster
+          const allInRoster =
+            prevLineup.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
+            prevLineup.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
+          if (allInRoster) {
+            playing_xi   = prevLineup.playing_xi
+            bowling_order = prevLineup.bowling_order
+          }
         }
       }
 
-      // Fall back to auto-pick if no previous lineup
+      // Fall back to auto-pick if no valid previous lineup
       if (!playing_xi) {
-        const { data: rosters } = await db
-          .from('bspl_rosters')
-          .select('player_id, players(*)')
-          .eq('team_id', teamId)
         const rosterPicks = buildRosterForPick(rosters ?? [])
         const { xi, bowlingOrder } = pickXI(rosterPicks)
         playing_xi    = xi

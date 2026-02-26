@@ -40,6 +40,9 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     .eq('match_id', matchId)
 
   async function prevOrAutoLineup(teamId: string, rosters: typeof rostersA) {
+    // Build set of valid player IDs from the current roster
+    const rosterPlayerIds = new Set((rosters ?? []).map((r: { player_id: string }) => r.player_id))
+
     // 1. Try previous submitted lineup (last completed match for this team)
     const { data: prevMatch } = await db
       .from('bspl_matches')
@@ -61,7 +64,13 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
         .maybeSingle()
 
       if (prev?.playing_xi?.length === 11 && prev?.bowling_order?.length === 5) {
-        return { team_id: teamId, ...prev, is_submitted: true }
+        // Validate all player IDs are still in the current roster before reusing
+        const allInRoster =
+          prev.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
+          prev.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
+        if (allInRoster) {
+          return { team_id: teamId, ...prev, is_submitted: true }
+        }
       }
     }
 
@@ -128,7 +137,14 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
   const innings2TeamId = battingFirstId === match.team_a_id ? match.team_b_id : match.team_a_id
 
   // ── 8. Run engine ──────────────────────────────────────────────────────────
-  const matchSeed = Date.now() % 1_000_000
+  // XOR with a hash of matchId so two matches simulated in the same millisecond
+  // get different seeds and produce different results
+  function hashMatchId(s: string): number {
+    let h = 0
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
+    return h
+  }
+  const matchSeed = (Date.now() ^ hashMatchId(matchId)) % 1_000_000
   const result    = simulateMatch(battingFirst, bowlingFirst, simVenue, matchSeed)
 
   // Substitute UUIDs in result_summary with team names
@@ -136,27 +152,15 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     .replace(battingFirst.team_id, teamName.get(battingFirst.team_id) ?? battingFirst.team_id)
     .replace(bowlingFirst.team_id, teamName.get(bowlingFirst.team_id) ?? bowlingFirst.team_id)
 
-  // ── 9a. Update match ────────────────────────────────────────────────────────
-  // Go directly to 'completed'. MatchReplay plays ball-by-ball from stored
-  // data whether the status is 'live' or 'completed', so users still get the
-  // full animated replay experience when they open the match.
-  await db.from('bspl_matches').update({
-    status:                'completed',
-    toss_winner_team_id:   tossWinnerId,
-    toss_decision:         tossDecision,
-    batting_first_team_id: battingFirstId,
-    result_summary:        resultSummary,
-    winner_team_id:        result.winner_team_id,
-  }).eq('id', matchId)
-
-  // ── 9b. Insert innings rows ────────────────────────────────────────────────
-  // Compute overs_completed from legal balls in ball_log
+  // ── 9a. Insert innings rows ────────────────────────────────────────────────
+  // Must succeed before we mark the match as completed — if innings insert
+  // fails, the match stays 'lineup_open' so the admin can retry safely.
   const legal1 = result.innings1.ball_log.filter(b => b.outcome !== 'Wd').length
   const legal2 = result.innings2.ball_log.filter(b => b.outcome !== 'Wd').length
   const overs1 = Math.floor(legal1 / 6) + (legal1 % 6) / 10
   const overs2 = Math.floor(legal2 / 6) + (legal2 % 6) / 10
 
-  const { data: inn1Row } = await db.from('bspl_innings').insert({
+  const { data: inn1Row, error: inn1Err } = await db.from('bspl_innings').insert({
     match_id:        matchId,
     innings_number:  1,
     batting_team_id: innings1TeamId,
@@ -167,7 +171,11 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     overs_completed: overs1,
   }).select('id').single()
 
-  const { data: inn2Row } = await db.from('bspl_innings').insert({
+  if (inn1Err || !inn1Row) {
+    throw new Error(`Failed to insert innings 1: ${inn1Err?.message ?? 'no row returned'}`)
+  }
+
+  const { data: inn2Row, error: inn2Err } = await db.from('bspl_innings').insert({
     match_id:        matchId,
     innings_number:  2,
     batting_team_id: innings2TeamId,
@@ -178,8 +186,12 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     overs_completed: overs2,
   }).select('id').single()
 
-  // ── 9c. Insert ball logs ───────────────────────────────────────────────────
-  if (inn1Row?.id && result.innings1.ball_log.length > 0) {
+  if (inn2Err || !inn2Row) {
+    throw new Error(`Failed to insert innings 2: ${inn2Err?.message ?? 'no row returned'}`)
+  }
+
+  // ── 9b. Insert ball logs ───────────────────────────────────────────────────
+  if (result.innings1.ball_log.length > 0) {
     await db.from('bspl_ball_log').insert(
       result.innings1.ball_log.map(b => ({
         innings_id:  inn1Row.id,
@@ -195,7 +207,7 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     )
   }
 
-  if (inn2Row?.id && result.innings2.ball_log.length > 0) {
+  if (result.innings2.ball_log.length > 0) {
     await db.from('bspl_ball_log').insert(
       result.innings2.ball_log.map(b => ({
         innings_id:  inn2Row.id,
@@ -210,6 +222,19 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
       }))
     )
   }
+
+  // ── 9c. Update match to completed ─────────────────────────────────────────
+  // Only mark completed after innings + ball_log are persisted. MatchReplay
+  // plays ball-by-ball from stored data whether status is 'live' or 'completed',
+  // so users still get the full animated replay when they open the match.
+  await db.from('bspl_matches').update({
+    status:                'completed',
+    toss_winner_team_id:   tossWinnerId,
+    toss_decision:         tossDecision,
+    batting_first_team_id: battingFirstId,
+    result_summary:        resultSummary,
+    winner_team_id:        result.winner_team_id,
+  }).eq('id', matchId)
 
   // ── 9d. Upsert stamina ─────────────────────────────────────────────────────
   const confMap = new Map(
