@@ -41,11 +41,11 @@ export function bowlerPhaseMultiplier(player: Player, overNumber: number): numbe
 // ─── Matchup modifier (batsman type vs bowler type) ───────────────────────────
 
 export function matchupModifier(batter: Player, bowler: Player): number {
-  // Left-hand batter vs off-spin: bowler advantage
+  // LHB vs spin: high-variance matchup — more boundaries (batter SR up) but also more wickets
+  // (this modifier is applied to both effectiveBattingSR and effectiveBowlerWicketProb)
   if (batter.is_left_handed && bowler.bowler_type === 'spin') return 1.10
-  // Off-spin vs left-hander tricky (simplified — spin = off/leg both)
+  // RHB vs spin: slight batter disadvantage
   if (!batter.is_left_handed && bowler.bowler_type === 'spin') return 0.95
-  // Short-ball specialist pacers vs aggressive batsmen: high variance (neutral net)
   return 1.0
 }
 

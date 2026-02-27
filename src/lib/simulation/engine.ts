@@ -1,4 +1,4 @@
-import type { SimPlayer, SimTeam, SimVenue, InningsResult, MatchResult, BallLog, StaminaUpdate, ConfidenceUpdate } from './types'
+import type { SimTeam, SimVenue, InningsResult, MatchResult, BallLog, StaminaUpdate, ConfidenceUpdate } from './types'
 import type { BallOutcome, BattingScorecard, BowlingScorecard, OverSummary } from '@/types'
 import {
   effectiveBattingSR,
@@ -25,7 +25,6 @@ function seededRandom(seed: number): () => number {
 
 // ─── Single ball outcome ──────────────────────────────────────────────────────
 function simulateBall(
-  batter: SimPlayer,
   bowlerSim: Parameters<typeof effectiveBowlerWicketProb>[0],
   batterSim: Parameters<typeof effectiveBattingSR>[0],
   venue: SimVenue,
@@ -154,7 +153,7 @@ function simulateInnings(
       const runsNeeded = isSecondInnings ? targetRuns - totalRuns + 1 : 0
       const ballsLeft = (TOTAL_OVERS - over) * 6 + (6 - legalBalls)
 
-      const ball = simulateBall(batterSim, bowlerSim, batterSim, venue, over, isSecondInnings, runsNeeded, ballsLeft, rand)
+      const ball = simulateBall(bowlerSim, batterSim, venue, over, isSecondInnings, runsNeeded, ballsLeft, rand)
 
       overBalls.push(ball.outcome)
       totalRuns += ball.runs
@@ -286,9 +285,11 @@ function computePostMatchUpdates(
 
     // Bowling stats — look in the innings where this team bowled (opponent batted)
     const bowlingEntry = bowlingInnings.bowling_scorecard.find(b => b.player_id === sp.player.id)
-    const oversBowled = bowlingEntry?.overs ?? 0
+    const oversCN = bowlingEntry?.overs ?? 0
+    // overs is stored in cricket notation (1.4 = 1 over + 4 balls); convert to decimal for stamina
+    const oversBowledDecimal = Math.floor(oversCN) + (oversCN % 1) * 10 / 6
 
-    const staminaLoss = calculateStaminaLoss(ballsFaced, oversBowled, true)
+    const staminaLoss = calculateStaminaLoss(ballsFaced, oversBowledDecimal, true)
     const newStamina = applyStaminaLoss(sp.stamina, staminaLoss)
     staminaUpdates.push({ player_id: sp.player.id, team_id: sp.team_id, old_stamina: sp.stamina, new_stamina: newStamina, delta: -staminaLoss })
 
@@ -300,8 +301,8 @@ function computePostMatchUpdates(
       confDelta += calculateBattingConfidenceDelta(battingEntry.runs, battingEntry.strike_rate)
       reason = `${battingEntry.runs} runs off ${ballsFaced}b`
     }
-    if (bowlingEntry && oversBowled > 0) {
-      const bowlDelta = calculateBowlingConfidenceDelta(bowlingEntry.runs, oversBowled, bowlingEntry.wickets)
+    if (bowlingEntry && oversCN > 0) {
+      const bowlDelta = calculateBowlingConfidenceDelta(bowlingEntry.runs, oversCN, bowlingEntry.wickets)
       confDelta += bowlDelta
       reason += ` | ${bowlingEntry.wickets}w @ ${bowlingEntry.economy} econ`
     }
