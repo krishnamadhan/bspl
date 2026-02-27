@@ -465,10 +465,10 @@ export default function AdminPage() {
 
   // ── Match handlers ──────────────────────────────────────────────────────────
   const handleOpenLineups  = (id: string) => handle(async () => { await post(`/api/admin/open-lineups/${id}`); showToast('Lineup window opened — bot lineups auto-filled', true); await loadMatches() })
-  const handleSimulate     = (id: string) => handle(async () => { const j = await post(`/api/admin/simulate/${id}`); showToast(j.result ?? 'Match simulated', true); await loadMatches() })
-  const handleSimulateAll  = () => handle(async () => { const j = await post('/api/admin/simulate-all'); showToast(`Simulated ${j.simulated} match(es)`, true); await loadMatches() })
+  const handleSimulate     = (id: string) => handle(async () => { const j = await post(`/api/admin/simulate/${id}`); showToast(j.result ?? 'Match simulated', true); await loadMatches(); await loadPlayoffBracket() })
+  const handleSimulateAll  = () => handle(async () => { const j = await post('/api/admin/simulate-all'); showToast(`Simulated ${j.simulated} match(es)`, true); await loadMatches(); await loadPlayoffBracket() })
   const handleAutoLineups  = () => handle(async () => { const j = await post('/api/admin/auto-lineups'); showToast(j.message ?? 'Bot lineups submitted', true); await loadMatches() })
-  const handleFinalize     = (id: string) => handle(async () => { await post(`/api/match/${id}/complete`); showToast('Match finalized', true); await loadMatches() })
+  const handleFinalize     = (id: string) => handle(async () => { await post(`/api/match/${id}/complete`); showToast('Match finalized', true); await loadMatches(); await loadPlayoffBracket() })
   const handleSetupTest    = () => handle(async () => { const j = await post('/api/admin/setup-test-season'); showToast(j.message ?? 'Test season set up', true); await loadSeasons(); await loadTeams() })
 
   const handleResetStamina = () => setConfirm({
@@ -514,6 +514,7 @@ export default function AdminPage() {
       setConfirm(null)
       await loadSeasons()
       await loadMatches()
+      await loadPlayoffBracket()
     }),
   })
 
