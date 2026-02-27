@@ -164,7 +164,7 @@ export default async function TeamSquadPage({
                   <div key={p.id} className="flex items-center gap-3 px-5 py-3">
                     {/* Name + team */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{p.name}</p>
+                      <p className="font-medium text-sm truncate text-white">{p.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
                         {p.ipl_team}
                         {p.bowler_type && ` · ${p.bowler_type}`}

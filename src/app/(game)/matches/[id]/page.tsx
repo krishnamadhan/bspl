@@ -423,7 +423,7 @@ export default async function MatchDetailPage({
             <div className="text-center">
               <Link href={`/teams/${batFirst?.id}`} className="flex items-center gap-2 justify-center mb-1 hover:text-yellow-400 transition group">
                 <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: batFirst?.color ?? '#888' }} />
-                <span className="font-bold group-hover:underline">{batFirst?.name}</span>
+                <span className="font-bold text-white group-hover:underline">{batFirst?.name}</span>
               </Link>
               <p className="text-3xl font-bold tabular-nums">
                 {inn1?.total_runs ?? '—'}
@@ -440,7 +440,7 @@ export default async function MatchDetailPage({
             <div className="text-center">
               <Link href={`/teams/${batSecond?.id}`} className="flex items-center gap-2 justify-center mb-1 hover:text-yellow-400 transition group">
                 <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: batSecond?.color ?? '#888' }} />
-                <span className="font-bold group-hover:underline">{batSecond?.name}</span>
+                <span className="font-bold text-white group-hover:underline">{batSecond?.name}</span>
               </Link>
               <p className="text-3xl font-bold tabular-nums">
                 {inn2?.total_runs ?? '—'}
@@ -569,9 +569,9 @@ export default async function MatchDetailPage({
               <div key={team?.id} className="text-center">
                 <div className="w-8 h-8 rounded-full mx-auto mb-1.5" style={{ backgroundColor: team?.color ?? '#888' }} />
                 {team?.id === myTeam.id ? (
-                  <p className="font-bold">{team?.name}</p>
+                  <p className="font-bold text-white">{team?.name}</p>
                 ) : (
-                  <Link href={`/teams/${team?.id}`} className="font-bold hover:text-yellow-400 hover:underline transition">
+                  <Link href={`/teams/${team?.id}`} className="font-bold text-white hover:text-yellow-400 hover:underline transition">
                     {team?.name}
                   </Link>
                 )}
@@ -640,7 +640,7 @@ export default async function MatchDetailPage({
         <div className="flex items-center gap-4">
           <div className="flex-1 text-center">
             <div className="w-12 h-12 rounded-full mx-auto mb-2" style={{ backgroundColor: teamA?.color ?? '#888' }} />
-            <Link href={`/teams/${teamA?.id}`} className="font-bold text-xl hover:text-yellow-400 hover:underline transition block">
+            <Link href={`/teams/${teamA?.id}`} className="font-bold text-xl text-white hover:text-yellow-400 hover:underline transition block">
               {teamA?.name ?? '—'}
             </Link>
             {teamA?.id === myTeam?.id
@@ -651,7 +651,7 @@ export default async function MatchDetailPage({
           <span className="text-gray-700 text-3xl font-bold flex-shrink-0">vs</span>
           <div className="flex-1 text-center">
             <div className="w-12 h-12 rounded-full mx-auto mb-2" style={{ backgroundColor: teamB?.color ?? '#888' }} />
-            <Link href={`/teams/${teamB?.id}`} className="font-bold text-xl hover:text-yellow-400 hover:underline transition block">
+            <Link href={`/teams/${teamB?.id}`} className="font-bold text-xl text-white hover:text-yellow-400 hover:underline transition block">
               {teamB?.name ?? '—'}
             </Link>
             {teamB?.id === myTeam?.id
@@ -665,7 +665,7 @@ export default async function MatchDetailPage({
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="bg-gray-800 rounded-lg p-3">
             <p className="text-gray-500 text-xs mb-1">Venue</p>
-            <p className="font-medium">{venue?.name}</p>
+            <p className="font-medium text-white">{venue?.name}</p>
             <p className="text-gray-400 text-xs">{venue?.city} · {venue?.pitch_type} track</p>
           </div>
           <div className="bg-gray-800 rounded-lg p-3">

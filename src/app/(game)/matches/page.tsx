@@ -115,7 +115,7 @@ function MatchCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: teamA?.color ?? '#6b7280' }} />
-              <span className="font-semibold text-sm truncate">{teamA?.name ?? '—'}</span>
+              <span className="font-semibold text-sm truncate text-white">{teamA?.name ?? '—'}</span>
             </div>
             {scoreA && <p className="text-xs text-gray-400 mt-0.5 ml-5">{scoreA}</p>}
           </div>
@@ -125,7 +125,7 @@ function MatchCard({
           {/* Team B */}
           <div className="flex-1 min-w-0 text-right">
             <div className="flex items-center justify-end gap-2">
-              <span className="font-semibold text-sm truncate">{teamB?.name ?? '—'}</span>
+              <span className="font-semibold text-sm truncate text-white">{teamB?.name ?? '—'}</span>
               <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: teamB?.color ?? '#6b7280' }} />
             </div>
             {scoreB && <p className="text-xs text-gray-400 mt-0.5 mr-5">{scoreB}</p>}

@@ -46,6 +46,8 @@ export function matchupModifier(batter: Player, bowler: Player): number {
   if (batter.is_left_handed && bowler.bowler_type === 'spin') return 1.10
   // RHB vs spin: slight batter disadvantage
   if (!batter.is_left_handed && bowler.bowler_type === 'spin') return 0.95
+  // LHB vs pace: slight batter disadvantage (angling in, harder to free arms)
+  if (batter.is_left_handed && (bowler.bowler_type === 'pace' || bowler.bowler_type === 'medium')) return 0.95
   return 1.0
 }
 

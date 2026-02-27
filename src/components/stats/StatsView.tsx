@@ -157,7 +157,7 @@ function BattingView({ rows }: { rows: StatRow[] }) {
                       {i < 3 && <span className="text-xs w-4">{['🥇','🥈','🥉'][i]}</span>}
                       {i >= 3 && <span className="text-xs text-gray-600 w-4 text-center font-mono">{i + 1}</span>}
                       <div>
-                        <p className="font-medium leading-tight">{r.player_name}</p>
+                        <p className="font-medium leading-tight text-white">{r.player_name}</p>
                         <p className="text-xs text-gray-500">{r.player_ipl_team}</p>
                       </div>
                     </div>
@@ -257,7 +257,7 @@ function BowlingView({ rows }: { rows: StatRow[] }) {
                       {i < 3 && <span className="text-xs w-4">{['🥇','🥈','🥉'][i]}</span>}
                       {i >= 3 && <span className="text-xs text-gray-600 w-4 text-center font-mono">{i + 1}</span>}
                       <div>
-                        <p className="font-medium leading-tight">{r.player_name}</p>
+                        <p className="font-medium leading-tight text-white">{r.player_name}</p>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <RoleBadge role={r.player_role} />
                           <span className="text-xs text-gray-600">{r.player_ipl_team}</span>
@@ -298,7 +298,7 @@ function BowlingView({ rows }: { rows: StatRow[] }) {
                 <span className="text-xs text-gray-600 w-5 font-mono text-center">{i + 1}</span>
                 <TeamDot color={r.team_color} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{r.player_name}</p>
+                  <p className="text-sm font-medium truncate text-white">{r.player_name}</p>
                   <p className="text-xs text-gray-500">{r.team_name} · {Number(r.overs_bowled).toFixed(1)} ov</p>
                 </div>
                 <span className="text-green-400 font-bold tabular-nums">{Number(r.bowling_economy).toFixed(2)}</span>

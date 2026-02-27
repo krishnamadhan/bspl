@@ -92,21 +92,21 @@ export default async function StatsPage() {
           {topRuns && (
             <div className="bg-gray-900 border border-orange-400/20 rounded-xl p-3">
               <p className="text-xs text-orange-400 font-semibold mb-1">🟠 Leading Scorer</p>
-              <p className="font-semibold text-sm truncate">{topRuns.player_name}</p>
+              <p className="font-semibold text-sm truncate text-white">{topRuns.player_name}</p>
               <p className="text-xs text-gray-500">{topRuns.total_runs} runs</p>
             </div>
           )}
           {topWkts && topWkts.wickets > 0 && (
             <div className="bg-gray-900 border border-purple-400/20 rounded-xl p-3">
               <p className="text-xs text-purple-400 font-semibold mb-1">🟣 Leading Wickets</p>
-              <p className="font-semibold text-sm truncate">{topWkts.player_name}</p>
+              <p className="font-semibold text-sm truncate text-white">{topWkts.player_name}</p>
               <p className="text-xs text-gray-500">{topWkts.wickets} wickets</p>
             </div>
           )}
           {topSixes && topSixes.sixes > 0 && (
             <div className="bg-gray-900 border border-green-400/20 rounded-xl p-3">
               <p className="text-xs text-green-400 font-semibold mb-1">💚 Most Sixes</p>
-              <p className="font-semibold text-sm truncate">{topSixes.player_name}</p>
+              <p className="font-semibold text-sm truncate text-white">{topSixes.player_name}</p>
               <p className="text-xs text-gray-500">{topSixes.sixes} sixes</p>
             </div>
           )}
