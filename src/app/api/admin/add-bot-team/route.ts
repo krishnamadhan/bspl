@@ -80,7 +80,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: teamErr?.message ?? 'Failed to create team' }, { status: 500 })
   }
 
-  // Auto-draft squad by role quotas (best available players by price_cr)
+  // Auto-draft squad by role quotas.
+  // Each bot picks from the top 3× candidate pool for variety — bots are competitive
+  // (always include some elite players) but different each time (random within tier).
+  function stratifiedPick<T extends { price_cr: number }>(pool: T[], quota: number): T[] {
+    if (pool.length <= quota) return pool
+    const candidatePool = pool.slice(0, quota * 3)  // top-3x candidates
+    // Split into elite top-half and good bottom-half
+    const half = Math.ceil(candidatePool.length / 2)
+    const elite = candidatePool.slice(0, half).sort(() => Math.random() - 0.5)
+    const good  = candidatePool.slice(half).sort(() => Math.random() - 0.5)
+    const elitePicks = Math.ceil(quota / 2)
+    const goodPicks  = quota - elitePicks
+    return [...elite.slice(0, elitePicks), ...good.slice(0, goodPicks)]
+  }
+
   const playersByRole: Record<string, { id: string; price_cr: number }[]> = {}
   for (const role of Object.keys(ROLE_QUOTAS)) {
     const { data } = await db
@@ -91,19 +105,16 @@ export async function POST(req: NextRequest) {
     playersByRole[role] = data ?? []
   }
 
-  // Build draft list respecting quotas
+  // Build draft list respecting quotas with stratified random selection
   const drafted: { player_id: string; purchase_price: number }[] = []
   for (const [role, quota] of Object.entries(ROLE_QUOTAS)) {
     const pool = playersByRole[role] ?? []
-    let picked = 0
-    for (const p of pool) {
-      if (picked >= quota) break
+    for (const p of stratifiedPick(pool, quota)) {
       drafted.push({ player_id: p.id, purchase_price: Number(p.price_cr) })
-      picked++
     }
   }
 
-  // Fill remaining slots from all roles by price
+  // Fill remaining slots — pick randomly from top 2× available (by price), excluding already drafted
   const draftedIds = new Set(drafted.map(d => d.player_id))
   const remaining = SQUAD_SIZE - drafted.length
   if (remaining > 0) {
@@ -112,8 +123,9 @@ export async function POST(req: NextRequest) {
       .select('id, price_cr')
       .not('id', 'in', `(${[...draftedIds].join(',')})`)
       .order('price_cr', { ascending: false })
-      .limit(remaining)
-    for (const p of fillPlayers ?? []) {
+      .limit(remaining * 2)
+    const shuffledFill = (fillPlayers ?? []).sort(() => Math.random() - 0.5).slice(0, remaining)
+    for (const p of shuffledFill) {
       drafted.push({ player_id: p.id, purchase_price: Number(p.price_cr) })
     }
   }
