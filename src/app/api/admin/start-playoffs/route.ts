@@ -86,30 +86,36 @@ export async function POST() {
   let playoffRows: object[]
   let message: string
 
+  const today = new Date()
+  const dayMs  = 24 * 60 * 60 * 1000
+  const d = (offset: number) => new Date(today.getTime() + offset * dayMs).toISOString()
+
   if (useFull) {
     // IPL format: Q1 (#1 vs #2) + Eliminator (#3 vs #4)
     playoffRows = [
       {
-        season_id:    season.id,
-        match_number: base + 1,
-        match_day:    base + 1,
-        team_a_id:    p1.team_id,
-        team_b_id:    p2.team_id,
-        venue_id:     venues[0 % venues.length].id,
-        condition:    CONDITIONS[0],
-        status:       'scheduled',
-        match_type:   'qualifier1',
+        season_id:      season.id,
+        match_number:   base + 1,
+        match_day:      base + 1,
+        team_a_id:      p1.team_id,
+        team_b_id:      p2.team_id,
+        venue_id:       venues[0 % venues.length].id,
+        condition:      CONDITIONS[0],
+        scheduled_date: d(1),
+        status:         'scheduled',
+        match_type:     'qualifier1',
       },
       {
-        season_id:    season.id,
-        match_number: base + 2,
-        match_day:    base + 2,
-        team_a_id:    p3.team_id,
-        team_b_id:    p4.team_id,
-        venue_id:     venues[1 % venues.length].id,
-        condition:    CONDITIONS[1],
-        status:       'scheduled',
-        match_type:   'eliminator',
+        season_id:      season.id,
+        match_number:   base + 2,
+        match_day:      base + 2,
+        team_a_id:      p3.team_id,
+        team_b_id:      p4.team_id,
+        venue_id:       venues[1 % venues.length].id,
+        condition:      CONDITIONS[1],
+        scheduled_date: d(2),
+        status:         'scheduled',
+        match_type:     'eliminator',
       },
     ]
     message = `Playoffs started (IPL format)! Q1: #1 vs #2 · Eliminator: #3 vs #4`
@@ -117,15 +123,16 @@ export async function POST() {
     // Direct Final: #1 vs #2
     playoffRows = [
       {
-        season_id:    season.id,
-        match_number: base + 1,
-        match_day:    base + 1,
-        team_a_id:    p1.team_id,
-        team_b_id:    p2.team_id,
-        venue_id:     venues[0 % venues.length].id,
-        condition:    CONDITIONS[0],
-        status:       'scheduled',
-        match_type:   'final',
+        season_id:      season.id,
+        match_number:   base + 1,
+        match_day:      base + 1,
+        team_a_id:      p1.team_id,
+        team_b_id:      p2.team_id,
+        venue_id:       venues[0 % venues.length].id,
+        condition:      CONDITIONS[0],
+        scheduled_date: d(1),
+        status:         'scheduled',
+        match_type:     'final',
       },
     ]
     message = `Playoffs started (Direct Final)! #1 vs #2 — winner takes the title.`

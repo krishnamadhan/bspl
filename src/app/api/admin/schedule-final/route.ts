@@ -55,15 +55,16 @@ export async function POST() {
   const { data: created, error: insertErr } = await db
     .from('bspl_matches')
     .insert({
-      season_id:    season.id,
-      match_number: next,
-      match_day:    next,
-      team_a_id:    q1.winner_team_id,
-      team_b_id:    q2.winner_team_id,
-      venue_id:     venues[0].id,
-      condition:    'neutral',
-      status:       'scheduled',
-      match_type:   'final',
+      season_id:      season.id,
+      match_number:   next,
+      match_day:      next,
+      team_a_id:      q1.winner_team_id,
+      team_b_id:      q2.winner_team_id,
+      venue_id:       venues[0].id,
+      condition:      'neutral',
+      scheduled_date: new Date().toISOString(),
+      status:         'scheduled',
+      match_type:     'final',
     })
     .select('id, team_a_id, team_b_id, condition')
 
