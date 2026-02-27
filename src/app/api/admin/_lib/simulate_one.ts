@@ -20,6 +20,20 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     throw new Error(`Match status is '${match.status}', expected 'lineup_open'`)
   }
 
+  // Atomically claim the match: lineup_open → live.
+  // If another request already claimed it, the status predicate matches 0 rows.
+  const { data: claimed } = await db
+    .from('bspl_matches')
+    .update({ status: 'live' })
+    .eq('id', matchId)
+    .eq('status', 'lineup_open')
+    .select('id')
+    .maybeSingle()
+
+  if (!claimed) throw new Error('Match simulation already in progress')
+
+  try {
+
   // ── 2. Load team names (for result summary) ────────────────────────────────
   const { data: teamRows } = await db
     .from('bspl_teams')
@@ -153,12 +167,15 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     .replace(bowlingFirst.team_id, teamName.get(bowlingFirst.team_id) ?? bowlingFirst.team_id)
 
   // ── 9a. Insert innings rows ────────────────────────────────────────────────
-  // Must succeed before we mark the match as completed — if innings insert
-  // fails, the match stays 'lineup_open' so the admin can retry safely.
+  // Must succeed before we mark the match as completed. If innings insert
+  // fails, the catch block resets status back to lineup_open for retry.
   const legal1 = result.innings1.ball_log.filter(b => b.outcome !== 'Wd').length
   const legal2 = result.innings2.ball_log.filter(b => b.outcome !== 'Wd').length
   const overs1 = Math.floor(legal1 / 6) + (legal1 % 6) / 10
   const overs2 = Math.floor(legal2 / 6) + (legal2 % 6) / 10
+  // Decimal overs for NRR math (e.g. 23 balls = 3.833…, not 3.5 cricket notation)
+  const oversDec1 = legal1 / 6
+  const oversDec2 = legal2 / 6
 
   const { data: inn1Row, error: inn1Err } = await db.from('bspl_innings').insert({
     match_id:        matchId,
@@ -411,6 +428,12 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     ? result.innings1.total_runs
     : result.innings2.total_runs
 
+  // Per-team decimal overs for proper NRR: (RF/OvF) − (RA/OvA)
+  const teamAOversFor     = battingFirstId === match.team_a_id ? oversDec1 : oversDec2
+  const teamAOversAgainst = battingFirstId === match.team_a_id ? oversDec2 : oversDec1
+  const teamBOversFor     = battingFirstId === match.team_b_id ? oversDec1 : oversDec2
+  const teamBOversAgainst = battingFirstId === match.team_b_id ? oversDec2 : oversDec1
+
   const { data: pointsRows } = await db
     .from('bspl_points')
     .select('*')
@@ -422,31 +445,36 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
   )
 
   const pointsUpserts = ([
-    [match.team_a_id, teamARunsFor, teamBRunsFor, result.winner_team_id === match.team_a_id] as const,
-    [match.team_b_id, teamBRunsFor, teamARunsFor, result.winner_team_id === match.team_b_id] as const,
-  ] as const).map(([teamId, runsFor, runsAgainst, won]) => {
+    [match.team_a_id, teamARunsFor, teamBRunsFor, result.winner_team_id === match.team_a_id, teamAOversFor, teamAOversAgainst] as const,
+    [match.team_b_id, teamBRunsFor, teamARunsFor, result.winner_team_id === match.team_b_id, teamBOversFor, teamBOversAgainst] as const,
+  ] as const).map(([teamId, runsFor, runsAgainst, won, matchOversFor, matchOversAgainst]) => {
     const p = pointsMap.get(teamId)
-    const newPlayed      = Number(p?.played       ?? 0) + 1
-    const newWon         = Number(p?.won          ?? 0) + (won ? 1 : 0)
-    const newLost        = Number(p?.lost         ?? 0) + (won ? 0 : 1)
-    const newPoints      = Number(p?.points       ?? 0) + (won ? 2 : 0)
-    const newRunsFor     = Number(p?.runs_for     ?? 0) + runsFor
-    const newRunsAgainst = Number(p?.runs_against ?? 0) + runsAgainst
-    const newNRR         = newPlayed > 0
-      ? Math.round(((newRunsFor - newRunsAgainst) / (5 * newPlayed)) * 1000) / 1000
+    const newPlayed       = Number(p?.played        ?? 0) + 1
+    const newWon          = Number(p?.won           ?? 0) + (won ? 1 : 0)
+    const newLost         = Number(p?.lost          ?? 0) + (won ? 0 : 1)
+    const newPoints       = Number(p?.points        ?? 0) + (won ? 2 : 0)
+    const newRunsFor      = Number(p?.runs_for      ?? 0) + runsFor
+    const newRunsAgainst  = Number(p?.runs_against  ?? 0) + runsAgainst
+    const newOversFor     = Number(p?.overs_for     ?? 0) + matchOversFor
+    const newOversAgainst = Number(p?.overs_against ?? 0) + matchOversAgainst
+    // Proper NRR formula: (runs scored / overs faced) − (runs conceded / overs bowled)
+    const newNRR = newOversFor > 0 && newOversAgainst > 0
+      ? Math.round(((newRunsFor / newOversFor) - (newRunsAgainst / newOversAgainst)) * 1000) / 1000
       : 0
 
     return {
-      season_id:    match.season_id,
-      team_id:      teamId,
-      played:       newPlayed,
-      won:          newWon,
-      lost:         newLost,
-      no_result:    Number(p?.no_result ?? 0),
-      points:       newPoints,
-      runs_for:     newRunsFor,
-      runs_against: newRunsAgainst,
-      nrr:          newNRR,
+      season_id:     match.season_id,
+      team_id:       teamId,
+      played:        newPlayed,
+      won:           newWon,
+      lost:          newLost,
+      no_result:     Number(p?.no_result ?? 0),
+      points:        newPoints,
+      runs_for:      newRunsFor,
+      runs_against:  newRunsAgainst,
+      overs_for:     Math.round(newOversFor * 1000) / 1000,
+      overs_against: Math.round(newOversAgainst * 1000) / 1000,
+      nrr:           newNRR,
     }
   })
 
@@ -455,4 +483,22 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
   })
 
   return resultSummary
+
+  } catch (err) {
+    // Reset to lineup_open so admin can retry — but only if innings haven't been
+    // persisted yet. If innings exist but the match isn't completed, leave it as
+    // 'live' so the admin can investigate rather than corrupt data on a retry.
+    const { count: inningsCount } = await db
+      .from('bspl_innings')
+      .select('id', { count: 'exact', head: true })
+      .eq('match_id', matchId)
+
+    if (!inningsCount) {
+      await db.from('bspl_matches')
+        .update({ status: 'lineup_open' })
+        .eq('id', matchId)
+        .eq('status', 'live') // safety: don't reset if somehow already completed
+    }
+    throw err
+  }
 }
