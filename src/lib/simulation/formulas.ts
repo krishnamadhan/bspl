@@ -210,10 +210,12 @@ export function effectiveBowlerRunsPerBall(
   // Experience: senior bowlers concede slightly less (inverse — higher experience = lower runs)
   const experience = 1 / experienceModifier(bowler.player.price_cr)
 
-  // Better bowler effectiveness = lower runs per ball
+  // Better bowler effectiveness = lower runs per ball.
+  // Cap the inverse at 2.0 so a bowler at minimal stamina concedes at most 2× their base economy
+  // (without the cap, stamina=20% would produce a 5× multiplier → ~45 RPO, which is absurd).
   const bowlerEffectiveness = bowlerCore * bowlerPhase
-  // Adjust economy inversely: more effective bowler = lower economy
-  return baseRPB * (1 / bowlerEffectiveness) * pitchEconMod * condDewMod * experience
+  const cappedInverse = Math.min(1 / bowlerEffectiveness, 2.0)
+  return baseRPB * cappedInverse * pitchEconMod * condDewMod * experience
 }
 
 // ─── Stamina calculation ──────────────────────────────────────────────────────

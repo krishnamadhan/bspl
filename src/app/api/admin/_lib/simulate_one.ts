@@ -5,7 +5,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { buildSimTeam, buildSimVenue, mergeBestBowling, getBotTossChoice } from './helpers'
 import { simulateMatch } from '@/lib/simulation/engine'
-import { pickXI, buildRosterForPick } from './pick_xi'
+import { pickXI, buildRosterForPick, isValidBowlingOrder } from './pick_xi'
 
 export async function simulateOne(matchId: string, db: SupabaseClient): Promise<string> {
   // ── 1. Load match ──────────────────────────────────────────────────────────
@@ -64,11 +64,11 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
         .maybeSingle()
 
       if (prev?.playing_xi?.length === 11 && prev?.bowling_order?.length === 5) {
-        // Validate all player IDs are still in the current roster before reusing
+        // Validate all player IDs are still in the current roster AND bowling order is valid
         const allInRoster =
           prev.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
           prev.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
-        if (allInRoster) {
+        if (allInRoster && isValidBowlingOrder(prev.bowling_order)) {
           return { team_id: teamId, ...prev, is_submitted: true }
         }
       }

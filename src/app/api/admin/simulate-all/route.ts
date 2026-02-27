@@ -8,10 +8,22 @@ export async function POST(_req: NextRequest) {
 
   const db = adminClient()
 
+  // Scope to the active season — prevents touching matches from other seasons
+  const { data: season } = await db
+    .from('bspl_seasons')
+    .select('id')
+    .in('status', ['in_progress', 'playoffs'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!season) return NextResponse.json({ error: 'No active season found' }, { status: 404 })
+
   // Find all matches ready to simulate (lineup_open + both lineups submitted)
   const { data: matches } = await db
     .from('bspl_matches')
     .select('id')
+    .eq('season_id', season.id)
     .eq('status', 'lineup_open')
     .order('match_number')
 

@@ -17,8 +17,7 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
   const sorted = [...roster].sort((a, b) => b.price_cr - a.price_cr)
 
   const xi: typeof sorted = []
-  let wk   = 0
-  let bowl = 0
+  let wk = 0
 
   // Pass 1: ensure 1 WK from best WKs
   for (const p of sorted) {
@@ -26,8 +25,10 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
     if (p.role === 'wicket-keeper' && wk === 0) { xi.push(p); wk++ }
   }
 
-  // Pass 2: add batsmen/all-rounders, preserving ≥4 bowling slots
-  // A batsman is skipped if adding them would make it impossible to fill 4 bowling slots
+  // Pass 2: add batsmen/all-rounders, preserving ≥4 bowling slots.
+  // bowlingInXI uses a live count of all bowling-capable players already in the XI
+  // (previously used a stale `bowl` counter that only tracked all-rounders from pass 2,
+  //  missing bowlers that would be added in pass 3 — causing incorrect skip decisions).
   for (const p of sorted) {
     if (xi.length >= 11) break
     if (xi.find(x => x.player_id === p.player_id)) continue
@@ -36,13 +37,13 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
         .filter(x => !xi.find(y => y.player_id === x.player_id) && x.player_id !== p.player_id)
         .filter(x => x.role === 'bowler' || x.role === 'all-rounder').length
       const slotsLeft = 11 - xi.length - 1
-      // Skip this batsman if we can't guarantee 4 bowling options in the XI
-      const bowlingInXI = bowl  // ARs already in
+      // Live count — includes ARs added in earlier iterations of this pass
+      const bowlingInXI = xi.filter(x => x.role === 'bowler' || x.role === 'all-rounder').length
       const bowlingNeeded = Math.max(0, 4 - bowlingInXI)
       if (bowlersLeft < bowlingNeeded && slotsLeft <= bowlersLeft) continue
       xi.push(p)
     } else if (p.role === 'all-rounder') {
-      xi.push(p); bowl++
+      xi.push(p)
     }
   }
 
@@ -50,7 +51,7 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
   for (const p of sorted) {
     if (xi.length >= 11) break
     if (xi.find(x => x.player_id === p.player_id)) continue
-    if (p.role === 'bowler') { xi.push(p); bowl++ }
+    if (p.role === 'bowler') xi.push(p)
   }
 
   // Pass 4: fill any remaining gaps
@@ -134,6 +135,25 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
     xi:           xi.slice(0, 11).map(p => p.player_id),
     bowlingOrder: bowlingOrder.slice(0, 5),
   }
+}
+
+/**
+ * Validates a 5-over bowling order:
+ *   - exactly 5 entries
+ *   - no consecutive overs by the same bowler
+ *   - no bowler gets more than 2 overs
+ *   - at least 3 distinct bowlers
+ */
+export function isValidBowlingOrder(order: string[]): boolean {
+  if (order.length !== 5) return false
+  const overs = new Map<string, number>()
+  for (let i = 0; i < order.length; i++) {
+    if (i > 0 && order[i] === order[i - 1]) return false   // consecutive
+    overs.set(order[i], (overs.get(order[i]) ?? 0) + 1)
+    if ((overs.get(order[i]) ?? 0) > 2) return false        // max 2 overs
+  }
+  if (overs.size < 3) return false                          // min 3 distinct
+  return true
 }
 
 /** Converts raw Supabase roster rows into PickRosterPlayer[] */

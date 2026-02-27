@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin, adminClient, getBotTossChoice } from '../_lib/helpers'
-import { pickXI, buildRosterForPick } from '../_lib/pick_xi'
+import { pickXI, buildRosterForPick, isValidBowlingOrder } from '../_lib/pick_xi'
 
 const CONDITIONS = ['neutral', 'overcast', 'dew_evening', 'slow_sticky'] as const
 
@@ -197,7 +197,7 @@ export async function autoFillBotLineups(
           const allInRoster =
             prev.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
             prev.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
-          if (allInRoster) {
+          if (allInRoster && isValidBowlingOrder(prev.bowling_order)) {
             xi = prev.playing_xi
             bowling = prev.bowling_order
           }

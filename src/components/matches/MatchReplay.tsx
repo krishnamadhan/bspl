@@ -349,7 +349,7 @@ function Intermission({
   // Compute actual overs completed from the ball log
   const legalBalls1 = inn1.balls.filter(b => b.outcome !== 'Wd' && b.outcome !== 'Nb').length
   const inn1OvStr   = `${Math.floor(legalBalls1 / 6)}.${legalBalls1 % 6}`
-  const rrr         = legalBalls1 > 0 ? (target / legalBalls1) * 6 : (target / 30) * 6
+  const rrr         = (target / 30) * 6
 
   return (
     <div className="max-w-sm mx-auto text-center py-10 space-y-5">
