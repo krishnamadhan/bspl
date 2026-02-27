@@ -67,17 +67,17 @@ function simulateBall(
   const k = Math.max(batterFloor, kRaw)
 
   // Probabilities calibrated for T5 (powerplay-only) format:
-  //   Batters attack from ball 1 — fewer dots, more boundaries, more wickets than T20 baseline.
-  //   k=1.0 (SR≈135 neutral): dots 36%, sixes 6.5%, fours 14.5%, twos 6%, threes 1.5%, singles ~35%
-  //   → expected SR ≈ 148  (T5 average: every over counts)
-  //   k=1.25 (Head-class, SR≈170): dots 32%, sixes 9%, fours 17% → SR ≈ 165
-  //   k=0.75 (tail-ender, SR≈100): dots 43%, sixes 3%, fours 10% → SR ≈ 115
-  //   Lower dot cap (0.48) ensures even tail-enders can't play out balls in a 5-over format.
-  const pDot  = Math.min(0.48, Math.max(0.15, 0.36 / Math.pow(k, 0.45)))
-  const pSix  = Math.min(0.10, Math.max(0.008, 0.065 * Math.pow(k, 1.3)))
-  const pFour = Math.min(0.18, Math.max(0.05,  0.145 * Math.pow(k, 0.9)))
-  const pTwo  = 0.06
-  const pThree = 0.015
+  //   Everyone attacks from ball 1 — high boundary rate, fewer dots, more wickets than T20.
+  //   k=1.0 (SR≈135 neutral): dots 28%, sixes 9%, fours 18%, twos 7%, threes 2%, singles ~36%
+  //   → expected SR ≈ 182  (T5 average: every over counts, no defensive play)
+  //   k=1.25 (Head-class, SR≈170): dots 23%, sixes 13%, fours 22% → SR ≈ 205
+  //   k=0.75 (tail-ender, SR≈100): dots 34%, sixes 4%, fours 13% → SR ≈ 148
+  //   Lower dot cap (0.42) ensures even tail-enders keep attacking in a 5-over format.
+  const pDot  = Math.min(0.42, Math.max(0.12, 0.28 / Math.pow(k, 0.40)))
+  const pSix  = Math.min(0.14, Math.max(0.01, 0.09 * Math.pow(k, 1.3)))
+  const pFour = Math.min(0.22, Math.max(0.06, 0.18 * Math.pow(k, 0.9)))
+  const pTwo  = 0.07
+  const pThree = 0.02
   // Singles absorb the remainder — naturally high for average players, lower for extremes
 
   const r3 = rand()

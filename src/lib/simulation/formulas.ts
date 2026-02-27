@@ -178,8 +178,8 @@ export function effectiveBowlerWicketProb(
   const experience = experienceModifier(bowler.player.price_cr)
 
   // T5 format: batters swing hard from ball 1, dismissal rate is inherently higher than T20
-  const T5_WICKET_BOOST = 1.5
-  return Math.min(base * core * phase * matchup * home * pitchMod * condMod * bowlerDewPenalty * T5_WICKET_BOOST * experience, 0.40)
+  const T5_WICKET_BOOST = 2.0
+  return Math.min(base * core * phase * matchup * home * pitchMod * condMod * bowlerDewPenalty * T5_WICKET_BOOST * experience, 0.45)
 }
 
 // ─── Effective bowling economy (runs per ball) ────────────────────────────────

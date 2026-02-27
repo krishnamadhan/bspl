@@ -67,7 +67,7 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
   // With 4+ canBowl: one bowler gets 2 overs (PP + death), rest get 1 each.
   // With 3 canBowl:  best gets 2, others get 1+2 → only 3 different (edge case, pickXI tries to avoid this).
   // With <4 canBowl: do best possible without violating no-consecutive.
-  const canBowl = xi
+  let canBowl = xi
     .filter(p => p.role === 'bowler' || p.role === 'all-rounder')
     .sort((a, b) => {
       const ae = a.bowling_economy ?? 99
@@ -75,6 +75,18 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
       if (ae !== be) return ae - be
       return (b.wicket_prob ?? 0) - (a.wicket_prob ?? 0)
     })
+
+  // In a 5-over format (max 2 overs per bowler), need at least 3 distinct bowlers.
+  // If we have fewer, pull in part-timers from the XI who have bowling stats.
+  if (canBowl.length < 3) {
+    const partTimers = xi
+      .filter(p =>
+        p.wicket_prob !== null &&
+        !canBowl.find(c => c.player_id === p.player_id)
+      )
+      .sort((a, b) => (a.bowling_economy ?? 99) - (b.bowling_economy ?? 99))
+    canBowl = [...canBowl, ...partTimers.slice(0, 3 - canBowl.length)]
+  }
 
   const MAX_OVERS_PER_BOWLER = 2
   const oversAssigned: Record<string, number> = {}
