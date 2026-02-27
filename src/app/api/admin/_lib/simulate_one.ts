@@ -320,6 +320,19 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     s.match_runs_conceded += entry.runs
   }
 
+  // ── Helpers for cricket notation ↔ balls conversion ────────────────────────
+  // overs_bowled is stored in cricket notation (1.4 = 1 over + 4 balls) for display.
+  // But arithmetic on cricket notation is wrong for partial overs, so we convert
+  // to ball counts for accumulation, then back to cricket notation for storage.
+  function cnToBalls(cn: number): number {
+    const full = Math.floor(cn)
+    const rem  = Math.round((cn % 1) * 10)
+    return full * 6 + rem
+  }
+  function ballsToCn(balls: number): number {
+    return Math.floor(balls / 6) + (balls % 6) / 10
+  }
+
   const allStatPlayerIds = [...matchStats.values()].map(s => s.player_id)
   const { data: existingStats } = await db
     .from('bspl_player_stats')
@@ -346,10 +359,15 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     const newBatAvg   = newInnings > 0 ? Math.round((newRuns / newInnings) * 100) / 100 : 0
     const newBatSR    = newBalls   > 0 ? Math.round((newRuns / newBalls)   * 10000) / 100 : 0
 
-    const newOvers    = Math.round((Number(ex?.overs_bowled ?? 0) + ms.match_overs) * 10) / 10
+    // Convert existing + match overs to ball counts for correct partial-over arithmetic
+    const prevBalls   = cnToBalls(Number(ex?.overs_bowled ?? 0))
+    const matchBalls  = cnToBalls(ms.match_overs)
+    const totalBalls  = prevBalls + matchBalls
+    const newOvers    = ballsToCn(totalBalls)          // cricket notation for display
     const newWickets  = Number(ex?.wickets     ?? 0) + ms.match_wickets
     const newRunsCon  = Number(ex?.runs_conceded ?? 0) + ms.match_runs_conceded
-    const newEconomy  = newOvers > 0 ? Math.round((newRunsCon / newOvers) * 100) / 100 : 0
+    // Economy uses actual decimal overs (totalBalls / 6) — not cricket notation
+    const newEconomy  = totalBalls > 0 ? Math.round((newRunsCon / (totalBalls / 6)) * 100) / 100 : 0
 
     const newBB = ms.match_wickets > 0
       ? mergeBestBowling(
