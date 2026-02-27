@@ -70,21 +70,43 @@ export function rrrPressureModifier(runsNeeded: number, ballsLeft: number): numb
 }
 
 // ─── Experience / caliber modifier ───────────────────────────────────────────
-// price_cr proxies a player's experience and consistency — elite IPL regulars
-// (high price) outperform their raw average because of big-match temperament.
+// price_cr reflects real-world IPL auction value — a proxy for career
+// experience, big-match temperament, and peak consistency.
 // Applied as a multiplier on effective batting SR and bowling wicket probability.
 // Inverse applied on bowler economy (senior bowlers are tighter under pressure).
 //
-//   >= 14 Cr  (A-tier — Kohli / Bumrah caliber):  +6% output
-//   10–13 Cr  (B-tier — solid IPL regulars):       +3% output
-//    6–9  Cr  (C-tier — average IPL players):      neutral
-//   <  6  Cr  (D-tier — fringe/rookie players):    −3% output
+//   >= 18 Cr  (Legend — Kohli / Bumrah / Jadeja caliber): +15% output
+//   >= 14 Cr  (Star   — KL Rahul / Russell / Rashid):     +9%  output
+//   >= 10 Cr  (A-tier — solid IPL regulars):               +4%  output
+//    >= 6 Cr  (B-tier — average IPL players):              neutral
+//    >= 3 Cr  (C-tier — domestic / fringe):               −3%  output
+//    <  3 Cr  (Rookie — uncapped / debutants):            −7%  output
 //
 export function experienceModifier(priceCr: number): number {
-  if (priceCr >= 14) return 1.06
-  if (priceCr >= 10) return 1.03
+  if (priceCr >= 18) return 1.15
+  if (priceCr >= 14) return 1.09
+  if (priceCr >= 10) return 1.04
   if (priceCr >= 6)  return 1.00
-  return 0.97
+  if (priceCr >= 3)  return 0.97
+  return 0.93
+}
+
+// ─── Batter consistency modifier ─────────────────────────────────────────────
+// Elite batters are technically superior — they play the ball later, pick
+// the line earlier, and have better footwork. This reduces their per-ball
+// dismissal probability independent of bowler quality.
+// Applied in effectiveBowlerWicketProb as a multiplier on the final result.
+//
+//   >= 18 Cr (Legend): 22% harder to dismiss
+//   >= 14 Cr (Star):   15% harder to dismiss
+//   >= 10 Cr (A-tier):  8% harder to dismiss
+//   < 10 Cr:            no adjustment
+//
+export function batterConsistencyMod(priceCr: number): number {
+  if (priceCr >= 18) return 0.78
+  if (priceCr >= 14) return 0.85
+  if (priceCr >= 10) return 0.92
+  return 1.0
 }
 
 // Elite batters also handle RRR pressure better — they stay calmer in chases.
@@ -96,8 +118,8 @@ export function rrrPressureWithExperience(
 ): number {
   const base = rrrPressureModifier(runsNeeded, ballsLeft)
   if (base >= 1.0) return 1.0
-  // Elite players absorb some of the pressure penalty
-  const calm = priceCr >= 14 ? 0.50 : priceCr >= 10 ? 0.30 : priceCr >= 6 ? 0.10 : 0.0
+  // Elite players absorb more of the pressure penalty
+  const calm = priceCr >= 18 ? 0.65 : priceCr >= 14 ? 0.50 : priceCr >= 10 ? 0.30 : priceCr >= 6 ? 0.10 : 0.0
   return base + (1.0 - base) * calm
 }
 
@@ -185,9 +207,12 @@ export function effectiveBowlerWicketProb(
   // Experience: seasoned bowlers are more consistent in taking wickets
   const experience = experienceModifier(bowler.player.price_cr)
 
+  // Batter quality: elite batters are harder to dismiss (better technique, footwork, reading)
+  const consistency = batterConsistencyMod(batter.player.price_cr)
+
   // T5 format: batters swing hard from ball 1, dismissal rate is inherently higher than T20
   const T5_WICKET_BOOST = 2.0
-  return Math.min(base * core * phase * matchup * home * pitchMod * condMod * bowlerDewPenalty * T5_WICKET_BOOST * experience, 0.45)
+  return Math.min(base * core * phase * matchup * home * pitchMod * condMod * bowlerDewPenalty * T5_WICKET_BOOST * experience * consistency, 0.45)
 }
 
 // ─── Effective bowling economy (runs per ball) ────────────────────────────────

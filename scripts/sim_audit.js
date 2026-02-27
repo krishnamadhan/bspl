@@ -2,8 +2,8 @@
  * BSPL Simulation Audit
  * ─────────────────────
  * Runs 5 000 matches per condition, reports innings totals, RPO, wicket counts,
- * tier-level batting/bowling output, and matchup effects.
- * Compare against real-world T10/IPL-powerplay benchmarks to find anomalies.
+ * tier-level batting/bowling output, matchup effects, AND per-player famous player
+ * performance analysis (Kohli, Bumrah, Jadeja, KL Rahul, Hardik, etc.)
  *
  * Usage:  node scripts/sim_audit.js
  */
@@ -118,11 +118,23 @@ function matchupMod(batter, bowler) {
   return 1.0
 }
 
+// Mirrors updated experienceModifier in formulas.ts
 function expMod(price) {
-  if (price >= 14) return 1.06
-  if (price >= 10) return 1.03
-  if (price >= 6)  return 1.00
-  return 0.97
+  if (price >= 18) return 1.15  // Legend (Kohli/Bumrah/Jadeja)
+  if (price >= 14) return 1.09  // Star (KL Rahul/Russell/Rashid)
+  if (price >= 10) return 1.04  // A-tier
+  if (price >= 6)  return 1.00  // B-tier
+  if (price >= 3)  return 0.97  // C-tier
+  return 0.93                   // Rookie
+}
+
+// Mirrors new batterConsistencyMod in formulas.ts
+// Elite batters are harder to dismiss (better technique, reading)
+function batterConsMod(price) {
+  if (price >= 18) return 0.78  // Legends: 22% harder to dismiss
+  if (price >= 14) return 0.85  // Stars: 15% harder
+  if (price >= 10) return 0.92  // A-tier: 8% harder
+  return 1.0
 }
 
 function rrrPressureMod(runsNeeded, ballsLeft) {
@@ -137,7 +149,7 @@ function rrrPressureMod(runsNeeded, ballsLeft) {
 function rrrWithExp(runsNeeded, ballsLeft, price) {
   const base = rrrPressureMod(runsNeeded, ballsLeft)
   if (base >= 1.0) return 1.0
-  const calm = price >= 14 ? 0.50 : price >= 10 ? 0.30 : price >= 6 ? 0.10 : 0.0
+  const calm = price >= 18 ? 0.65 : price >= 14 ? 0.50 : price >= 10 ? 0.30 : price >= 6 ? 0.10 : 0.0
   return base + (1.0 - base) * calm
 }
 
@@ -169,7 +181,8 @@ function effectiveBowlerWicketProb(bowler, batter, cond, over, isSecond) {
   const dew = isSecond ? cond.innings2_bowler_economy_mod : 1.0
   const dewPenalty = 1 / dew
   const exp = expMod(bowler.player.price_cr)
-  return Math.min(base * core * phase * mu * pitchMod * condMod * dewPenalty * 2.0 * exp, 0.45)
+  const cons = batterConsMod(batter.player.price_cr)  // batter quality reduces dismissal prob
+  return Math.min(base * core * phase * mu * pitchMod * condMod * dewPenalty * 2.0 * exp * cons, 0.45)
 }
 
 function effectiveBowlerRPB(bowler, batter, cond, over, isSecond) {
@@ -220,8 +233,8 @@ function simBall(bowlerSim, batterSim, cond, over, isSecond, runsNeeded, ballsLe
   return { runs: 1, isWicket: false, isWide: false }
 }
 
-// ─── Innings simulator ────────────────────────────────────────────────────────
-function simInnings(batting, bowling, cond, isSecond, target, seed) {
+// ─── Innings simulator (with optional per-player tracking) ───────────────────
+function simInnings(batting, bowling, cond, isSecond, target, seed, trackStats = false) {
   const rand = seededRandom(seed)
   let totalRuns = 0, totalWickets = 0, extras = 0
   let battingIdx = 0
@@ -229,7 +242,14 @@ function simInnings(batting, bowling, cond, isSecond, target, seed) {
   let nonStriker = batting.batting_order[battingIdx++]
   const playerMap = new Map(batting.players.map(p => [p.player.id, p]))
   const bowlerMap = new Map(bowling.players.map(p => [p.player.id, p]))
-  const batterRuns = {}
+
+  // Per-player detailed tracking
+  const pRuns    = {}  // batter id → runs
+  const pBalls   = {}  // batter id → legal balls faced
+  const pOut     = {}  // batter id → boolean
+  const bWickets = {}  // bowler id → wickets
+  const bRuns    = {}  // bowler id → runs conceded
+  const bBalls   = {}  // bowler id → legal balls bowled
 
   for (let over = 1; over <= 5; over++) {
     if (totalWickets >= 10) break
@@ -241,6 +261,11 @@ function simInnings(batting, bowling, cond, isSecond, target, seed) {
       ?? [...bowlerMap.values()][0]
     if (!bowlerSim) break
 
+    const bid = bowlerSim.player.id
+    bWickets[bid] = bWickets[bid] ?? 0
+    bRuns[bid]    = bRuns[bid]    ?? 0
+    bBalls[bid]   = bBalls[bid]   ?? 0
+
     let legalBalls = 0
     while (legalBalls < 6) {
       if (totalWickets >= 10) break
@@ -249,38 +274,51 @@ function simInnings(batting, bowling, cond, isSecond, target, seed) {
       const batterSim = playerMap.get(striker) ?? [...playerMap.values()][0]
       if (!batterSim) break
 
+      const sid = batterSim.player.id
+      pRuns[sid]  = pRuns[sid]  ?? 0
+      pBalls[sid] = pBalls[sid] ?? 0
+      if (pOut[sid] === undefined) pOut[sid] = false
+
       const runsNeeded = isSecond ? target - totalRuns + 1 : 0
       const ballsLeft  = (5 - over) * 6 + (6 - legalBalls)
 
       const ball = simBall(bowlerSim, batterSim, cond, over, isSecond, runsNeeded, ballsLeft, rand)
 
       totalRuns += ball.runs
+      bRuns[bid] += ball.runs
+
       if (ball.isWide) { extras++; continue }
 
       legalBalls++
+      bBalls[bid]++
+      pBalls[sid]++
+
       if (ball.isWicket) {
         totalWickets++
+        pOut[sid] = true
+        bWickets[bid]++
         if (battingIdx < batting.batting_order.length)
           striker = batting.batting_order[battingIdx++]
       } else {
-        batterRuns[striker] = (batterRuns[striker] ?? 0) + ball.runs
+        pRuns[sid] += ball.runs
         if (ball.runs % 2 === 1) [striker, nonStriker] = [nonStriker, striker]
       }
     }
     [striker, nonStriker] = [nonStriker, striker]
   }
-  return { totalRuns, totalWickets, extras, batterRuns }
+
+  return {
+    totalRuns, totalWickets, extras,
+    playerStats: trackStats ? { pRuns, pBalls, pOut, bWickets, bRuns, bBalls } : null,
+  }
 }
 
 // ─── Team builder ─────────────────────────────────────────────────────────────
-// Select 11 players: top batsmen/wk first, then bowlers, assign bowling order.
 function buildTeam(id, playerList) {
-  // Need 5 proper bowlers for bowling_order
-  const bowlers     = playerList.filter(p => (p.role === 'bowler' || p.role === 'all-rounder') && p.base_stats.wicket_prob)
-  const nonBowlers  = playerList.filter(p => !bowlers.includes(p))
-  const selected    = [...nonBowlers.slice(0, 6), ...bowlers.slice(0, 5)]
+  const bowlers    = playerList.filter(p => (p.role === 'bowler' || p.role === 'all-rounder') && p.base_stats.wicket_prob)
+  const nonBowlers = playerList.filter(p => !bowlers.includes(p))
+  const selected   = [...nonBowlers.slice(0, 6), ...bowlers.slice(0, 5)]
   if (selected.length < 11) {
-    // pad with remaining players
     const used = new Set(selected.map(p => p.id))
     for (const p of playerList) { if (!used.has(p.id) && selected.length < 11) selected.push(p) }
   }
@@ -298,25 +336,36 @@ function buildTeam(id, playerList) {
   }
 }
 
-// ─── Collect representative teams by tier ─────────────────────────────────────
-function getByTier(tier) {
-  return PLAYERS.filter(p => p.price_tier === tier)
+// ─── Collect representative teams by price tier ───────────────────────────────
+function byPrice(min, max) {
+  return PLAYERS.filter(p => p.price_cr >= min && p.price_cr <= max)
 }
 
-const ELITE_TEAM   = buildTeam('ELITE',   getByTier('elite'))
-const PREMIUM_TEAM = buildTeam('PREMIUM', getByTier('premium'))
-const GOOD_TEAM    = buildTeam('GOOD',    getByTier('good'))
-const BUDGET_TEAM  = buildTeam('BUDGET',  [...getByTier('value'), ...getByTier('budget')])
+// Legacy tier helper (some players have price_tier set)
+function getByTier(tier) { return PLAYERS.filter(p => p.price_tier === tier) }
 
-// Balanced team: typical BSPL squad (mix of premium + good)
+// Price-band teams
+const LEGEND_POOL  = byPrice(18, 99)   // ≥18 Cr
+const STAR_POOL    = byPrice(14, 17.9) // 14–17 Cr
+const A_POOL       = byPrice(10, 13.9) // 10–13 Cr
+const B_POOL       = byPrice(6,  9.9)  // 6–9 Cr
+const BUDGET_POOL  = byPrice(0,  5.9)  // <6 Cr
+
+const LEGEND_TEAM = LEGEND_POOL.length >= 11 ? buildTeam('LEGEND', LEGEND_POOL) : null
+const STAR_TEAM   = STAR_POOL.length   >= 11 ? buildTeam('STAR',   STAR_POOL)   : null
+const A_TEAM      = A_POOL.length      >= 11 ? buildTeam('ATIER',  A_POOL)      : null
+const BUDGET_TEAM = BUDGET_POOL.length >= 11 ? buildTeam('BUDGET', BUDGET_POOL) : null
+
+// Balanced team: typical BSPL squad (mix of A-tier + B-tier)
 const BALANCED_TEAM = buildTeam('BAL', [
-  ...getByTier('elite').slice(0, 2),
-  ...getByTier('premium').slice(0, 4),
-  ...getByTier('good').slice(0, 3),
-  ...getByTier('value').slice(0, 2),
+  ...LEGEND_POOL.slice(0, 1),
+  ...STAR_POOL.slice(0, 2),
+  ...A_POOL.slice(0, 4),
+  ...B_POOL.slice(0, 2),
+  ...BUDGET_POOL.slice(0, 2),
 ])
 
-// ─── Run N matches and collect stats ─────────────────────────────────────────
+// ─── Run N matches and collect aggregate stats ────────────────────────────────
 function runMatches(teamA, teamB, cond, N) {
   const inn1Totals = [], inn2Totals = []
   const inn1Wkts   = [], inn2Wkts   = []
@@ -332,7 +381,7 @@ function runMatches(teamA, teamB, cond, N) {
     inn1Wkts.push(i1.totalWickets)
     inn2Wkts.push(i2.totalWickets)
 
-    if (i2.totalRuns > i1.totalRuns)      chaseWins++
+    if (i2.totalRuns > i1.totalRuns)       chaseWins++
     else if (i2.totalRuns === i1.totalRuns) ties++
   }
 
@@ -364,43 +413,130 @@ function runMatches(teamA, teamB, cond, N) {
   }
 }
 
-// ─── Per-tier batting/bowling output ─────────────────────────────────────────
-function tierAnalysis(N = 2000) {
-  const cond = CONDITIONS.neutral
-  const tiers = ['elite', 'premium', 'good', 'value', 'budget']
-  const results = {}
+// ─── Per-player famous player performance analysis ────────────────────────────
+// Builds a team with the target player + 10 filler average players,
+// runs N matches, and extracts that player's individual stats.
+function playerPerformanceAudit(N = 500) {
+  const famousNames = [
+    'V Kohli', 'RR Pant', 'KL Rahul', 'MS Dhoni',         // Iconic batters/WKs
+    'JJ Bumrah', 'RA Jadeja', 'R Ashwin',                  // Elite bowlers
+    'HH Pandya', 'AD Russell', 'Rashid Khan',              // All-rounders
+    'GJ Maxwell', 'TM Head', 'DA Warner', 'Shubman Gill',  // International stars
+    'SA Yadav',                                            // Suryakumar Yadav
+  ]
 
-  for (const tier of tiers) {
-    const pool = getByTier(tier).length > 0 ? getByTier(tier) : getByTier('value')
-    if (pool.length < 11) continue
-    const team = buildTeam(tier, pool)
-    const stats = runMatches(team, BALANCED_TEAM, cond, N)
-    results[tier] = stats
+  // Filler: average IPL players (5-9 Cr) to isolate the famous player's contribution
+  const FILLER = byPrice(5, 9).slice(0, 20)
+
+  const results = []
+  const cond = CONDITIONS.neutral
+
+  for (const targetName of famousNames) {
+    const target = PLAYERS.find(p => p.name === targetName)
+    if (!target) {
+      results.push({ name: targetName, missing: true })
+      continue
+    }
+
+    // Build batting team: target player bats at #1 or #4 based on role
+    // For bowlers, place them at #8 in the order so they still bat
+    const isBowler = target.role === 'bowler'
+    const fillerPool = FILLER.filter(p => p.id !== target.id)
+    const fillerXI   = fillerPool.slice(0, 10)
+    const fillerBowlers = fillerXI.filter(p => p.base_stats.wicket_prob != null)
+    const fillerNonBowlers = fillerXI.filter(p => !fillerBowlers.includes(p))
+
+    // Build batting lineup
+    let battingOrder
+    if (isBowler) {
+      // bowler bats low, at position 8
+      battingOrder = [
+        ...fillerNonBowlers.slice(0, 6).map(p => p.id),
+        target.id,
+        ...fillerBowlers.slice(0, 4).map(p => p.id),
+      ]
+    } else {
+      // batter opens or bats at #3
+      battingOrder = [
+        target.id,
+        ...fillerNonBowlers.slice(0, 5).map(p => p.id),
+        ...fillerBowlers.slice(0, 5).map(p => p.id),
+      ]
+    }
+    battingOrder = battingOrder.slice(0, 11)
+
+    // Build bowling order — if target is a bowler/all-rounder, include them
+    const bowlingCandidates = [target, ...fillerXI].filter(p => p.base_stats.wicket_prob != null)
+    const bowlingOrder = []
+    for (let i = 0; i < 5; i++) bowlingOrder.push(bowlingCandidates[i % bowlingCandidates.length].id)
+
+    const teamWithTarget = {
+      team_id: 'TARGET',
+      players: [target, ...fillerXI].slice(0, 11).map(p => ({
+        player: p, stamina: 100, confidence: 1.0, team_id: 'TARGET',
+      })),
+      batting_order: battingOrder,
+      bowling_order: bowlingOrder,
+    }
+
+    // Opposition: balanced fielding team
+    const oppPool = byPrice(7, 10).filter(p => p.id !== target.id).slice(0, 15)
+    const oppTeam = buildTeam('OPP', oppPool)
+
+    // Track batting stats (target team bats first) and bowling stats (target team bowls)
+    let batRuns = 0, batBalls = 0, batDismissals = 0, batInnings = 0
+    let bowlWkts = 0, bowlRuns = 0, bowlBalls = 0, bowlInnings = 0
+
+    for (let i = 0; i < N; i++) {
+      const seed = i * 3571 + target.id.charCodeAt(0) * 97
+
+      // Target team bats (innings 1)
+      const i1 = simInnings(teamWithTarget, oppTeam, cond, false, 0, seed, true)
+      if (i1.playerStats) {
+        const pid = target.id
+        const r = i1.playerStats.pRuns[pid]
+        const b = i1.playerStats.pBalls[pid]
+        const o = i1.playerStats.pOut[pid]
+        if (b !== undefined && b > 0) {
+          batRuns += r ?? 0
+          batBalls += b
+          batInnings++
+          if (o) batDismissals++
+        }
+        // Bowling in innings 2 (target team bowls against opp)
+        const i2 = simInnings(oppTeam, teamWithTarget, cond, true, i1.totalRuns, seed + 1, true)
+        if (i2.playerStats && i2.playerStats.bBalls[pid] > 0) {
+          bowlWkts  += i2.playerStats.bWickets[pid] ?? 0
+          bowlRuns  += i2.playerStats.bRuns[pid]    ?? 0
+          bowlBalls += i2.playerStats.bBalls[pid]
+          bowlInnings++
+        }
+      }
+    }
+
+    const avgRuns    = batInnings > 0 ? batRuns / batInnings : 0
+    const batSR      = batBalls   > 0 ? (batRuns  / batBalls)  * 100 : 0
+    const dismissRate = batInnings > 0 ? batDismissals / batInnings : 0
+    const avgWkts    = bowlInnings > 0 ? bowlWkts  / bowlInnings : 0
+    const bowlEcon   = bowlBalls   > 0 ? (bowlRuns / bowlBalls) * 6 : 0
+    const bowlSR     = bowlWkts    > 0 ? bowlBalls / bowlWkts : 999
+
+    results.push({
+      name:        target.name,
+      price:       target.price_cr,
+      role:        target.role,
+      bowlerType:  target.bowler_type,
+      baseSR:      target.base_stats.batting_sr,
+      baseWktProb: target.base_stats.wicket_prob,
+      baseEcon:    target.base_stats.bowling_economy,
+      // Batting
+      batInnings, avgRuns, batSR, dismissRate, batBalls: batInnings > 0 ? batBalls / batInnings : 0,
+      // Bowling
+      bowlInnings, avgWkts, bowlEcon, bowlSR,
+    })
   }
+
   return results
-}
-
-// ─── Matchup: LHB vs spin, etc. ──────────────────────────────────────────────
-function matchupAnalysis(N = 3000) {
-  const cond = CONDITIONS.neutral
-
-  // Build single-archetype teams for isolation
-  const lhbBatters = PLAYERS.filter(p =>  p.is_left_handed && (p.role === 'batsman' || p.role === 'wicket-keeper') && p.base_stats.batting_sr >= 130)
-  const rhbBatters = PLAYERS.filter(p => !p.is_left_handed && (p.role === 'batsman' || p.role === 'wicket-keeper') && p.base_stats.batting_sr >= 130)
-  const spinBowlers = PLAYERS.filter(p => p.bowler_type === 'spin' && p.base_stats.wicket_prob)
-  const paceBowlers = PLAYERS.filter(p => (p.bowler_type === 'pace' || p.bowler_type === 'medium') && p.base_stats.wicket_prob)
-
-  const lhbVsSpin = buildTeam('LHB', lhbBatters.slice(0, 11))
-  const rhbVsSpin = buildTeam('RHB', rhbBatters.slice(0, 11))
-  const spinTeam  = buildTeam('SPIN', [...spinBowlers.slice(0, 5), ...PLAYERS.filter(p => p.role === 'batsman').slice(0, 6)])
-  const paceTeam  = buildTeam('PACE', [...paceBowlers.slice(0, 5), ...PLAYERS.filter(p => p.role === 'batsman').slice(0, 6)])
-
-  return {
-    lhbVsSpin: runMatches(lhbVsSpin, spinTeam, cond, N),
-    rhbVsSpin: runMatches(rhbVsSpin, spinTeam, cond, N),
-    lhbVsPace: runMatches(lhbVsSpin, paceTeam, cond, N),
-    rhbVsPace: runMatches(rhbVsSpin, paceTeam, cond, N),
-  }
 }
 
 // ─── Format helpers ───────────────────────────────────────────────────────────
@@ -422,7 +558,7 @@ console.log('\n═════════════════════�
 console.log(' BSPL Simulation Audit')
 console.log(`════════════════════════════════════════════════════════`)
 console.log(`Players loaded: ${PLAYERS.length}`)
-console.log(`  Elite: ${getByTier('elite').length}  Premium: ${getByTier('premium').length}  Good: ${getByTier('good').length}  Value: ${getByTier('value').length}  Budget: ${getByTier('budget').length}`)
+console.log(`  Legend (≥18Cr): ${LEGEND_POOL.length}  Star (14–17Cr): ${STAR_POOL.length}  A-tier (10–13Cr): ${A_POOL.length}  B-tier (6–9Cr): ${B_POOL.length}  Budget (<6Cr): ${BUDGET_POOL.length}`)
 
 // ── Real-world benchmarks ─────────────────────────────────────────────────────
 console.log('\n── REAL-WORLD BENCHMARKS ──────────────────────────────')
@@ -439,41 +575,56 @@ for (const [name, cond] of Object.entries(CONDITIONS)) {
   printMatchStats(name.toUpperCase().padEnd(14), s)
 }
 
-// ── 2. Tier matchups ──────────────────────────────────────────────────────────
-console.log('\n\n══ 2. TIER MATCHUPS — neutral (3 000 matches each) ══')
+// ── 2. Price-tier matchups ────────────────────────────────────────────────────
+console.log('\n\n══ 2. PRICE-TIER MATCHUPS — neutral (3 000 matches each) ══')
 const N_TIER = 3000
 const cNeutral = CONDITIONS.neutral
 
-if (getByTier('elite').length >= 11) {
-  printMatchStats('Elite   vs Elite  ', runMatches(ELITE_TEAM, ELITE_TEAM, cNeutral, N_TIER))
-  printMatchStats('Elite   vs Budget ', runMatches(ELITE_TEAM, BUDGET_TEAM, cNeutral, N_TIER))
-  printMatchStats('Budget  vs Elite  ', runMatches(BUDGET_TEAM, ELITE_TEAM, cNeutral, N_TIER))
+if (LEGEND_TEAM) {
+  printMatchStats('Legend  vs Legend ', runMatches(LEGEND_TEAM, LEGEND_TEAM, cNeutral, N_TIER))
+  if (BUDGET_TEAM) {
+    printMatchStats('Legend  vs Budget ', runMatches(LEGEND_TEAM, BUDGET_TEAM, cNeutral, N_TIER))
+    printMatchStats('Budget  vs Legend ', runMatches(BUDGET_TEAM, LEGEND_TEAM, cNeutral, N_TIER))
+  }
 }
 printMatchStats('Balanced vs Balanced', runMatches(BALANCED_TEAM, BALANCED_TEAM, cNeutral, N_TIER))
-if (getByTier('premium').length >= 11)
-  printMatchStats('Premium vs Premium  ', runMatches(PREMIUM_TEAM, PREMIUM_TEAM, cNeutral, N_TIER))
+if (STAR_TEAM) printMatchStats('Star     vs Balanced', runMatches(STAR_TEAM, BALANCED_TEAM, cNeutral, N_TIER))
 
-// ── 3. Average score by tier (batting) ────────────────────────────────────────
-console.log('\n\n══ 3. TIER BATTING AVERAGE vs BALANCED BOWLING ══')
-const tiers = ['elite', 'premium', 'good', 'value']
-for (const tier of tiers) {
-  const pool = getByTier(tier)
-  if (pool.length < 11) { console.log(`  ${tier.padEnd(8)}: not enough players`); continue }
-  const t = buildTeam(tier, pool)
+// ── 3. Average score by price tier (batting) ──────────────────────────────────
+console.log('\n\n══ 3. PRICE TIER BATTING AVERAGE vs BALANCED BOWLING ══')
+const priceBands = [
+  { label: 'Legend (≥18Cr)',  pool: LEGEND_POOL },
+  { label: 'Star   (14-17Cr)', pool: STAR_POOL  },
+  { label: 'A-tier (10-13Cr)', pool: A_POOL     },
+  { label: 'B-tier (6-9Cr)',   pool: B_POOL     },
+  { label: 'Budget (<6Cr)',    pool: BUDGET_POOL },
+]
+for (const { label, pool } of priceBands) {
+  if (pool.length < 11) { console.log(`  ${label.padEnd(20)}: not enough players (${pool.length})`); continue }
+  const t = buildTeam(label, pool)
   const s = runMatches(t, BALANCED_TEAM, cNeutral, 2000)
-  console.log(`  ${tier.padEnd(8)}: Inn1 avg ${f1(s.inn1.avg)} runs @ ${f2(s.inn1.rpo)} RPO, ${f1(s.inn1.avgWkts)} wkts`)
+  console.log(`  ${label.padEnd(20)}: Inn1 avg ${f1(s.inn1.avg)} runs @ ${f2(s.inn1.rpo)} RPO  wkts lost ${f1(s.inn1.avgWkts)}`)
 }
 
 // ── 4. Matchup analysis ───────────────────────────────────────────────────────
 console.log('\n\n══ 4. MATCHUP ANALYSIS (LHB/RHB vs Spin/Pace) — neutral, 3 000 matches ══')
-const mu = matchupAnalysis(3000)
-const m = (label, s) => console.log(`  ${label.padEnd(20)}: avg ${f1(s.inn1.avg)} runs  RPO ${f2(s.inn1.rpo)}  wkts ${f1(s.inn1.avgWkts)}`)
-m('LHB vs Spin', mu.lhbVsSpin)
-m('RHB vs Spin', mu.rhbVsSpin)
-m('LHB vs Pace', mu.lhbVsPace)
-m('RHB vs Pace', mu.rhbVsPace)
+const lhbBatters  = PLAYERS.filter(p =>  p.is_left_handed && (p.role === 'batsman' || p.role === 'wicket-keeper') && p.base_stats.batting_sr >= 130)
+const rhbBatters  = PLAYERS.filter(p => !p.is_left_handed && (p.role === 'batsman' || p.role === 'wicket-keeper') && p.base_stats.batting_sr >= 130)
+const spinBowlers = PLAYERS.filter(p => p.bowler_type === 'spin' && p.base_stats.wicket_prob)
+const paceBowlers = PLAYERS.filter(p => (p.bowler_type === 'pace' || p.bowler_type === 'medium') && p.base_stats.wicket_prob)
+if (lhbBatters.length >= 6 && rhbBatters.length >= 6) {
+  const lhbTeam  = buildTeam('LHB', lhbBatters.slice(0, 11))
+  const rhbTeam  = buildTeam('RHB', rhbBatters.slice(0, 11))
+  const spinTeam = buildTeam('SPIN', [...spinBowlers.slice(0, 5), ...PLAYERS.filter(p => p.role === 'batsman').slice(0, 6)])
+  const paceTeam = buildTeam('PACE', [...paceBowlers.slice(0, 5), ...PLAYERS.filter(p => p.role === 'batsman').slice(0, 6)])
+  const m = (label, s) => console.log(`  ${label.padEnd(20)}: avg ${f1(s.inn1.avg)} runs  RPO ${f2(s.inn1.rpo)}  wkts ${f1(s.inn1.avgWkts)}`)
+  m('LHB vs Spin', runMatches(lhbTeam, spinTeam, cNeutral, 3000))
+  m('RHB vs Spin', runMatches(rhbTeam, spinTeam, cNeutral, 3000))
+  m('LHB vs Pace', runMatches(lhbTeam, paceTeam, cNeutral, 3000))
+  m('RHB vs Pace', runMatches(rhbTeam, paceTeam, cNeutral, 3000))
+}
 
-// ── 5. Condition swing: bat-first advantage ────────────────────────────────────
+// ── 5. Chase win rate by condition ────────────────────────────────────────────
 console.log('\n\n══ 5. CHASE WIN RATE BY CONDITION (Balanced vs Balanced) ══')
 console.log('  (>55% = heavy chasing advantage; <45% = heavy batting-first advantage)')
 for (const [name, cond] of Object.entries(CONDITIONS)) {
@@ -484,47 +635,71 @@ for (const [name, cond] of Object.entries(CONDITIONS)) {
   console.log(`  ${name.padEnd(16)}: chase ${pct(s.chaseWinPct)}${flag}`)
 }
 
-// ── 6. Individual player extremes ─────────────────────────────────────────────
-console.log('\n\n══ 6. PLAYER EXTREMES ══')
-const batters = PLAYERS.filter(p => p.base_stats.batting_sr > 0).sort((a, b) => b.base_stats.batting_sr - a.base_stats.batting_sr)
-const bowlers = PLAYERS.filter(p => p.base_stats.wicket_prob).sort((a, b) => b.base_stats.wicket_prob - a.base_stats.wicket_prob)
+// ── 6. Famous player individual performance ───────────────────────────────────
+console.log('\n\n══ 6. FAMOUS PLAYER INDIVIDUAL PERFORMANCE (500 matches each) ══')
+console.log('  Playing with 10 average filler players (7–9 Cr) vs balanced opposition.\n')
+console.log('  Batters:')
+console.log('  ' + 'Player'.padEnd(22) + 'Price'.padEnd(7) + 'BaseSR'.padEnd(8) + 'AvgRuns'.padEnd(10) + 'SimSR'.padEnd(8) + 'Balls/Inn'.padEnd(11) + 'Dismissal%')
 
-console.log('\n  Top 10 batters by base SR:')
-batters.slice(0, 10).forEach(p => {
-  console.log(`    ${p.name.padEnd(22)} SR=${f1(p.base_stats.batting_sr).padStart(6)}  price=${p.price_cr}Cr  tier=${p.price_tier}  ${p.is_left_handed ? 'LHB' : 'RHB'}`)
-})
+const playerAudit = playerPerformanceAudit(500)
 
-console.log('\n  Top 10 bowlers by wicket_prob:')
-bowlers.slice(0, 10).forEach(p => {
-  const wp = (p.base_stats.wicket_prob * 100).toFixed(2)
-  const ec = p.base_stats.bowling_economy?.toFixed(2) ?? 'N/A'
-  console.log(`    ${p.name.padEnd(22)} wkt%=${wp.padStart(5)}%  econ=${ec}  price=${p.price_cr}Cr  type=${p.bowler_type ?? 'none'}`)
-})
+const batResults  = playerAudit.filter(r => !r.missing && r.batInnings > 0)
+  .sort((a, b) => b.avgRuns - a.avgRuns)
+const bowlResults = playerAudit.filter(r => !r.missing && r.bowlInnings > 0 && r.baseWktProb)
+  .sort((a, b) => b.avgWkts - a.avgWkts)
 
-console.log('\n  Bottom 5 batters by SR (tail-ender check):')
-batters.slice(-5).forEach(p => {
-  console.log(`    ${p.name.padEnd(22)} SR=${f1(p.base_stats.batting_sr).padStart(6)}  role=${p.role}  tier=${p.price_tier}`)
-})
+// Print batting table
+for (const r of batResults) {
+  if (r.avgRuns < 0.5) continue  // skip pure bowlers with negligible batting
+  const dismissStr = (r.dismissRate * 100).toFixed(0) + '%'
+  console.log(
+    '  ' +
+    r.name.padEnd(22) +
+    (r.price + 'Cr').padEnd(7) +
+    f1(r.baseSR).padEnd(8) +
+    f1(r.avgRuns).padEnd(10) +
+    f1(r.batSR).padEnd(8) +
+    f1(r.batBalls).padEnd(11) +
+    dismissStr
+  )
+}
 
-// ── 7. Expected k-values for key archetypes ────────────────────────────────────
-console.log('\n\n══ 7. EFFECTIVE k-VALUES (adjSR/135) — neutral, fresh, vs avg bowler ══')
-console.log('  (k controls boundary/dot distribution; k<0.6 = very defensive, k>1.3 = elite)')
-const archetypes = [
-  { name: 'Elite batter (SR 175)',   sr: 175, price: 14 },
-  { name: 'Premium batter (SR 145)', sr: 145, price: 10 },
-  { name: 'Good batter (SR 130)',    sr: 130, price: 7 },
-  { name: 'Budget batter (SR 100)',  sr: 100, price: 3 },
-  { name: 'Tail-ender (SR 70)',      sr: 70,  price: 1.5 },
+console.log('\n  Bowlers:')
+console.log('  ' + 'Player'.padEnd(22) + 'Price'.padEnd(7) + 'BaseWkt%'.padEnd(10) + 'BaseEcon'.padEnd(10) + 'AvgWkts'.padEnd(9) + 'SimEcon'.padEnd(9) + 'BallsPerWkt')
+for (const r of bowlResults) {
+  const bwp = r.baseWktProb ? (r.baseWktProb * 100).toFixed(2) + '%' : '-'
+  const simEcon = r.bowlEcon > 0 ? f2(r.bowlEcon) : '-'
+  const bpw = r.bowlSR < 999 ? f1(r.bowlSR) : '-'
+  console.log(
+    '  ' +
+    r.name.padEnd(22) +
+    (r.price + 'Cr').padEnd(7) +
+    bwp.padEnd(10) +
+    (r.baseEcon ? f2(r.baseEcon) : '-').padEnd(10) +
+    f2(r.avgWkts).padEnd(9) +
+    simEcon.padEnd(9) +
+    bpw
+  )
+}
+
+// Print any missing players
+const missing = playerAudit.filter(r => r.missing)
+if (missing.length) console.log('\n  Not found in seed: ' + missing.map(r => r.name).join(', '))
+
+// ── 7. Price tier vs price tier win rates ─────────────────────────────────────
+console.log('\n\n══ 7. EXPECTED WIN RATES: PRICE TIERS HEAD-TO-HEAD ══')
+console.log('  (Shows how much richer teams dominate — should be decisive but not total)')
+const tierMatchups = [
+  { a: 'Legend',  ta: LEGEND_TEAM,  b: 'Star',    tb: STAR_TEAM    },
+  { a: 'Star',    ta: STAR_TEAM,    b: 'A-tier',  tb: A_TEAM       },
+  { a: 'A-tier',  ta: A_TEAM,       b: 'Budget',  tb: BUDGET_TEAM  },
+  { a: 'Legend',  ta: LEGEND_TEAM,  b: 'Budget',  tb: BUDGET_TEAM  },
 ]
-const avgBowlerRPB = 9.0 / 6  // reference
-for (const a of archetypes) {
-  const effSR  = a.sr * 1.0 * 1.0 * 1.0 * 1.0 * 1.0 * 1.0 * expMod(a.price)  // fresh, neutral
-  const k      = Math.max(Math.max(0.3, (effSR / 135.0) * 0.55), effSR / 135.0)
-  const pDot   = Math.min(0.42, Math.max(0.12, 0.28 / Math.pow(k, 0.40)))
-  const pSix   = Math.min(0.14, Math.max(0.01, 0.09 * Math.pow(k, 1.3)))
-  const pFour  = Math.min(0.22, Math.max(0.06, 0.18 * Math.pow(k, 0.9)))
-  const expRPB = 0 * pDot + 6 * pSix + 4 * pFour + 2 * 0.07 + 3 * 0.02 + 1 * (1 - pDot - pSix - pFour - 0.07 - 0.02)
-  console.log(`  ${a.name.padEnd(28)}: k=${f2(k)}  dot=${(pDot*100).toFixed(0)}%  6s=${(pSix*100).toFixed(0)}%  4s=${(pFour*100).toFixed(0)}%  expRPB=${f2(expRPB)}  expSR=${f1(expRPB*100)}`)
+for (const { a, ta, b, tb } of tierMatchups) {
+  if (!ta || !tb) { console.log(`  ${a} vs ${b}: insufficient players`); continue }
+  const s = runMatches(ta, tb, cNeutral, 3000)
+  const aWin = ((1 - s.chaseWinPct - s.tiePct) * 100).toFixed(1)  // teamA bats first
+  console.log(`  ${a.padEnd(8)} bats first vs ${b.padEnd(8)}: ${a} win ${aWin}%  ${b} chase win ${pct(s.chaseWinPct)}  tie ${pct(s.tiePct)}`)
 }
 
 console.log('\n════════════════════════════════════════════════════════\n')
