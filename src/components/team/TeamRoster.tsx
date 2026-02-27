@@ -126,7 +126,7 @@ function PlayerCard({ p }: { p: TeamPlayer }) {
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-lg shrink-0">{ROLE_ICON[p.role]}</span>
           <div className="min-w-0">
-            <p className="font-semibold text-sm truncate">{p.name}</p>
+            <p className="font-semibold text-sm text-white truncate">{p.name}</p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="text-xs text-gray-500">{p.ipl_team}</span>
               {p.bowler_type && (

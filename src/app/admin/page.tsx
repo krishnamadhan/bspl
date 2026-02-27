@@ -314,18 +314,30 @@ export default function AdminPage() {
     setLastRefreshed(new Date())
     if (!raw?.length) { setMatches([]); return }
 
-    const { data: lineupRows } = await supabase
-      .from('bspl_lineups')
-      .select('match_id, team_id, is_submitted')
-      .in('match_id', raw.map(m => m.id))
-
-    const submittedByMatch = new Map<string, Set<string>>()
-    lineupRows?.forEach(l => {
-      if (l.is_submitted) {
-        if (!submittedByMatch.has(l.match_id)) submittedByMatch.set(l.match_id, new Set())
-        submittedByMatch.get(l.match_id)!.add(l.team_id)
+    // Use service-role endpoint so RLS doesn't hide real-player lineup submissions
+    const matchIdParam = raw.map(m => m.id).join(',')
+    let submittedByMatch = new Map<string, Set<string>>()
+    try {
+      const res = await fetch(`/api/admin/lineup-counts?match_ids=${encodeURIComponent(matchIdParam)}`)
+      if (res.ok) {
+        const json = await res.json() as { submitted: Record<string, string[]> }
+        for (const [mid, teamIds] of Object.entries(json.submitted ?? {})) {
+          submittedByMatch.set(mid, new Set(teamIds))
+        }
       }
-    })
+    } catch {
+      // Fallback: try browser client (may miss non-bot lineups due to RLS)
+      const { data: lineupRows } = await supabase
+        .from('bspl_lineups')
+        .select('match_id, team_id, is_submitted')
+        .in('match_id', raw.map(m => m.id))
+      lineupRows?.forEach(l => {
+        if (l.is_submitted) {
+          if (!submittedByMatch.has(l.match_id)) submittedByMatch.set(l.match_id, new Set())
+          submittedByMatch.get(l.match_id)!.add(l.team_id)
+        }
+      })
+    }
 
     setMatches((raw as RawMatch[]).map(m => {
       const submitted = submittedByMatch.get(m.id) ?? new Set<string>()
@@ -749,7 +761,7 @@ export default function AdminPage() {
                   />
                 </div>
                 <p className="text-xs text-gray-600 mt-1.5">
-                  Add as many bot teams as you need for the season.
+                  Add as many or as few bot teams as you need — no limit.
                 </p>
               </div>
             )}
@@ -910,7 +922,16 @@ export default function AdminPage() {
       {seasonInfo?.status === 'playoffs' && (
         <Section
           title="Playoff Bracket"
-          badge={<span className="text-xs text-purple-400 font-semibold">IPL FORMAT</span>}
+          badge={(() => {
+            const isDirectFinal = playoffBracket.length > 0 &&
+              !playoffBracket.find(m => m.match_type === 'qualifier1') &&
+              playoffBracket.find(m => m.match_type === 'final')
+            return (
+              <span className="text-xs text-purple-400 font-semibold">
+                {isDirectFinal ? 'DIRECT FINAL' : 'IPL FORMAT'}
+              </span>
+            )
+          })()}
           headerRight={(() => {
             const q1   = playoffBracket.find(m => m.match_type === 'qualifier1')
             const el   = playoffBracket.find(m => m.match_type === 'eliminator')
@@ -919,10 +940,11 @@ export default function AdminPage() {
             const q1Done = q1?.status === 'completed'
             const elDone = el?.status === 'completed'
             const q2Done = q2?.status === 'completed'
-            if (q1Done && elDone && !q2) {
+            // IPL format: show Q2 button after Q1+EL done, Final after Q1+Q2 done
+            if (q1 && el && q1Done && elDone && !q2) {
               return <Btn label={isPending ? '…' : 'Schedule Q2'} onClick={handleScheduleQ2} disabled={isPending} variant="green" size="sm" />
             }
-            if (q1Done && q2Done && !fin) {
+            if (q1 && q2Done && !fin) {
               return <Btn label={isPending ? '…' : '🏆 Schedule Final'} onClick={handleScheduleFinal} disabled={isPending} variant="yellow" size="sm" />
             }
             return undefined
@@ -933,10 +955,12 @@ export default function AdminPage() {
               <p className="text-gray-500 text-sm">Playoff matches will appear here once started.</p>
             ) : (
               <>
-                {/* Legend */}
-                <p className="text-xs text-gray-500 mb-3">
-                  Q1 winner → Final · Q1 loser → Q2 · Eliminator winner → Q2 · Q2 winner → Final
-                </p>
+                {/* Legend — only show for IPL format */}
+                {playoffBracket.find(m => m.match_type === 'qualifier1') && (
+                  <p className="text-xs text-gray-500 mb-3">
+                    Q1 winner → Final · Q1 loser → Q2 · Eliminator winner → Q2 · Q2 winner → Final
+                  </p>
+                )}
                 {(() => {
                   const LABELS: Record<string, { short: string; cls: string }> = {
                     qualifier1: { short: 'Q1',    cls: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
@@ -944,7 +968,11 @@ export default function AdminPage() {
                     qualifier2: { short: 'Q2',    cls: 'bg-orange-500/20 text-orange-300 border-orange-500/30' },
                     final:      { short: 'FINAL', cls: 'bg-yellow-400/20 text-yellow-300 border-yellow-400/30' },
                   }
-                  const order = ['qualifier1', 'eliminator', 'qualifier2', 'final']
+                  // Show only match types that exist or are IPL placeholders
+                  const hasIPL = !!playoffBracket.find(m => m.match_type === 'qualifier1')
+                  const order = hasIPL
+                    ? ['qualifier1', 'eliminator', 'qualifier2', 'final']
+                    : ['final']
                   return order.map(type => {
                     const m = playoffBracket.find(x => x.match_type === type)
                     const meta = LABELS[type]
@@ -1003,8 +1031,9 @@ export default function AdminPage() {
         {devOpen && (
           <div className="px-6 pb-6 border-t border-gray-800 pt-5 space-y-3">
             <p className="text-xs text-gray-500">
-              Creates 6 preset bot teams and auto-drafts 20 players each into the current
-              <span className="text-yellow-400/80"> draft_open</span> season.
+              Quick-start shortcut: creates 6 named bot teams and snake-drafts 20 players into each
+              for the current <span className="text-yellow-400/80">draft_open</span> season.
+              For custom team counts, use the <span className="text-gray-300">+ Add Bot Team</span> button above instead.
             </p>
             <Btn
               label={isPending ? 'Setting up…' : 'Setup Test Season (6 Bots + Draft)'}

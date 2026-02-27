@@ -221,7 +221,7 @@ function InningsCard({
                 {batting.map((b, i) => (
                   <tr key={i} className="border-t border-gray-800/50">
                     <td className="py-1.5 pr-2 pl-1">
-                      <span className="font-medium">{b.name}</span>
+                      <span className="font-medium text-white">{b.name}</span>
                       {!b.dismissed && b.balls > 0 && (
                         <span className="text-green-400 text-xs ml-1">*</span>
                       )}
@@ -261,7 +261,7 @@ function InningsCard({
               <tbody>
                 {bowling.map((b, i) => (
                   <tr key={i} className="border-t border-gray-800/50">
-                    <td className="py-1.5 pr-2 pl-1 font-medium">{b.name}</td>
+                    <td className="py-1.5 pr-2 pl-1 font-medium text-white">{b.name}</td>
                     <td className="text-center py-1.5 text-gray-400">{b.overs}</td>
                     <td className="text-center py-1.5">{b.runs}</td>
                     <td className="text-center py-1.5 font-semibold text-yellow-400">{b.wickets}</td>

@@ -5,16 +5,13 @@ import { pickXI, buildRosterForPick } from '../_lib/pick_xi'
 const CONDITIONS = ['neutral', 'overcast', 'dew_evening', 'slow_sticky'] as const
 
 /**
- * IPL-style playoffs: creates Qualifier 1 and Eliminator from the top 4 teams.
+ * Flexible playoffs — adapts to however many teams are in the season:
  *
- * Q1:  #1 vs #2  — winner goes straight to Final
- * E:   #3 vs #4  — winner goes to Q2, loser is eliminated
+ *  2–3 teams  → Direct Final between #1 and #2
+ *  4+ teams   → IPL format: Q1 (#1 vs #2) + Eliminator (#3 vs #4)
+ *               then schedule-q2 → schedule-final complete the bracket
  *
- * After these two are simulated:
- *   POST /api/admin/schedule-q2   → creates Q2 (Q1-loser vs E-winner)
- *   POST /api/admin/schedule-final → creates Final (Q1-winner vs Q2-winner)
- *
- * Requires season in draft_locked status.
+ * Requires season in draft_locked or in_progress status.
  */
 export async function POST() {
   const user = await requireAdmin()
@@ -22,7 +19,7 @@ export async function POST() {
 
   const db = adminClient()
 
-  // ── 1. Find the active season (draft_locked OR in_progress) ────────────────
+  // ── 1. Find the active season ───────────────────────────────────────────────
   const { data: season } = await db
     .from('bspl_seasons')
     .select('id, name, status')
@@ -52,22 +49,23 @@ export async function POST() {
     )
   }
 
-  // ── 2. Top 4 teams by points → NRR ─────────────────────────────────────────
+  // ── 2. Get standings — take as many teams as available (min 2) ──────────────
   const { data: standings } = await db
     .from('bspl_points')
     .select('team_id, points, nrr')
     .eq('season_id', season.id)
     .order('points', { ascending: false })
     .order('nrr', { ascending: false })
-    .limit(4)
 
-  if (!standings || standings.length < 4) {
+  if (!standings || standings.length < 2) {
     return NextResponse.json(
-      { error: `Need 4 teams in standings. Found ${standings?.length ?? 0}.` },
+      { error: `Need at least 2 teams in standings. Found ${standings?.length ?? 0}. Make sure teams have played matches.` },
       { status: 400 },
     )
   }
 
+  // Clamp to top 4 for IPL format; use top 2 for smaller leagues
+  const useFull = standings.length >= 4
   const [p1, p2, p3, p4] = standings
 
   // ── 3. Venues ───────────────────────────────────────────────────────────────
@@ -84,31 +82,54 @@ export async function POST() {
 
   const base = lastMatch?.match_number ?? 0
 
-  // ── 4. Create Q1 and Eliminator ─────────────────────────────────────────────
-  const playoffRows = [
-    {
-      season_id:    season.id,
-      match_number: base + 1,
-      match_day:    base + 1,
-      team_a_id:    p1.team_id,
-      team_b_id:    p2.team_id,
-      venue_id:     venues[0 % venues.length].id,
-      condition:    CONDITIONS[0],
-      status:       'scheduled',
-      match_type:   'qualifier1',
-    },
-    {
-      season_id:    season.id,
-      match_number: base + 2,
-      match_day:    base + 2,
-      team_a_id:    p3.team_id,
-      team_b_id:    p4.team_id,
-      venue_id:     venues[1 % venues.length].id,
-      condition:    CONDITIONS[1],
-      status:       'scheduled',
-      match_type:   'eliminator',
-    },
-  ]
+  // ── 4. Create playoff matches ────────────────────────────────────────────────
+  let playoffRows: object[]
+  let message: string
+
+  if (useFull) {
+    // IPL format: Q1 (#1 vs #2) + Eliminator (#3 vs #4)
+    playoffRows = [
+      {
+        season_id:    season.id,
+        match_number: base + 1,
+        match_day:    base + 1,
+        team_a_id:    p1.team_id,
+        team_b_id:    p2.team_id,
+        venue_id:     venues[0 % venues.length].id,
+        condition:    CONDITIONS[0],
+        status:       'scheduled',
+        match_type:   'qualifier1',
+      },
+      {
+        season_id:    season.id,
+        match_number: base + 2,
+        match_day:    base + 2,
+        team_a_id:    p3.team_id,
+        team_b_id:    p4.team_id,
+        venue_id:     venues[1 % venues.length].id,
+        condition:    CONDITIONS[1],
+        status:       'scheduled',
+        match_type:   'eliminator',
+      },
+    ]
+    message = `Playoffs started (IPL format)! Q1: #1 vs #2 · Eliminator: #3 vs #4`
+  } else {
+    // Direct Final: #1 vs #2
+    playoffRows = [
+      {
+        season_id:    season.id,
+        match_number: base + 1,
+        match_day:    base + 1,
+        team_a_id:    p1.team_id,
+        team_b_id:    p2.team_id,
+        venue_id:     venues[0 % venues.length].id,
+        condition:    CONDITIONS[0],
+        status:       'scheduled',
+        match_type:   'final',
+      },
+    ]
+    message = `Playoffs started (Direct Final)! #1 vs #2 — winner takes the title.`
+  }
 
   const { data: created, error: insertErr } = await db
     .from('bspl_matches')
@@ -123,10 +144,7 @@ export async function POST() {
   // ── 6. Season → playoffs ────────────────────────────────────────────────────
   await db.from('bspl_seasons').update({ status: 'playoffs' }).eq('id', season.id)
 
-  return NextResponse.json({
-    ok: true,
-    message: `Playoffs started! Q1: #1 vs #2 · Eliminator: #3 vs #4`,
-  })
+  return NextResponse.json({ ok: true, message })
 }
 
 // ── Shared helper: open lineups + auto-fill bot teams ────────────────────────
@@ -141,7 +159,7 @@ export async function autoFillBotLineups(
 
     for (const teamId of [match.team_a_id, match.team_b_id]) {
       const { data: teamRow } = await db
-        .from('bspl_teams').select('is_bot').eq('id', teamId).single()
+        .from('bspl_teams').select('is_bot').eq('id', teamId).maybeSingle()
       if (!teamRow?.is_bot) continue
 
       const { data: existing } = await db

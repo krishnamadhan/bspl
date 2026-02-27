@@ -283,7 +283,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
                   {/* Name + stats */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{player.name}</p>
+                    <p className="text-sm font-medium text-white truncate">{player.name}</p>
                     <p className="text-xs text-gray-500">
                       SR {player.batting_sr.toFixed(0)}
                       {player.bowling_economy != null ? ` · Econ ${player.bowling_economy.toFixed(1)}` : ''}
@@ -360,7 +360,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                       </span>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{p.name}</p>
+                        <p className="text-sm font-medium text-white truncate">{p.name}</p>
                       </div>
 
                       {/* Bowl toggle (only for bowlers/AR) */}
@@ -431,7 +431,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
                     {bowler ? (
                       <>
-                        <span className="text-sm flex-1 truncate">{bowler.name}</span>
+                        <span className="text-sm flex-1 text-white truncate">{bowler.name}</span>
                         <div className="flex gap-0.5 flex-shrink-0">
                           <button
                             onClick={() => moveBowling(i, -1)}
