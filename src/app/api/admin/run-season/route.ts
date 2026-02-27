@@ -10,7 +10,7 @@
 import { NextResponse } from 'next/server'
 import { adminClient, requireAdmin, getBotTossChoice } from '../_lib/helpers'
 import { simulateOne } from '../_lib/simulate_one'
-import { pickXI, buildRosterForPick } from '../_lib/pick_xi'
+import { pickXI, buildRosterForPick, isValidBowlingOrder } from '../_lib/pick_xi'
 
 export async function POST() {
   const user = await requireAdmin()
@@ -92,7 +92,7 @@ export async function POST() {
           const allInRoster =
             prevLineup.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
             prevLineup.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
-          if (allInRoster) {
+          if (allInRoster && isValidBowlingOrder(prevLineup.bowling_order)) {
             playing_xi    = prevLineup.playing_xi
             bowling_order = prevLineup.bowling_order
           }

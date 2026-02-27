@@ -295,20 +295,19 @@ function computePostMatchUpdates(
 
     // Confidence
     let confDelta = 0
-    let reason = 'Average performance'
+    const reasons: string[] = []
 
     if (battingEntry && ballsFaced > 0) {
       confDelta += calculateBattingConfidenceDelta(battingEntry.runs, battingEntry.strike_rate)
-      reason = `${battingEntry.runs} runs off ${ballsFaced}b`
+      reasons.push(`${battingEntry.runs} runs off ${ballsFaced}b`)
     }
     if (bowlingEntry && oversCN > 0) {
       const bowlDelta = calculateBowlingConfidenceDelta(bowlingEntry.runs, oversCN, bowlingEntry.wickets)
       confDelta += bowlDelta
-      reason += ` | ${bowlingEntry.wickets}w @ ${bowlingEntry.economy} econ`
+      reasons.push(`${bowlingEntry.wickets}w @ ${bowlingEntry.economy} econ`)
     }
-    if (confDelta === 0 && !battingEntry && !bowlingEntry) {
-      reason = 'Fielding only'
-    }
+    if (reasons.length === 0) reasons.push(ballsFaced > 0 ? 'Average performance' : 'Fielding only')
+    const reason = reasons.join(' | ')
 
     const newConf = clampConfidence(sp.confidence + confDelta)
     confidenceUpdates.push({ player_id: sp.player.id, team_id: sp.team_id, old_confidence: sp.confidence, new_confidence: newConf, delta: newConf - sp.confidence, reason })

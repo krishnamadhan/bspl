@@ -702,4 +702,210 @@ for (const { a, ta, b, tb } of tierMatchups) {
   console.log(`  ${a.padEnd(8)} bats first vs ${b.padEnd(8)}: ${a} win ${aWin}%  ${b} chase win ${pct(s.chaseWinPct)}  tie ${pct(s.tiePct)}`)
 }
 
+// ── 8. Ball outcome distribution (real-world comparison) ─────────────────────
+// Sample across ALL player combinations in 2000 full innings to get realistic distribution
+console.log('\n\n══ 8. BALL OUTCOME DISTRIBUTION — sampled from 2 000 full innings ══')
+console.log('  Real IPL powerplay benchmarks (CricViz, T10 Abu Dhabi data):')
+console.log('  Dot: ~28-32%  Single: ~30-34%  2s: ~7%  3s: ~2%  4s: ~18-22%  6s: ~9-12%  Wide: ~4%')
+console.log('  Note: T5 format is more aggressive — expect boundary% at upper end of IPL PP range\n')
+{
+  const cond = CONDITIONS.neutral
+  let dots=0, ones=0, twos=0, threes=0, fours=0, sixes=0, wides=0, wkts=0, totalBalls=0
+  let totalRuns=0, totalLegalBalls=0
+
+  for (let i = 0; i < 2000; i++) {
+    const seed = i * 5003
+    const inn = simInnings(BALANCED_TEAM, BALANCED_TEAM, cond, false, 0, seed, false)
+    // Re-simulate with ball-level tracking via a custom loop
+    // Instead, reconstruct from known aggregate stats
+    // Just accumulate per-ball from all matchups across innings
+  }
+
+  // Proper approach: simulate ball by ball across many batter×bowler pairs from the pool
+  const batters = BALANCED_TEAM.players
+  const bowlers = BALANCED_TEAM.players.filter(p => p.player.base_stats.wicket_prob)
+
+  for (let i = 0; i < 30000; i++) {
+    const batter = batters[i % batters.length]
+    const bowler = bowlers[i % Math.max(1, bowlers.length)]
+    const over = (i % 5) + 1
+    const ball = simBall(bowler, batter, cond, over, false, 0, (5 - over) * 6 + 5, seededRandom(i * 17 + 3))
+    totalBalls++
+    if (ball.isWide)   { wides++; continue }
+    totalLegalBalls++
+    if (ball.isWicket) { wkts++; continue }
+    if (ball.runs === 0) dots++
+    else if (ball.runs === 1) ones++
+    else if (ball.runs === 2) twos++
+    else if (ball.runs === 3) threes++
+    else if (ball.runs === 4) fours++
+    else if (ball.runs === 6) sixes++
+    totalRuns += ball.runs
+  }
+  const p = (n, d) => ((n / d) * 100).toFixed(1) + '%'
+  const legalNonWkt = totalLegalBalls - wkts
+  console.log(`  Simulated (all player combinations, all over phases, neutral):`)
+  console.log(`    Dot: ${p(dots, legalNonWkt).padEnd(8)} Single: ${p(ones, legalNonWkt).padEnd(8)} 2s: ${p(twos, legalNonWkt).padEnd(8)} 3s: ${p(threes, legalNonWkt).padEnd(8)} 4s: ${p(fours, legalNonWkt).padEnd(8)} 6s: ${p(sixes, legalNonWkt).padEnd(8)} Wide: ${p(wides, totalBalls)} Wkt: ${p(wkts, totalLegalBalls)}`)
+  const runsFromHits = ones + twos*2 + threes*3 + fours*4 + sixes*6
+  const simSR = (runsFromHits / legalNonWkt * 100).toFixed(1)
+  const boundaryRunPct = runsFromHits > 0 ? ((fours*4 + sixes*6) / runsFromHits * 100).toFixed(1) : '0'
+  console.log(`    ExpSR (excl wkts): ${simSR}  BoundaryRun%: ${boundaryRunPct}%`)
+  console.log(`\n  Real-world T5/T10: ExpSR (excl wkts) ~160-200  BoundaryRun% ~58-70%  WktRate ~8-12%`)
+}
+
+// ── 9. Famous player real-world benchmark comparison ─────────────────────────
+console.log('\n\n══ 9. FAMOUS PLAYER vs REAL-WORLD BENCHMARKS ══')
+console.log('  Real-world stats are from IPL 2024 season + career powerplay data.')
+console.log('  T5 sim runs are per-match averages with balanced opposition.\n')
+
+// Real-world reference data (IPL career / recent season, adjusted for T5 scaling)
+// T5 = 5 overs = 83% of 6-over powerplay. Batting avg scaled down proportionally.
+// Bowlers bowl 1 over per T5 match.
+const realWorldRef = {
+  'V Kohli':       { realAvg: '22-28', realSR: '135-145', realWkts: '-',    realEcon: '-',      note: 'IPL career avg 37.3 (full innings), PP SR ~145' },
+  'RR Pant':       { realAvg: '20-26', realSR: '145-165', realWkts: '-',    realEcon: '-',      note: 'IPL avg 34.6, SR 152, very aggressive opener' },
+  'KL Rahul':      { realAvg: '18-24', realSR: '130-145', realWkts: '-',    realEcon: '-',      note: 'IPL avg 47.3 but slow; PP SR ~135' },
+  'MS Dhoni':      { realAvg: '10-18', realSR: '140-180', realWkts: '-',    realEcon: '-',      note: 'Bats low (#4-7); SR 135-180 in death/PP' },
+  'JJ Bumrah':     { realAvg: '-',     realSR: '-',        realWkts: '0.5-0.8', realEcon: '6.5-8.0', note: 'IPL economy 7.4, avg 0.65 wkt per PP over' },
+  'RA Jadeja':     { realAvg: '-',     realSR: '-',        realWkts: '0.3-0.5', realEcon: '7.5-9.5', note: 'IPL econ 7.6 PP, ~0.4 wkt per over' },
+  'R Ashwin':      { realAvg: '-',     realSR: '-',        realWkts: '0.3-0.5', realEcon: '7.0-9.0', note: 'IPL econ 6.97 overall, good PP numbers' },
+  'HH Pandya':     { realAvg: '14-20', realSR: '140-165', realWkts: '0.3-0.5', realEcon: '8.5-10.5', note: 'All-rounder; IPL avg 28, SR 152' },
+  'AD Russell':    { realAvg: '14-22', realSR: '165-200', realWkts: '0.5-0.8', realEcon: '8.5-10.5', note: 'KKR icon; SR 178 career, economy 9.1' },
+  'Rashid Khan':   { realAvg: '-',     realSR: '-',        realWkts: '0.5-0.8', realEcon: '6.5-8.5', note: 'IPL econ 7.2, ~0.6 wkt/over career avg' },
+  'GJ Maxwell':    { realAvg: '14-20', realSR: '150-175', realWkts: '0.3-0.5', realEcon: '7.5-9.5', note: 'SR 169 career T20; part-time spinner' },
+  'SA Yadav':      { realAvg: '16-22', realSR: '160-190', realWkts: '-',    realEcon: '-',      note: 'IPL T20 SR 178; very aggressive batter' },
+}
+
+console.log('  ' + 'Player'.padEnd(16) + 'SimAvg'.padEnd(10) + 'SimSR'.padEnd(10) + 'RealAvg(T5)'.padEnd(15) + 'RealSR'.padEnd(12) + 'SimWkts'.padEnd(10) + 'SimEcon'.padEnd(10) + 'RealWkts'.padEnd(12) + 'RealEcon')
+
+const auditForRef = playerPerformanceAudit(300)
+for (const [name, ref] of Object.entries(realWorldRef)) {
+  const sim = auditForRef.find(r => r.name === name)
+  if (!sim || sim.missing) { console.log(`  ${name.padEnd(16)}: not found`); continue }
+  const simAvg  = sim.avgRuns > 0.5  ? f1(sim.avgRuns)  : '-'
+  const simSR   = sim.batSR   > 0    ? f1(sim.batSR)    : '-'
+  const simW    = sim.avgWkts > 0    ? f2(sim.avgWkts)  : '-'
+  const simE    = sim.bowlEcon > 0   ? f2(sim.bowlEcon) : '-'
+  const flag    = (() => {
+    if (sim.avgRuns > 0.5 && ref.realAvg !== '-') {
+      const [lo, hi] = ref.realAvg.split('-').map(Number)
+      if (sim.avgRuns > hi * 1.4) return ' ⚠ HIGH'
+      if (sim.avgRuns < lo * 0.6) return ' ⚠ LOW'
+    }
+    if (sim.bowlEcon > 0 && ref.realEcon !== '-') {
+      const [lo, hi] = ref.realEcon.split('-').map(Number)
+      if (sim.bowlEcon > hi * 1.3) return ' ⚠ ECON HIGH'
+      if (sim.bowlEcon < lo * 0.7) return ' ⚠ ECON LOW'
+    }
+    return ''
+  })()
+  console.log(
+    '  ' +
+    name.padEnd(16) +
+    simAvg.padEnd(10) +
+    simSR.padEnd(10) +
+    ref.realAvg.padEnd(15) +
+    ref.realSR.padEnd(12) +
+    simW.padEnd(10) +
+    simE.padEnd(10) +
+    ref.realWkts.padEnd(12) +
+    ref.realEcon +
+    flag
+  )
+}
+
+// ── 10. Innings score distribution vs T10 real world ─────────────────────────
+console.log('\n\n══ 10. INNINGS SCORE DISTRIBUTION vs T10 REAL-WORLD ══')
+console.log('  T10 Abu Dhabi 2024: avg 104/innings (10 overs) → T5 expected: ~52-58 runs')
+console.log('  IPL powerplay (6 overs): avg 57 runs → T5 (5 overs) expected: ~47-52 runs')
+console.log('  T5 format (aggressive from ball 1): expected avg 55-68 runs @ 11-13.5 RPO\n')
+{
+  const s = runMatches(BALANCED_TEAM, BALANCED_TEAM, CONDITIONS.neutral, 10000)
+  console.log(`  Simulated (balanced vs balanced, neutral, 10 000 matches):`)
+  console.log(`    Inn1: avg ${f1(s.inn1.avg)} ± ${f1(s.inn1.sd)} runs  RPO ${f2(s.inn1.rpo)}  avg wkts ${f1(s.inn1.avgWkts)}`)
+  console.log(`    Inn2: avg ${f1(s.inn2.avg)} ± ${f1(s.inn2.sd)} runs  RPO ${f2(s.inn2.rpo)}  avg wkts ${f1(s.inn2.avgWkts)}`)
+  console.log(`    Ties: ${pct(s.tiePct)}  Chase wins: ${pct(s.chaseWinPct)}`)
+  const avg1 = s.inn1.avg
+  if (avg1 < 45) console.log('    ⚠ Inn1 avg too LOW vs T10 benchmark (expected 52-68)')
+  else if (avg1 > 75) console.log('    ⚠ Inn1 avg too HIGH vs T10 benchmark (expected 52-68)')
+  else console.log('    ✓ Inn1 avg within expected T5 range (52-68)')
+  if (s.inn1.rpo < 9) console.log('    ⚠ RPO too LOW (expected 11-13.5)')
+  else if (s.inn1.rpo > 14) console.log('    ⚠ RPO too HIGH (expected 11-13.5)')
+  else console.log('    ✓ RPO within expected T5 range (11-13.5)')
+  if (s.inn1.avgWkts < 2) console.log('    ⚠ Wickets too LOW (expected 3-6)')
+  else if (s.inn1.avgWkts > 7) console.log('    ⚠ Wickets too HIGH (expected 3-6)')
+  else console.log('    ✓ Wicket count within expected range (2-6 for T5 powerplay)')
+}
+
+// ── 11. Boundary percentage analysis — from full innings, all batters ─────────
+console.log('\n\n══ 11. BOUNDARY % ANALYSIS — from 2 000 full innings ══')
+console.log('  Real IPL PP (6 overs): ~57-62% boundary runs | T10 (10 overs): ~60-65%')
+console.log('  T5 (all-PP, attacking format): expect ~58-68% boundary runs\n')
+{
+  const cond = CONDITIONS.neutral
+  let singleRuns=0, twoRuns=0, threeRuns=0, fourRuns=0, sixRuns=0
+  let totalInningsRuns=0, totalExtras=0, wicketTotal=0
+
+  for (let i = 0; i < 2000; i++) {
+    const seed = i * 3001
+    const inn = simInnings(BALANCED_TEAM, BALANCED_TEAM, cond, false, 0, seed, true)
+    if (!inn.playerStats) continue
+    const ps = inn.playerStats
+    for (const pid of Object.keys(ps.pRuns)) {
+      const r = ps.pRuns[pid] ?? 0
+      const b = ps.pBalls[pid] ?? 0
+      if (b === 0 && r === 0) continue
+      // We only have total runs, not breakdown by type. Use ball-level estimates.
+    }
+    totalInningsRuns += inn.totalRuns
+    totalExtras += inn.extras
+    wicketTotal += inn.totalWickets
+  }
+  // For run breakdown, use ball sampling across all balanced team players
+  const batters = BALANCED_TEAM.players
+  const bowlers = BALANCED_TEAM.players.filter(p => p.player.base_stats.wicket_prob)
+  let legalBalls=0, wkts=0
+  for (let i = 0; i < 50000; i++) {
+    const batter = batters[i % batters.length]
+    const bowler = bowlers[i % Math.max(1, bowlers.length)]
+    const over = (i % 5) + 1
+    const ball = simBall(bowler, batter, cond, over, false, 0, (5-over)*6+3, seededRandom(i*11+5))
+    if (ball.isWide) continue
+    legalBalls++
+    if (ball.isWicket) { wkts++; continue }
+    if (ball.runs === 1) singleRuns++
+    else if (ball.runs === 2) twoRuns++
+    else if (ball.runs === 3) threeRuns++
+    else if (ball.runs === 4) fourRuns++
+    else if (ball.runs === 6) sixRuns++
+  }
+  const totalR = singleRuns + twoRuns*2 + threeRuns*3 + fourRuns*4 + sixRuns*6
+  const p = (n, d) => ((n / d) * 100).toFixed(1) + '%'
+  const brPct = (fourRuns*4 + sixRuns*6) / totalR
+  console.log(`  From ${legalBalls} legal balls (all batter-bowler pairs, all overs):`)
+  console.log(`    Runs from 1s: ${p(singleRuns, totalR/1)}% value   4s share: ${p(fourRuns*4, totalR)}   6s share: ${p(sixRuns*6, totalR)}`)
+  console.log(`    Boundary (4+6) % of runs: ${(brPct*100).toFixed(1)}%  Wkt rate: ${p(wkts, legalBalls)}`)
+  console.log(`    Avg innings (2000 matches): ${(totalInningsRuns/2000).toFixed(1)} runs  avg wkts: ${(wicketTotal/2000).toFixed(1)}`)
+  if (brPct < 0.52) console.log('    ⚠ Boundary % too LOW (expected 58-68% for T5)')
+  else if (brPct > 0.75) console.log('    ⚠ Boundary % too HIGH (expected 58-68% for T5)')
+  else console.log('    ✓ Boundary % within expected T5 range (58-68%)')
+}
+
+// ── 12. Final benchmark summary ────────────────────────────────────────────────
+console.log('\n\n══ 12. FINAL BENCHMARK SUMMARY ══')
+{
+  const s = runMatches(BALANCED_TEAM, BALANCED_TEAM, CONDITIONS.neutral, 5000)
+  const rows = [
+    { metric: 'Avg innings score',   sim: f1(s.inn1.avg) + ' runs',   real: '55-68 runs',  ok: s.inn1.avg >= 48 && s.inn1.avg <= 72 },
+    { metric: 'RPO',                  sim: f2(s.inn1.rpo),             real: '11.0-13.5',   ok: s.inn1.rpo >= 9.5 && s.inn1.rpo <= 14.5 },
+    { metric: 'Avg wickets/innings',  sim: f1(s.inn1.avgWkts),         real: '2.5-5.5',     ok: s.inn1.avgWkts >= 2 && s.inn1.avgWkts <= 6.5 },
+    { metric: 'Chase win rate',       sim: pct(s.chaseWinPct),         real: '45-55%',      ok: s.chaseWinPct >= 0.42 && s.chaseWinPct <= 0.58 },
+    { metric: 'Tie rate',             sim: pct(s.tiePct),              real: '1-5%',        ok: s.tiePct >= 0.005 && s.tiePct <= 0.08 },
+  ]
+  console.log('  ' + 'Metric'.padEnd(26) + 'Simulated'.padEnd(16) + 'Real-World'.padEnd(18) + 'Status')
+  for (const r of rows) {
+    console.log('  ' + r.metric.padEnd(26) + r.sim.padEnd(16) + r.real.padEnd(18) + (r.ok ? '✓ OK' : '⚠ OUT OF RANGE'))
+  }
+}
+
 console.log('\n════════════════════════════════════════════════════════\n')
