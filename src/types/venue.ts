@@ -43,8 +43,8 @@ export const MATCH_CONDITIONS: Record<ConditionType, MatchCondition> = {
     innings1_pace_wicket_mod: 1.0,
     innings1_spin_wicket_mod: 1.0,
     innings1_batting_sr_mod: 1.0,
-    innings2_bowler_economy_mod: 1.20,
-    innings2_batting_sr_mod: 1.08,
+    innings2_bowler_economy_mod: 1.10,  // was 1.20 — 20% was too strong (gave 64% chase win rate)
+    innings2_batting_sr_mod: 1.04,      // was 1.08 — combined with economy boost, chasers were dominant
     innings2_spin_wicket_mod: 0.85,
     bat_first_advantage: false,
   },
@@ -56,8 +56,8 @@ export const MATCH_CONDITIONS: Record<ConditionType, MatchCondition> = {
     innings1_spin_wicket_mod: 1.0,
     innings1_batting_sr_mod: 1.0,
     innings2_bowler_economy_mod: 0.95,
-    innings2_batting_sr_mod: 0.85,
-    innings2_spin_wicket_mod: 1.25,
+    innings2_batting_sr_mod: 0.88,      // was 0.85 — 15% SR penalty was too punishing
+    innings2_spin_wicket_mod: 1.18,     // was 1.25 — combined with SR penalty gave 66% bat-first win rate
     bat_first_advantage: true,
   },
   overcast: {
@@ -80,8 +80,8 @@ export const MATCH_CONDITIONS: Record<ConditionType, MatchCondition> = {
     innings1_spin_wicket_mod: 1.0,
     innings1_batting_sr_mod: 1.08,
     innings2_bowler_economy_mod: 0.95,
-    innings2_batting_sr_mod: 0.88,
-    innings2_spin_wicket_mod: 1.10,
+    innings2_batting_sr_mod: 0.91,      // was 0.88 — gave 66% bat-first win rate, same as crumbling_spin
+    innings2_spin_wicket_mod: 1.07,     // was 1.10
     bat_first_advantage: true,
   },
   neutral: {

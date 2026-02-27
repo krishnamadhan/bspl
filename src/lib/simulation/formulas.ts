@@ -148,7 +148,13 @@ export function effectiveBowlerWicketProb(
   overNumber: number,
   isSecondInnings: boolean
 ): number {
-  const base = bowler.player.base_stats.wicket_prob ?? 0.05
+  // Players with no bowler_type are part-timers. Their wicket_prob stats are often
+  // based on tiny IPL samples (e.g. 1 wicket in 3 balls = 33%). Cap them at 0.06
+  // to prevent data artifacts from inflating wicket probability.
+  const rawBase = bowler.player.base_stats.wicket_prob ?? 0.05
+  const base = bowler.player.bowler_type == null
+    ? Math.min(rawBase, 0.06)
+    : rawBase
 
   const core = effectiveMultiplier(bowler.stamina, bowler.confidence)
   const phase = bowlerPhaseMultiplier(bowler.player, overNumber)
