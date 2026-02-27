@@ -415,7 +415,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 10,
+    "price_cr": 12,
     "price_tier": "elite",
     "fielding_rating": 7
   },
@@ -1555,7 +1555,7 @@
     "bowl_phase_pp": 0.871,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1,
-    "price_cr": 7,
+    "price_cr": 5,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -1585,7 +1585,7 @@
     "bowl_phase_pp": 1.003,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.844,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -1645,7 +1645,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -1735,7 +1735,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -1795,7 +1795,7 @@
     "bowl_phase_pp": 1.004,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.92,
-    "price_cr": 7,
+    "price_cr": 15,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -1825,7 +1825,7 @@
     "bowl_phase_pp": 0.806,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.178,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -1855,7 +1855,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 3,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -1945,7 +1945,7 @@
     "bowl_phase_pp": 0.871,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.818,
-    "price_cr": 7,
+    "price_cr": 3,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2005,7 +2005,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 3,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2065,7 +2065,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 5,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2125,7 +2125,7 @@
     "bowl_phase_pp": 1.009,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.919,
-    "price_cr": 7,
+    "price_cr": 4,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2185,7 +2185,7 @@
     "bowl_phase_pp": 1.35,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.35,
-    "price_cr": 7,
+    "price_cr": 2,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2215,7 +2215,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2245,7 +2245,7 @@
     "bowl_phase_pp": 1.11,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.816,
-    "price_cr": 7,
+    "price_cr": 4,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2275,7 +2275,7 @@
     "bowl_phase_pp": 1.164,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.787,
-    "price_cr": 7,
+    "price_cr": 5,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2335,7 +2335,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 4,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2365,7 +2365,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 4,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2455,7 +2455,7 @@
     "bowl_phase_pp": 1.053,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.929,
-    "price_cr": 7,
+    "price_cr": 5,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2545,7 +2545,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 5,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2575,7 +2575,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 4,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2605,7 +2605,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 2,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2635,7 +2635,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 4,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2665,7 +2665,7 @@
     "bowl_phase_pp": 1.004,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.859,
-    "price_cr": 7,
+    "price_cr": 2,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2695,7 +2695,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 5,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2725,7 +2725,7 @@
     "bowl_phase_pp": 1.026,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.013,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2785,7 +2785,7 @@
     "bowl_phase_pp": 1.093,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.918,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2845,7 +2845,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 2,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2875,7 +2875,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 9,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2905,7 +2905,7 @@
     "bowl_phase_pp": 1.083,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.839,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2935,7 +2935,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 10,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -2995,7 +2995,7 @@
     "bowl_phase_pp": 1.029,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.887,
-    "price_cr": 7,
+    "price_cr": 11,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3025,7 +3025,7 @@
     "bowl_phase_pp": 1.076,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.101,
-    "price_cr": 7,
+    "price_cr": 8,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3055,7 +3055,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 5,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3205,7 +3205,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 11,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3265,7 +3265,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3295,7 +3295,7 @@
     "bowl_phase_pp": 1.049,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.236,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3325,7 +3325,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3355,7 +3355,7 @@
     "bowl_phase_pp": 1.35,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3385,7 +3385,7 @@
     "bowl_phase_pp": 1.117,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.885,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3505,7 +3505,7 @@
     "bowl_phase_pp": 1,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.35,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3625,7 +3625,7 @@
     "bowl_phase_pp": 1.139,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.814,
-    "price_cr": 7,
+    "price_cr": 10,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3655,7 +3655,7 @@
     "bowl_phase_pp": 1.046,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.763,
-    "price_cr": 7,
+    "price_cr": 9,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3685,7 +3685,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 6,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3745,7 +3745,7 @@
     "bowl_phase_pp": 1,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.121,
-    "price_cr": 7,
+    "price_cr": 9,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3775,7 +3775,7 @@
     "bowl_phase_pp": 0.991,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.35,
-    "price_cr": 7,
+    "price_cr": 9,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3925,7 +3925,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 9,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -3985,7 +3985,7 @@
     "bowl_phase_pp": 1,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.943,
-    "price_cr": 7,
+    "price_cr": 8,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -4045,7 +4045,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 11,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -4165,7 +4165,7 @@
     "bowl_phase_pp": 0.958,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.992,
-    "price_cr": 7,
+    "price_cr": 8,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -4195,7 +4195,7 @@
     "bowl_phase_pp": 1.177,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.719,
-    "price_cr": 7,
+    "price_cr": 10,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -4225,7 +4225,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 7,
+    "price_cr": 9,
     "price_tier": "premium",
     "fielding_rating": 7
   },
@@ -4315,7 +4315,7 @@
     "bowl_phase_pp": 0.834,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.986,
-    "price_cr": 5,
+    "price_cr": 9,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4375,7 +4375,7 @@
     "bowl_phase_pp": 1.057,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.888,
-    "price_cr": 5,
+    "price_cr": 7,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4405,7 +4405,7 @@
     "bowl_phase_pp": 1.077,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.759,
-    "price_cr": 5,
+    "price_cr": 7,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4435,7 +4435,7 @@
     "bowl_phase_pp": 0.972,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.781,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4465,7 +4465,7 @@
     "bowl_phase_pp": 0.999,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.789,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4495,7 +4495,7 @@
     "bowl_phase_pp": 1.046,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.804,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4525,7 +4525,7 @@
     "bowl_phase_pp": 1.101,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.823,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4555,7 +4555,7 @@
     "bowl_phase_pp": 1.119,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.797,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4585,7 +4585,7 @@
     "bowl_phase_pp": 1.005,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.9,
-    "price_cr": 5,
+    "price_cr": 7,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4645,7 +4645,7 @@
     "bowl_phase_pp": 1.143,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.81,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4675,7 +4675,7 @@
     "bowl_phase_pp": 1.108,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.82,
-    "price_cr": 5,
+    "price_cr": 10,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4705,7 +4705,7 @@
     "bowl_phase_pp": 0.955,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.989,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4735,7 +4735,7 @@
     "bowl_phase_pp": 1.048,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.875,
-    "price_cr": 5,
+    "price_cr": 8,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4765,7 +4765,7 @@
     "bowl_phase_pp": 0.888,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.839,
-    "price_cr": 5,
+    "price_cr": 8,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4795,7 +4795,7 @@
     "bowl_phase_pp": 1.198,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.85,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4825,7 +4825,7 @@
     "bowl_phase_pp": 1.019,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.903,
-    "price_cr": 5,
+    "price_cr": 3,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4855,7 +4855,7 @@
     "bowl_phase_pp": 0.971,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.947,
-    "price_cr": 5,
+    "price_cr": 7,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4885,7 +4885,7 @@
     "bowl_phase_pp": 1,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.77,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -4975,7 +4975,7 @@
     "bowl_phase_pp": 0.912,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.918,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5035,7 +5035,7 @@
     "bowl_phase_pp": 1.084,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.823,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5065,7 +5065,7 @@
     "bowl_phase_pp": 1.182,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.865,
-    "price_cr": 5,
+    "price_cr": 8,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5095,7 +5095,7 @@
     "bowl_phase_pp": 1.038,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.932,
-    "price_cr": 5,
+    "price_cr": 10,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5125,7 +5125,7 @@
     "bowl_phase_pp": 0.91,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.879,
-    "price_cr": 5,
+    "price_cr": 8,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5155,7 +5155,7 @@
     "bowl_phase_pp": 1.093,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.898,
-    "price_cr": 5,
+    "price_cr": 8,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5185,7 +5185,7 @@
     "bowl_phase_pp": 1.023,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.897,
-    "price_cr": 5,
+    "price_cr": 7,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5245,7 +5245,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5275,7 +5275,7 @@
     "bowl_phase_pp": 1.009,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.148,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5395,7 +5395,7 @@
     "bowl_phase_pp": 1.23,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.819,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5425,7 +5425,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5455,7 +5455,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5515,7 +5515,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5545,7 +5545,7 @@
     "bowl_phase_pp": 1.108,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.903,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5665,7 +5665,7 @@
     "bowl_phase_pp": 1.23,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.864,
-    "price_cr": 5,
+    "price_cr": 4,
     "price_tier": "good",
     "fielding_rating": 7
   },
@@ -5785,7 +5785,7 @@
     "bowl_phase_pp": 0.967,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.898,
-    "price_cr": 3,
+    "price_cr": 2,
     "price_tier": "value",
     "fielding_rating": 7
   },
@@ -5845,7 +5845,7 @@
     "bowl_phase_pp": 0.997,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.843,
-    "price_cr": 3,
+    "price_cr": 2,
     "price_tier": "value",
     "fielding_rating": 7
   },
@@ -5875,7 +5875,7 @@
     "bowl_phase_pp": 1.05,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.862,
-    "price_cr": 3,
+    "price_cr": 4,
     "price_tier": "value",
     "fielding_rating": 7
   },
@@ -5905,7 +5905,7 @@
     "bowl_phase_pp": 1.006,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
-    "price_cr": 3,
+    "price_cr": 10,
     "price_tier": "value",
     "fielding_rating": 7
   },
@@ -5935,7 +5935,7 @@
     "bowl_phase_pp": 0.959,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.947,
-    "price_cr": 3,
+    "price_cr": 4,
     "price_tier": "value",
     "fielding_rating": 7
   },
@@ -5965,7 +5965,7 @@
     "bowl_phase_pp": 1.31,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
-    "price_cr": 3,
+    "price_cr": 8,
     "price_tier": "value",
     "fielding_rating": 7
   },
@@ -5995,7 +5995,7 @@
     "bowl_phase_pp": 1.35,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.35,
-    "price_cr": 3,
+    "price_cr": 10,
     "price_tier": "value",
     "fielding_rating": 7
   },
@@ -6025,7 +6025,7 @@
     "bowl_phase_pp": 1.177,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.818,
-    "price_cr": 3,
+    "price_cr": 4,
     "price_tier": "value",
     "fielding_rating": 7
   },
@@ -6055,7 +6055,7 @@
     "bowl_phase_pp": 1.043,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.774,
-    "price_cr": 3,
+    "price_cr": 8,
     "price_tier": "value",
     "fielding_rating": 7
   },
@@ -6085,7 +6085,7 @@
     "bowl_phase_pp": 1.045,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.935,
-    "price_cr": 3,
+    "price_cr": 4,
     "price_tier": "value",
     "fielding_rating": 7
   },
@@ -6115,7 +6115,7 @@
     "bowl_phase_pp": 1.105,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.808,
-    "price_cr": 3,
+    "price_cr": 5,
     "price_tier": "value",
     "fielding_rating": 7
   },
@@ -6175,7 +6175,7 @@
     "bowl_phase_pp": 1.117,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6325,7 +6325,7 @@
     "bowl_phase_pp": 1.195,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.83,
-    "price_cr": 1.5,
+    "price_cr": 4,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6385,7 +6385,7 @@
     "bowl_phase_pp": 1.053,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.732,
-    "price_cr": 1.5,
+    "price_cr": 4,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6415,7 +6415,7 @@
     "bowl_phase_pp": 0.936,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
-    "price_cr": 1.5,
+    "price_cr": 5,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6505,7 +6505,7 @@
     "bowl_phase_pp": 1.063,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.977,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6535,7 +6535,7 @@
     "bowl_phase_pp": 0.972,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.009,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6745,7 +6745,7 @@
     "bowl_phase_pp": 0.851,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6775,7 +6775,7 @@
     "bowl_phase_pp": 1.238,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
-    "price_cr": 1.5,
+    "price_cr": 4,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6835,7 +6835,7 @@
     "bowl_phase_pp": 1.118,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.723,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6865,7 +6865,7 @@
     "bowl_phase_pp": 1.281,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.794,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6895,7 +6895,7 @@
     "bowl_phase_pp": 1.09,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.872,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6925,7 +6925,7 @@
     "bowl_phase_pp": 1.223,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.789,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -6985,7 +6985,7 @@
     "bowl_phase_pp": 1.068,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.797,
-    "price_cr": 1.5,
+    "price_cr": 4,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -7015,7 +7015,7 @@
     "bowl_phase_pp": 1.017,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.882,
-    "price_cr": 1.5,
+    "price_cr": 4,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -7255,7 +7255,7 @@
     "bowl_phase_pp": 0.7,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.722,
-    "price_cr": 1.5,
+    "price_cr": 4,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -7285,7 +7285,7 @@
     "bowl_phase_pp": 1.001,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.955,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -7315,7 +7315,7 @@
     "bowl_phase_pp": 1.161,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.704,
-    "price_cr": 1.5,
+    "price_cr": 5,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -7345,7 +7345,7 @@
     "bowl_phase_pp": 0.94,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.902,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -7375,7 +7375,7 @@
     "bowl_phase_pp": 1.097,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.769,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -7405,7 +7405,7 @@
     "bowl_phase_pp": 1.205,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.879,
-    "price_cr": 1.5,
+    "price_cr": 3,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -7435,7 +7435,7 @@
     "bowl_phase_pp": 1.006,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.835,
-    "price_cr": 1.5,
+    "price_cr": 4,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -7465,7 +7465,7 @@
     "bowl_phase_pp": 1.003,
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.962,
-    "price_cr": 1.5,
+    "price_cr": 5,
     "price_tier": "budget",
     "fielding_rating": 7
   },
@@ -7495,7 +7495,7 @@
     "bowl_phase_pp": null,
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
-    "price_cr": 1.5,
+    "price_cr": 4,
     "price_tier": "budget",
     "fielding_rating": 7
   },
