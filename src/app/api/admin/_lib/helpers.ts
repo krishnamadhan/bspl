@@ -130,6 +130,16 @@ export function buildSimTeam(
   }
 }
 
+// ── Bot toss choice — condition-aware ─────────────────────────────────────────
+// Dew evening: chasing team benefits from dew (higher batting SR, worse economy for bowlers)
+// Overcast: pacers benefit bowling first (swing and seam movement in 1st innings)
+// All other conditions: bat first is safer
+export function getBotTossChoice(condition: string): 'bat' | 'bowl' {
+  if (condition === 'dew_evening') return 'bowl'
+  if (condition === 'overcast')    return 'bowl'
+  return 'bat'
+}
+
 // ── Best bowling comparison: higher wickets wins, then lower runs ─────────────
 export function mergeBestBowling(existing: string | null, candidate: string | null): string | null {
   if (!candidate) return existing

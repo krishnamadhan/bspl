@@ -1,13 +1,23 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { adminClient, requireAdmin } from '../_lib/helpers'
 
-const MATCH_CONDITION_CYCLE = [
+const MATCH_CONDITIONS_POOL = [
   'neutral',
   'overcast',
   'dew_evening',
   'slow_sticky',
   'crumbling_spin',
 ] as const
+
+/** Fisher-Yates shuffle — gives a different condition order every season */
+function shuffleConditions<T>(arr: readonly T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
 
 export async function POST(_req: NextRequest) {
   const user = await requireAdmin()
@@ -61,13 +71,16 @@ export async function POST(_req: NextRequest) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
+  // Shuffle conditions so each season has a different distribution
+  const conditions = shuffleConditions(MATCH_CONDITIONS_POOL)
+
   const matchRows = pairs.map((pair, index) => {
     const matchDay  = index + 1
     const matchDate = new Date(today)
     matchDate.setDate(today.getDate() + matchDay) // first match tomorrow
 
     const venueId   = venues[index % venues.length].id
-    const condition = MATCH_CONDITION_CYCLE[index % MATCH_CONDITION_CYCLE.length]
+    const condition = conditions[index % conditions.length]
 
     return {
       season_id:      season.id,

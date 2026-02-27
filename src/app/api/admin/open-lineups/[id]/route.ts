@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { adminClient, requireAdmin } from '../../_lib/helpers'
+import { adminClient, requireAdmin, getBotTossChoice } from '../../_lib/helpers'
 import { pickXI, buildRosterForPick } from '../../_lib/pick_xi'
 
 export async function POST(
@@ -14,7 +14,7 @@ export async function POST(
 
   const { data: match } = await db
     .from('bspl_matches')
-    .select('id, status, season_id, team_a_id, team_b_id')
+    .select('id, status, season_id, team_a_id, team_b_id, condition')
     .eq('id', matchId)
     .single()
 
@@ -95,7 +95,7 @@ export async function POST(
           team_id:      teamId,
           playing_xi,
           bowling_order,
-          toss_choice:  'bat',
+          toss_choice:  getBotTossChoice(match.condition),
           is_submitted: true,
         },
         { onConflict: 'match_id,team_id' },

@@ -194,8 +194,10 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
     } else {
       setNotice({
         type: 'success',
-        msg: existingLineup?.is_submitted ? 'Lineup updated successfully!' : 'Lineup submitted!',
+        msg: existingLineup?.is_submitted ? 'Lineup updated successfully!' : 'Lineup submitted! Good luck!',
       })
+      // Refresh the page so the server-rendered "✓ Lineup submitted" badge syncs
+      setTimeout(() => window.location.reload(), 1500)
     }
   }
 
@@ -219,13 +221,9 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
   return (
     <div className="space-y-4">
-      {/* Notice banner */}
-      {notice && (
-        <div className={`px-4 py-3 rounded-lg text-sm ${
-          notice.type === 'success'
-            ? 'bg-green-500/10 text-green-300 border border-green-500/20'
-            : 'bg-red-500/10 text-red-300 border border-red-500/20'
-        }`}>
+      {/* Error notice at top — errors must be immediately visible */}
+      {notice?.type === 'error' && (
+        <div className="px-4 py-3 rounded-lg text-sm bg-red-500/10 text-red-300 border border-red-500/20">
           {notice.msg}
         </div>
       )}
@@ -486,17 +484,23 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
           </div>
 
           {/* Submit */}
-          <button
-            onClick={handleSubmit}
-            disabled={loading || !readyToSubmit}
-            className="w-full py-3 bg-yellow-400 text-gray-950 font-bold rounded-xl hover:bg-yellow-300 transition disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {loading
-              ? 'Submitting…'
-              : existingLineup?.is_submitted
-                ? 'Update Lineup'
-                : 'Submit Lineup'}
-          </button>
+          {notice?.type === 'success' ? (
+            <div className="w-full py-3 bg-green-500/20 border border-green-500/30 text-green-300 font-bold rounded-xl text-center text-sm">
+              ✓ {notice.msg} Refreshing…
+            </div>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !readyToSubmit}
+              className="w-full py-3 bg-yellow-400 text-gray-950 font-bold rounded-xl hover:bg-yellow-300 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {loading
+                ? 'Submitting…'
+                : existingLineup?.is_submitted
+                  ? 'Update Lineup'
+                  : 'Submit Lineup'}
+            </button>
+          )}
 
           {!readyToSubmit && !loading && (
             <p className="text-xs text-gray-600 text-center">

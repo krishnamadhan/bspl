@@ -371,15 +371,25 @@ export default function AdminPage() {
   }, [seasonInfo?.id, matches]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── API helpers ─────────────────────────────────────────────────────────────
-  const post = async (url: string, body?: object) => {
-    const res  = await fetch(url, {
-      method: 'POST',
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
-      body:    body ? JSON.stringify(body) : undefined,
-    })
-    const json = await res.json()
-    if (!res.ok) throw new Error(json.error ?? 'Request failed')
-    return json
+  const post = async (url: string, body?: object, timeoutMs = 90_000) => {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    try {
+      const res = await fetch(url, {
+        method:  'POST',
+        headers: body ? { 'Content-Type': 'application/json' } : undefined,
+        body:    body ? JSON.stringify(body) : undefined,
+        signal:  controller.signal,
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Request failed')
+      return json
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') throw new Error('Request timed out — the operation may still be running, please refresh.')
+      throw err
+    } finally {
+      clearTimeout(timer)
+    }
   }
 
   const handle = (fn: () => Promise<void>) =>
@@ -535,6 +545,18 @@ export default function AdminPage() {
           ADMIN ONLY
         </span>
       </div>
+
+      {/* ── Working indicator ──────────────────────────────────────────────── */}
+      {isPending && (
+        <div className="flex items-center gap-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl px-4 py-3">
+          <div className="flex gap-1">
+            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+          </div>
+          <span className="text-yellow-300 text-sm font-medium">Working… please wait</span>
+        </div>
+      )}
 
       {/* ── Toast ──────────────────────────────────────────────────────────── */}
       {toast && (
@@ -726,11 +748,9 @@ export default function AdminPage() {
                     size="sm"
                   />
                 </div>
-                {botTeams.length < 6 && (
-                  <p className="text-xs text-yellow-400/60 mt-1.5">
-                    {6 - botTeams.length} more bot team{6 - botTeams.length !== 1 ? 's' : ''} recommended (target: 6 bots)
-                  </p>
-                )}
+                <p className="text-xs text-gray-600 mt-1.5">
+                  Add as many bot teams as you need for the season.
+                </p>
               </div>
             )}
 

@@ -8,7 +8,7 @@
  * Returns a detailed result log so anomalies can be spotted easily.
  */
 import { NextResponse } from 'next/server'
-import { adminClient, requireAdmin } from '../_lib/helpers'
+import { adminClient, requireAdmin, getBotTossChoice } from '../_lib/helpers'
 import { simulateOne } from '../_lib/simulate_one'
 import { pickXI, buildRosterForPick } from '../_lib/pick_xi'
 
@@ -38,7 +38,7 @@ export async function POST() {
   // ── Step 1: open all scheduled matches (auto-fill bot lineups) ────────────
   const { data: scheduledMatches } = await db
     .from('bspl_matches')
-    .select('id, match_number, team_a_id, team_b_id')
+    .select('id, match_number, team_a_id, team_b_id, condition')
     .eq('season_id', season.id)
     .eq('status', 'scheduled')
     .order('match_number')
@@ -58,7 +58,14 @@ export async function POST() {
     const botTeamIds = (teams ?? []).filter(t => t.is_bot).map(t => t.id)
 
     for (const teamId of botTeamIds) {
-      // Try to reuse previous submitted lineup
+      // Always fetch current roster first — needed for validation AND auto-pick fallback
+      const { data: rosters } = await db
+        .from('bspl_rosters')
+        .select('player_id, players(*)')
+        .eq('team_id', teamId)
+      const rosterPlayerIds = new Set((rosters ?? []).map((r: { player_id: string }) => r.player_id))
+
+      // Try to reuse previous submitted lineup (only if all players still in roster)
       const { data: prevMatch } = await db
         .from('bspl_matches')
         .select('id')
@@ -82,16 +89,18 @@ export async function POST() {
           .maybeSingle()
 
         if (prevLineup?.playing_xi?.length === 11 && prevLineup?.bowling_order?.length === 5) {
-          playing_xi    = prevLineup.playing_xi
-          bowling_order = prevLineup.bowling_order
+          const allInRoster =
+            prevLineup.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
+            prevLineup.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
+          if (allInRoster) {
+            playing_xi    = prevLineup.playing_xi
+            bowling_order = prevLineup.bowling_order
+          }
         }
       }
 
+      // Fall back to auto-pick from current roster
       if (!playing_xi) {
-        const { data: rosters } = await db
-          .from('bspl_rosters')
-          .select('player_id, players(*)')
-          .eq('team_id', teamId)
         const rosterPicks = buildRosterForPick(rosters ?? [])
         const { xi, bowlingOrder } = pickXI(rosterPicks)
         playing_xi    = xi
@@ -104,7 +113,7 @@ export async function POST() {
           team_id:      teamId,
           playing_xi,
           bowling_order,
-          toss_choice:  'bat',
+          toss_choice:  getBotTossChoice(match.condition),
           is_submitted: true,
         },
         { onConflict: 'match_id,team_id' },
@@ -117,7 +126,7 @@ export async function POST() {
   // ── Step 2: auto-fill bot lineups for any already-open matches without one ─
   const { data: openMatches } = await db
     .from('bspl_matches')
-    .select('id, match_number, team_a_id, team_b_id')
+    .select('id, match_number, team_a_id, team_b_id, condition')
     .eq('season_id', season.id)
     .eq('status', 'lineup_open')
     .order('match_number')
@@ -157,7 +166,7 @@ export async function POST() {
           team_id:      team.id,
           playing_xi:   xi,
           bowling_order: bowlingOrder,
-          toss_choice:  'bat',
+          toss_choice:  getBotTossChoice(match.condition),
           is_submitted: true,
         },
         { onConflict: 'match_id,team_id' },

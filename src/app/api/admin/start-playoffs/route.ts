@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireAdmin, adminClient } from '../_lib/helpers'
+import { requireAdmin, adminClient, getBotTossChoice } from '../_lib/helpers'
 import { pickXI, buildRosterForPick } from '../_lib/pick_xi'
 
 const CONDITIONS = ['neutral', 'overcast', 'dew_evening', 'slow_sticky'] as const
@@ -113,7 +113,7 @@ export async function POST() {
   const { data: created, error: insertErr } = await db
     .from('bspl_matches')
     .insert(playoffRows)
-    .select('id, team_a_id, team_b_id, match_type')
+    .select('id, team_a_id, team_b_id, match_type, condition')
 
   if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
 
@@ -134,7 +134,7 @@ export async function POST() {
 export async function autoFillBotLineups(
   db: ReturnType<typeof adminClient>,
   seasonId: string,
-  matches: Array<{ id: string; team_a_id: string; team_b_id: string }>,
+  matches: Array<{ id: string; team_a_id: string; team_b_id: string; condition?: string }>,
 ) {
   for (const match of matches) {
     await db.from('bspl_matches').update({ status: 'lineup_open' }).eq('id', match.id)
@@ -149,7 +149,12 @@ export async function autoFillBotLineups(
         .eq('match_id', match.id).eq('team_id', teamId).maybeSingle()
       if (existing?.is_submitted) continue
 
-      // Try last completed lineup for this team
+      // Always fetch roster first — needed for validation AND auto-pick fallback
+      const { data: rosters } = await db
+        .from('bspl_rosters').select('player_id, players(*)').eq('team_id', teamId)
+      const rosterPlayerIds = new Set((rosters ?? []).map((r: { player_id: string }) => r.player_id))
+
+      // Try last completed lineup for this team (only if all players still in roster)
       const { data: prevMatch } = await db
         .from('bspl_matches').select('id')
         .eq('season_id', seasonId).eq('status', 'completed')
@@ -164,23 +169,28 @@ export async function autoFillBotLineups(
           .from('bspl_lineups').select('playing_xi, bowling_order, toss_choice')
           .eq('match_id', prevMatch.id).eq('team_id', teamId).eq('is_submitted', true).maybeSingle()
         if (prev?.playing_xi?.length === 11 && prev?.bowling_order?.length === 5) {
-          xi = prev.playing_xi
-          bowling = prev.bowling_order
+          const allInRoster =
+            prev.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
+            prev.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
+          if (allInRoster) {
+            xi = prev.playing_xi
+            bowling = prev.bowling_order
+          }
         }
       }
 
+      // Fall back to auto-pick from current roster
       if (xi.length !== 11) {
-        const { data: rosters } = await db
-          .from('bspl_rosters').select('player_id, players(*)').eq('team_id', teamId)
         const picked = pickXI(buildRosterForPick(rosters ?? []))
         xi = picked.xi
         bowling = picked.bowlingOrder
       }
 
+      const condition = match.condition ?? 'neutral'
       const payload = {
         match_id: match.id, team_id: teamId,
         playing_xi: xi, bowling_order: bowling,
-        toss_choice: 'bat', is_submitted: true,
+        toss_choice: getBotTossChoice(condition), is_submitted: true,
       }
       if (existing) {
         await db.from('bspl_lineups').update(payload).eq('id', existing.id)

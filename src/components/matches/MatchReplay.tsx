@@ -346,7 +346,10 @@ function Intermission({
   }, [])
 
   const target = inn1.total_runs + 1
-  const rrr    = (target / 30) * 6
+  // Compute actual overs completed from the ball log
+  const legalBalls1 = inn1.balls.filter(b => b.outcome !== 'Wd' && b.outcome !== 'Nb').length
+  const inn1OvStr   = `${Math.floor(legalBalls1 / 6)}.${legalBalls1 % 6}`
+  const rrr         = legalBalls1 > 0 ? (target / legalBalls1) * 6 : (target / 30) * 6
 
   return (
     <div className="max-w-sm mx-auto text-center py-10 space-y-5">
@@ -362,7 +365,7 @@ function Intermission({
         <div className="text-4xl font-bold tabular-nums text-yellow-400">
           {inn1.total_runs}/{inn1.total_wickets}
         </div>
-        <div className="text-gray-400 text-sm mt-1">(5.0 ov)</div>
+        <div className="text-gray-400 text-sm mt-1">({inn1OvStr} ov)</div>
       </div>
 
       {/* Target callout — adds suspense before inn2 */}

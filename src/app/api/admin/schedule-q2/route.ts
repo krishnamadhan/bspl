@@ -69,7 +69,7 @@ export async function POST() {
       status:       'scheduled',
       match_type:   'qualifier2',
     })
-    .select('id, team_a_id, team_b_id')
+    .select('id, team_a_id, team_b_id, condition')
 
   if (insertErr || !created?.length) {
     return NextResponse.json({ error: insertErr?.message ?? 'Insert failed' }, { status: 500 })

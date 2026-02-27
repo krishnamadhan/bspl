@@ -20,7 +20,6 @@ const COND: Record<string, { label: string; color: string; desc: string }> = {
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   scheduled:   { label: 'Scheduled',   cls: 'bg-gray-700 text-gray-300' },
   lineup_open: { label: 'Lineup Open', cls: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' },
-  locked:      { label: 'Locked',      cls: 'bg-orange-500/20 text-orange-300' },
   live:        { label: 'LIVE',        cls: 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' },
   completed:   { label: 'Completed',   cls: 'bg-green-500/20 text-green-300' },
 }
@@ -687,12 +686,6 @@ export default async function MatchDetailPage({
             </p>
           </div>
         </div>
-
-        {rawMatch.status === 'locked' && (
-          <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 text-sm text-orange-300">
-            Lineups are locked. The match will be simulated shortly.
-          </div>
-        )}
 
         {rawMatch.status === 'lineup_open' && !amPlaying && (
           <div className="bg-gray-800 rounded-lg p-3 text-sm text-gray-400">

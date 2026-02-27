@@ -82,19 +82,33 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
   let prevBowlerId: string | null = null
 
   for (let slot = 0; slot < 5; slot++) {
-    // Eligible: under max overs AND not the same as previous over (no consecutive)
-    const eligible = canBowl.filter(p =>
+    // Primary: under max overs AND not the same as previous over (no consecutive)
+    let eligible = canBowl.filter(p =>
       (oversAssigned[p.player_id] ?? 0) < MAX_OVERS_PER_BOWLER &&
       p.player_id !== prevBowlerId
     )
+
+    // Fallback 1: relax max-overs cap (sparse bowling attack — e.g. only 2 bowlers)
+    // This ensures we always produce 5 bowling assignments; the no-consecutive rule is kept.
+    if (eligible.length === 0) {
+      eligible = canBowl
+        .filter(p => p.player_id !== prevBowlerId)
+        .sort((a, b) => (oversAssigned[a.player_id] ?? 0) - (oversAssigned[b.player_id] ?? 0))
+    }
+
+    // Fallback 2: only 1 bowler total — must bowl consecutive (avoid infinite loop)
+    if (eligible.length === 0) {
+      eligible = [...canBowl].sort((a, b) => (oversAssigned[a.player_id] ?? 0) - (oversAssigned[b.player_id] ?? 0))
+    }
+
     if (eligible.length === 0) break
 
     let pick: typeof canBowl[0]
     if (slot === 0 || slot === 4) {
-      // Over 1 (powerplay) and over 5 (death): always best eligible bowler
+      // Over 1 (powerplay) and over 5 (death): best eligible bowler by economy
       pick = eligible[0]
     } else {
-      // Middle overs: prioritise bowlers who haven't bowled yet to ensure min 4 different
+      // Middle overs: prioritise bowlers who haven't bowled yet to ensure variety
       const unused = eligible.filter(p => !(oversAssigned[p.player_id] ?? 0))
       pick = unused.length > 0 ? unused[0] : eligible[0]
     }

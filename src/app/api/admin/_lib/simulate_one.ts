@@ -3,7 +3,7 @@
  * Returns a result summary string, or throws with an error message.
  */
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { buildSimTeam, buildSimVenue, mergeBestBowling } from './helpers'
+import { buildSimTeam, buildSimVenue, mergeBestBowling, getBotTossChoice } from './helpers'
 import { simulateMatch } from '@/lib/simulation/engine'
 import { pickXI, buildRosterForPick } from './pick_xi'
 
@@ -77,7 +77,7 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     // 2. Auto-pick from roster
     const roster = buildRosterForPick(rosters ?? [])
     const { xi, bowlingOrder } = pickXI(roster)
-    return { team_id: teamId, playing_xi: xi, bowling_order: bowlingOrder, toss_choice: 'bat', is_submitted: true }
+    return { team_id: teamId, playing_xi: xi, bowling_order: bowlingOrder, toss_choice: getBotTossChoice(match.condition), is_submitted: true }
   }
 
   const rawA = lineups?.find((l: { team_id: string }) => l.team_id === match.team_a_id)
