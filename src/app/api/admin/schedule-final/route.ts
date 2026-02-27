@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { requireAdmin, adminClient } from '../_lib/helpers'
 import { autoFillBotLineups } from '../start-playoffs/route'
 
+const CONDITIONS = ['neutral', 'overcast', 'dew_evening', 'slow_sticky', 'crumbling_spin'] as const
+
 /**
  * Creates the Grand Final: Q1 winner vs Q2 winner.
  * Requires both Q1 and Q2 to be completed.
@@ -61,7 +63,7 @@ export async function POST() {
       team_a_id:      q1.winner_team_id,
       team_b_id:      q2.winner_team_id,
       venue_id:       venues[0].id,
-      condition:      'neutral',
+      condition:      CONDITIONS[Math.floor(Math.random() * CONDITIONS.length)],
       scheduled_date: new Date().toISOString(),
       status:         'scheduled',
       match_type:     'final',

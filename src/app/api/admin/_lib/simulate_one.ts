@@ -444,6 +444,8 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     pointsRows?.map((p: Record<string, unknown>) => [p.team_id as string, p as Record<string, number>]) ?? []
   )
 
+  const isTie = result.winner_team_id === null
+
   const pointsUpserts = ([
     [match.team_a_id, teamARunsFor, teamBRunsFor, result.winner_team_id === match.team_a_id, teamAOversFor, teamAOversAgainst] as const,
     [match.team_b_id, teamBRunsFor, teamARunsFor, result.winner_team_id === match.team_b_id, teamBOversFor, teamBOversAgainst] as const,
@@ -451,8 +453,8 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     const p = pointsMap.get(teamId)
     const newPlayed       = Number(p?.played        ?? 0) + 1
     const newWon          = Number(p?.won           ?? 0) + (won ? 1 : 0)
-    const newLost         = Number(p?.lost          ?? 0) + (won ? 0 : 1)
-    const newPoints       = Number(p?.points        ?? 0) + (won ? 2 : 0)
+    const newLost         = Number(p?.lost          ?? 0) + (!won && !isTie ? 1 : 0)
+    const newPoints       = Number(p?.points        ?? 0) + (won ? 2 : isTie ? 1 : 0)
     const newRunsFor      = Number(p?.runs_for      ?? 0) + runsFor
     const newRunsAgainst  = Number(p?.runs_against  ?? 0) + runsAgainst
     const newOversFor     = Number(p?.overs_for     ?? 0) + matchOversFor
@@ -468,7 +470,7 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
       played:        newPlayed,
       won:           newWon,
       lost:          newLost,
-      no_result:     Number(p?.no_result ?? 0),
+      no_result:     Number(p?.no_result ?? 0) + (isTie ? 1 : 0),
       points:        newPoints,
       runs_for:      newRunsFor,
       runs_against:  newRunsAgainst,

@@ -328,11 +328,14 @@ export function simulateMatch(
   const target = innings1.total_runs
   const innings2 = simulateInnings(teamB, teamA, venue, true, target, matchSeed + 1)
 
-  const teamAWon = innings2.total_runs <= target
-  const winnerTeamId = teamAWon ? teamA.team_id : teamB.team_id
+  const isTie    = innings2.total_runs === target
+  const teamAWon = innings2.total_runs < target
+  const winnerTeamId = isTie ? null : (teamAWon ? teamA.team_id : teamB.team_id)
 
   let resultSummary = ''
-  if (teamAWon) {
+  if (isTie) {
+    resultSummary = `Match tied — both teams scored ${target}`
+  } else if (teamAWon) {
     const margin = target - innings2.total_runs
     resultSummary = `${teamA.team_id} won by ${margin} run${margin !== 1 ? 's' : ''}`
   } else {
@@ -349,7 +352,7 @@ export function simulateMatch(
     innings2,
     winner_team_id: winnerTeamId,
     margin_runs: teamAWon ? target - innings2.total_runs : null,
-    margin_wickets: !teamAWon ? 10 - innings2.total_wickets : null,
+    margin_wickets: (!teamAWon && !isTie) ? 10 - innings2.total_wickets : null,
     result_summary: resultSummary,
     stamina_updates: [...teamAUpdates.stamina, ...teamBUpdates.stamina],
     confidence_updates: [...teamAUpdates.confidence, ...teamBUpdates.confidence],

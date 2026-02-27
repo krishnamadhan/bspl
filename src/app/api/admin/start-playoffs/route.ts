@@ -218,9 +218,11 @@ export async function autoFillBotLineups(
         toss_choice: getBotTossChoice(condition), is_submitted: true,
       }
       if (existing) {
-        await db.from('bspl_lineups').update(payload).eq('id', existing.id)
+        const { error: updErr } = await db.from('bspl_lineups').update(payload).eq('id', existing.id)
+        if (updErr) console.error(`[autoFillBotLineups] lineup update failed for team ${teamId} match ${match.id}:`, updErr.message)
       } else {
-        await db.from('bspl_lineups').insert(payload)
+        const { error: insErr } = await db.from('bspl_lineups').insert(payload)
+        if (insErr) console.error(`[autoFillBotLineups] lineup insert failed for team ${teamId} match ${match.id}:`, insErr.message)
       }
     }
   }

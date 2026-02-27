@@ -107,7 +107,7 @@ export async function POST() {
         bowling_order = bowlingOrder
       }
 
-      await db.from('bspl_lineups').upsert(
+      const { error: upsertErr } = await db.from('bspl_lineups').upsert(
         {
           match_id:     match.id,
           team_id:      teamId,
@@ -118,6 +118,7 @@ export async function POST() {
         },
         { onConflict: 'match_id,team_id' },
       )
+      if (upsertErr) console.error(`[run-season] lineup upsert failed for team ${teamId} match ${match.id}:`, upsertErr.message)
     }
 
     opened.push(match.match_number)
@@ -160,7 +161,7 @@ export async function POST() {
       const { xi, bowlingOrder } = pickXI(rosterPicks)
       if (xi.length < 11 || bowlingOrder.length < 5) continue
 
-      await db.from('bspl_lineups').upsert(
+      const { error: upsertErr2 } = await db.from('bspl_lineups').upsert(
         {
           match_id:     match.id,
           team_id:      team.id,
@@ -171,6 +172,7 @@ export async function POST() {
         },
         { onConflict: 'match_id,team_id' },
       )
+      if (upsertErr2) console.error(`[run-season] lineup upsert failed for team ${team.id} match ${match.id}:`, upsertErr2.message)
     }
   }
 

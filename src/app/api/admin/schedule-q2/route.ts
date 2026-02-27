@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { requireAdmin, adminClient } from '../_lib/helpers'
 import { autoFillBotLineups } from '../start-playoffs/route'
 
+const CONDITIONS = ['neutral', 'overcast', 'dew_evening', 'slow_sticky', 'crumbling_spin'] as const
+
 /**
  * Creates Qualifier 2: Q1 loser vs Eliminator winner.
  * Requires both Q1 and the Eliminator to be completed.
@@ -65,7 +67,7 @@ export async function POST() {
       team_a_id:      q1Loser,
       team_b_id:      elWinner,
       venue_id:       venues[2 % venues.length].id,
-      condition:      'crumbling_spin',
+      condition:      CONDITIONS[Math.floor(Math.random() * CONDITIONS.length)],
       scheduled_date: new Date().toISOString(),
       status:         'scheduled',
       match_type:     'qualifier2',
