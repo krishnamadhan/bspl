@@ -7,11 +7,16 @@ import { buildSimTeam, buildSimVenue, mergeBestBowling, getBotTossChoice } from 
 import { simulateMatch } from '@/lib/simulation/engine'
 import { pickXI, buildRosterForPick, isValidBowlingOrder } from './pick_xi'
 
-export async function simulateOne(matchId: string, db: SupabaseClient): Promise<string> {
+export async function simulateOne(
+  matchId: string,
+  db: SupabaseClient,
+  opts: { isPractice?: boolean } = {},
+): Promise<string> {
+  const { isPractice = false } = opts
   // ── 1. Load match ──────────────────────────────────────────────────────────
   const { data: match, error: matchError } = await db
     .from('bspl_matches')
-    .select('*')
+    .select('id, status, match_type, season_id, team_a_id, team_b_id, venue_id, condition, match_number')
     .eq('id', matchId)
     .single()
 
@@ -19,6 +24,9 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
   if (match.status !== 'lineup_open') {
     throw new Error(`Match status is '${match.status}', expected 'lineup_open'`)
   }
+  // Practice matches skip stamina / player-stats / points updates
+  // (isPractice is set by the caller; we re-confirm via DB to be safe)
+  const effectivelyPractice = isPractice || match.match_type === 'practice'
 
   // Atomically claim the match: lineup_open → live.
   // If another request already claimed it, the status predicate matches 0 rows.
@@ -268,7 +276,7 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     confidence:      Math.round((confMap.get(`${u.team_id}:${u.player_id}`) ?? 1.0) * 1000) / 1000,
   }))
 
-  if (staminaUpserts.length > 0) {
+  if (!effectivelyPractice && staminaUpserts.length > 0) {
     const { error: staminaErr } = await db.from('bspl_stamina').upsert(staminaUpserts, {
       onConflict: 'season_id,team_id,player_id',
     })
@@ -418,7 +426,7 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     }
   })
 
-  if (statsUpserts.length > 0) {
+  if (!effectivelyPractice && statsUpserts.length > 0) {
     const { error: statsErr } = await db.from('bspl_player_stats').upsert(statsUpserts, {
       onConflict: 'season_id,team_id,player_id',
     })
@@ -485,10 +493,12 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     }
   })
 
-  const { error: pointsErr } = await db.from('bspl_points').upsert(pointsUpserts, {
-    onConflict: 'season_id,team_id',
-  })
-  if (pointsErr) console.error(`[simulate] points upsert failed for match ${matchId}: ${pointsErr.message}`)
+  if (!effectivelyPractice) {
+    const { error: pointsErr } = await db.from('bspl_points').upsert(pointsUpserts, {
+      onConflict: 'season_id,team_id',
+    })
+    if (pointsErr) console.error(`[simulate] points upsert failed for match ${matchId}: ${pointsErr.message}`)
+  }
 
   return resultSummary
 

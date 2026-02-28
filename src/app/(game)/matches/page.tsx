@@ -190,6 +190,7 @@ export default async function MatchesPage() {
           venue:bspl_venues!venue_id (name, city, pitch_type)
         `)
         .eq('season_id', season.id)
+        .neq('match_type', 'practice')
         .order('match_number', { ascending: true })
     : { data: [] }
 
