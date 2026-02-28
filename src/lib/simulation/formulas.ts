@@ -2,15 +2,15 @@ import type { SimPlayer, SimVenue } from './types'
 import type { Player } from '@/types'
 import { MATCH_CONDITIONS } from '@/types/venue'
 
-export const STAMINA_FLOOR = 0.0        // Pure linear — no floor
-export const STAMINA_WARNING = 40       // 🏥 hospital icon threshold
+export const STAMINA_FLOOR = 40         // No player ever simulates below 40 stamina
+export const STAMINA_WARNING = 60       // Show tired indicator above the floor
 export const MAX_CONFIDENCE = 1.30
 export const MIN_CONFIDENCE = 0.70
 export const MAX_STAMINA = 100
 export const STAMINA_LOSS_BASE = 5      // Just being in the XI (fielding)
 export const STAMINA_LOSS_PER_BALL = 0.6
 export const STAMINA_LOSS_PER_OVER = 10
-export const STAMINA_MAX_LOSS_PER_GAME = 12   // was 25 — too punishing in T5 short season (4 games → 0 stamina)
+export const STAMINA_MAX_LOSS_PER_GAME = 20   // lose up to 20/game; floor means min effective stamina = 40
 export const STAMINA_RECOVERY_RESTED = 25
 
 // ─── Core multiplier ──────────────────────────────────────────────────────────
@@ -178,9 +178,7 @@ export function effectiveBowlerWicketProb(
     ? Math.min(rawBase, 0.06)
     : rawBase
 
-  // Floor at 0.50 so exhausted bowlers still take occasional wickets.
-  // Mirrors the economy cap (1/effectiveness capped at 2.0) for consistency.
-  const core = Math.max(0.50, effectiveMultiplier(bowler.stamina, bowler.confidence))
+  const core = effectiveMultiplier(bowler.stamina, bowler.confidence)
   const phase = bowlerPhaseMultiplier(bowler.player, overNumber)
   const matchup = matchupModifier(batter.player, bowler.player)
   const home = homeGroundBoost(bowler.player, venue.venue.id)

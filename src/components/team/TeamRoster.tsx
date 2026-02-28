@@ -57,8 +57,9 @@ interface TeamRosterProps {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const STAMINA_WARNING = 40   // 🏥 threshold
-const STAMINA_CAUTION = 65   // yellow threshold
+const STAMINA_FLOOR   = 40   // simulation minimum — below this players perform at 40% effectiveness
+const STAMINA_WARNING = 60   // 🏥 threshold — getting tired, rest advised
+const STAMINA_CAUTION = 75   // yellow threshold
 
 const ROLE_ICON: Record<PlayerRole, string> = {
   'batsman':       '🏏',
@@ -91,7 +92,8 @@ function staminaColor(s: number) {
 }
 
 function staminaLabel(s: number) {
-  if (s < STAMINA_WARNING) return { icon: '🏥', text: 'Low — rest advised', color: 'text-red-400' }
+  if (s <= STAMINA_FLOOR) return { icon: '🏥', text: 'At floor — min 40% effectiveness', color: 'text-red-400' }
+  if (s < STAMINA_WARNING) return { icon: '🏥', text: 'Tired — rest advised', color: 'text-red-400' }
   if (s < STAMINA_CAUTION) return { icon: '⚠️', text: 'Caution', color: 'text-yellow-400' }
   return { icon: '💪', text: 'Fit', color: 'text-green-400' }
 }
@@ -157,8 +159,11 @@ function PlayerCard({ p }: { p: TeamPlayer }) {
             style={{ width: `${p.current_stamina}%` }}
           />
         </div>
-        {p.current_stamina < STAMINA_WARNING && (
-          <p className="text-xs text-red-400 mt-1">Rest this player to recover +25% stamina</p>
+        {p.current_stamina <= STAMINA_FLOOR && (
+          <p className="text-xs text-red-400 mt-1">At minimum — rest to recover +25 stamina</p>
+        )}
+        {p.current_stamina > STAMINA_FLOOR && p.current_stamina < STAMINA_WARNING && (
+          <p className="text-xs text-red-400 mt-1">Getting tired — rest advised (+25 stamina)</p>
         )}
       </div>
 
@@ -301,7 +306,7 @@ export default function TeamRoster({ myTeam, players, nextMatch, seasonName }: T
             🏥 {lowStamina.length} player{lowStamina.length > 1 ? 's' : ''} below {STAMINA_WARNING}% stamina
           </p>
           <p className="text-xs text-gray-500">
-            Resting them this match recovers +25% stamina. Playing through reduces effectiveness.
+            Resting them recovers +25 stamina. Players at 40% or below simulate at minimum effectiveness — rotate your squad.
           </p>
           <div className="flex flex-wrap gap-1.5 mt-2">
             {lowStamina.map(p => (

@@ -6,6 +6,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { buildSimTeam, buildSimVenue, mergeBestBowling, getBotTossChoice } from './helpers'
 import { simulateMatch } from '@/lib/simulation/engine'
 import { pickXI, buildRosterForPick, isValidBowlingOrder } from './pick_xi'
+import { STAMINA_FLOOR } from '@/lib/simulation/formulas'
 
 export async function simulateOne(
   matchId: string,
@@ -272,7 +273,7 @@ export async function simulateOne(
     season_id:       match.season_id,
     team_id:         u.team_id,
     player_id:       u.player_id,
-    current_stamina: Math.round(u.new_stamina * 100) / 100,
+    current_stamina: Math.max(STAMINA_FLOOR, Math.round(u.new_stamina * 100) / 100),
     confidence:      Math.round((confMap.get(`${u.team_id}:${u.player_id}`) ?? 1.0) * 1000) / 1000,
   }))
 

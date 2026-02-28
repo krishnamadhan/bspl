@@ -3,6 +3,7 @@ import { createClient as createSsrClient } from '@/lib/supabase/server'
 import type { Player, Venue, ConditionType } from '@/types'
 import type { SimPlayer, SimTeam, SimVenue } from '@/lib/simulation/types'
 import { MATCH_CONDITIONS } from '@/types'
+import { STAMINA_FLOOR } from '@/lib/simulation/formulas'
 
 // ── DB client that bypasses RLS ───────────────────────────────────────────────
 export function adminClient() {
@@ -116,7 +117,7 @@ export function buildSimTeam(
     const stamData = staminaMap.get(`${teamId}:${r.player_id}`)
     return [{
       player:     mapDbRowToPlayer(playerRow as Record<string, unknown>),
-      stamina:    stamData?.stamina    ?? 100,
+      stamina:    Math.max(STAMINA_FLOOR, stamData?.stamina    ?? 100),
       confidence: stamData?.confidence ?? 1.0,
       team_id:    teamId,
     }]
