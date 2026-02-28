@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
@@ -187,6 +187,9 @@ export default function AdminPage() {
   // Dev tools
   const [devOpen, setDevOpen] = useState(false)
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
+
+  // Ref guard: prevents double-submit before React re-renders `isPending`
+  const simulatingRef = useRef(false)
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -465,8 +468,34 @@ export default function AdminPage() {
 
   // ── Match handlers ──────────────────────────────────────────────────────────
   const handleOpenLineups  = (id: string) => handle(async () => { await post(`/api/admin/open-lineups/${id}`); showToast('Lineup window opened — bot lineups auto-filled', true); await loadMatches() })
-  const handleSimulate     = (id: string) => handle(async () => { const j = await post(`/api/admin/simulate/${id}`); showToast(j.result ?? 'Match simulated', true); await loadMatches(); await loadPlayoffBracket() })
-  const handleSimulateAll  = () => handle(async () => { const j = await post('/api/admin/simulate-all'); showToast(`Simulated ${j.simulated} match(es)`, true); await loadMatches(); await loadPlayoffBracket() })
+  const handleSimulate = (id: string) => {
+    if (simulatingRef.current) return
+    simulatingRef.current = true
+    handle(async () => {
+      try {
+        const j = await post(`/api/admin/simulate/${id}`)
+        showToast(j.result ?? 'Match simulated', true)
+        await loadMatches()
+        await loadPlayoffBracket()
+      } finally {
+        simulatingRef.current = false
+      }
+    })
+  }
+  const handleSimulateAll = () => {
+    if (simulatingRef.current) return
+    simulatingRef.current = true
+    handle(async () => {
+      try {
+        const j = await post('/api/admin/simulate-all')
+        showToast(`Simulated ${j.simulated} match(es)`, true)
+        await loadMatches()
+        await loadPlayoffBracket()
+      } finally {
+        simulatingRef.current = false
+      }
+    })
+  }
   const handleAutoLineups  = () => handle(async () => { const j = await post('/api/admin/auto-lineups'); showToast(j.message ?? 'Bot lineups submitted', true); await loadMatches() })
   const handleFinalize     = (id: string) => handle(async () => { await post(`/api/match/${id}/complete`); showToast('Match finalized', true); await loadMatches(); await loadPlayoffBracket() })
   const handleSetupTest    = () => handle(async () => { const j = await post('/api/admin/setup-test-season'); showToast(j.message ?? 'Test season set up', true); await loadSeasons(); await loadTeams() })
