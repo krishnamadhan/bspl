@@ -104,6 +104,22 @@ export default async function StandingsPage() {
   }
 
   const matchesPlayed = completedMatches?.length ?? 0
+  const isPlayoffs = season.status === 'playoffs' || season.status === 'completed'
+
+  // Playoff match results (shown separately)
+  const { data: playoffMatches } = isPlayoffs
+    ? await supabase
+        .from('bspl_matches')
+        .select(`
+          id, match_type, status, result_summary,
+          team_a:bspl_teams!team_a_id(id, name, color),
+          team_b:bspl_teams!team_b_id(id, name, color),
+          winner_team_id
+        `)
+        .eq('season_id', season.id)
+        .in('match_type', ['qualifier1', 'eliminator', 'qualifier2', 'final'])
+        .order('match_type', { ascending: true })
+    : { data: null }
 
   return (
     <div className="space-y-6">
@@ -114,11 +130,24 @@ export default async function StandingsPage() {
           <span>{season.name}</span>
           <span className="text-gray-600">·</span>
           <span>{matchesPlayed} match{matchesPlayed !== 1 ? 'es' : ''} played</span>
+          {isPlayoffs && (
+            <span className="px-2 py-0.5 rounded-full bg-yellow-400/15 text-yellow-400 text-xs font-semibold border border-yellow-400/25">
+              PLAYOFFS
+            </span>
+          )}
         </div>
       </div>
 
+      {/* Frozen standings notice */}
+      {isPlayoffs && (
+        <div className="flex items-center gap-2 px-4 py-3 bg-yellow-400/8 border border-yellow-400/20 rounded-lg text-sm text-yellow-300">
+          <span>🔒</span>
+          <span>League phase complete. Standings are final — top 4 qualified for playoffs.</span>
+        </div>
+      )}
+
       {/* Legend */}
-      {standings.length > 0 && (
+      {standings.length > 0 && !isPlayoffs && (
         <div className="flex items-center gap-4 text-xs text-gray-500">
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-3 h-3 rounded-full bg-green-500" /> Win
@@ -252,6 +281,71 @@ export default async function StandingsPage() {
           P=Played · W=Won · L=Lost · Pts=Points · NRR=Net Run Rate · RF=Runs For · RA=Runs Against · Form=Last {Math.min(5, matchesPlayed)} results
         </p>
       )}
+
+      {/* Playoff bracket */}
+      {isPlayoffs && playoffMatches && playoffMatches.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Playoff Results</h2>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {playoffMatches.map(m => {
+              const teamA = unpack(m.team_a as TeamSnap | TeamSnap[] | null)
+              const teamB = unpack(m.team_b as TeamSnap | TeamSnap[] | null)
+              const BRACKET_LABEL: Record<string, string> = {
+                qualifier1: 'Qualifier 1', eliminator: 'Eliminator',
+                qualifier2: 'Qualifier 2', final: 'FINAL',
+              }
+              const isFinal = m.match_type === 'final'
+              return (
+                <Link
+                  key={m.id}
+                  href={`/matches/${m.id}`}
+                  className={`block rounded-xl border px-4 py-3 transition hover:border-yellow-400/40 hover:bg-gray-800/40 ${
+                    isFinal ? 'border-yellow-400/30 bg-yellow-400/5' : 'border-gray-800 bg-gray-900'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                      isFinal
+                        ? 'bg-yellow-400/20 text-yellow-300 border border-yellow-400/30'
+                        : 'bg-gray-700 text-gray-300'
+                    }`}>
+                      {BRACKET_LABEL[m.match_type] ?? m.match_type}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${
+                      m.status === 'completed' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'
+                    }`}>
+                      {m.status === 'completed' ? 'Result' : m.status}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                      {teamA?.color && <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: teamA.color }} />}
+                      <span className={`font-medium truncate ${m.winner_team_id === teamA?.id ? 'text-white' : 'text-gray-400'}`}>
+                        {teamA?.name ?? '—'}
+                        {m.winner_team_id === teamA?.id && <span className="ml-1 text-yellow-400 text-xs">✓</span>}
+                      </span>
+                    </div>
+                    <span className="text-gray-600 text-xs flex-shrink-0">vs</span>
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                      <span className={`font-medium truncate ${m.winner_team_id === teamB?.id ? 'text-white' : 'text-gray-400'}`}>
+                        {m.winner_team_id === teamB?.id && <span className="mr-1 text-yellow-400 text-xs">✓</span>}
+                        {teamB?.name ?? '—'}
+                      </span>
+                      {teamB?.color && <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: teamB.color }} />}
+                    </div>
+                  </div>
+                  {m.result_summary && (
+                    <p className="text-xs text-gray-500 mt-1.5 text-center">{m.result_summary}</p>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
+// local type for the joined team shape
+type TeamSnap = { id: string; name: string; color: string }

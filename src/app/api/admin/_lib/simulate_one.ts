@@ -493,7 +493,9 @@ export async function simulateOne(
     }
   })
 
-  if (!effectivelyPractice) {
+  // Only league matches count toward the standings table.
+  // Playoff matches (qualifier1, eliminator, qualifier2, final) must not touch bspl_points.
+  if (!effectivelyPractice && match.match_type === 'league') {
     const { error: pointsErr } = await db.from('bspl_points').upsert(pointsUpserts, {
       onConflict: 'season_id,team_id',
     })
