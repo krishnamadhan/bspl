@@ -31,7 +31,8 @@ export async function POST() {
     }, { status: 400 })
   }
 
-  await db.from('bspl_seasons').update({ status: 'completed' }).eq('id', season.id)
+  const { error: endErr } = await db.from('bspl_seasons').update({ status: 'completed' }).eq('id', season.id)
+  if (endErr) return NextResponse.json({ error: endErr.message }, { status: 500 })
 
   return NextResponse.json({ ok: true, message: `Season "${season.name}" ended` })
 }

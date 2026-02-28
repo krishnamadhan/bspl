@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { adminClient, requireAdmin, getBotTossChoice } from '../../_lib/helpers'
-import { pickXI, buildRosterForPick } from '../../_lib/pick_xi'
+import { pickXI, buildRosterForPick, isValidBowlingOrder } from '../../_lib/pick_xi'
 
 export async function POST(
   _req: NextRequest,
@@ -27,7 +27,8 @@ export async function POST(
   }
 
   // Open lineup window
-  await db.from('bspl_matches').update({ status: 'lineup_open' }).eq('id', matchId)
+  const { error: openErr } = await db.from('bspl_matches').update({ status: 'lineup_open' }).eq('id', matchId)
+  if (openErr) return NextResponse.json({ error: `Failed to open match: ${openErr.message}` }, { status: 500 })
 
   // Auto-fill lineups for bot teams immediately
   const { data: teams } = await db
@@ -74,7 +75,7 @@ export async function POST(
           const allInRoster =
             prevLineup.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
             prevLineup.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
-          if (allInRoster) {
+          if (allInRoster && isValidBowlingOrder(prevLineup.bowling_order)) {
             playing_xi   = prevLineup.playing_xi
             bowling_order = prevLineup.bowling_order
           }
@@ -89,7 +90,7 @@ export async function POST(
         bowling_order = bowlingOrder
       }
 
-      await db.from('bspl_lineups').upsert(
+      const { error: lineupErr } = await db.from('bspl_lineups').upsert(
         {
           match_id:     matchId,
           team_id:      teamId,
@@ -100,6 +101,7 @@ export async function POST(
         },
         { onConflict: 'match_id,team_id' },
       )
+      if (lineupErr) console.error(`[open-lineups] lineup upsert failed for team ${teamId}: ${lineupErr.message}`)
     }
   }
 

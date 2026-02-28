@@ -209,7 +209,7 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
 
   // ── 9b. Insert ball logs ───────────────────────────────────────────────────
   if (result.innings1.ball_log.length > 0) {
-    await db.from('bspl_ball_log').insert(
+    const { error: ballErr1 } = await db.from('bspl_ball_log').insert(
       result.innings1.ball_log.map(b => ({
         innings_id:  inn1Row.id,
         over_number: b.over,
@@ -222,10 +222,11 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
         wicket_type: b.wicket_type,
       }))
     )
+    if (ballErr1) throw new Error(`Failed to insert ball log 1: ${ballErr1.message}`)
   }
 
   if (result.innings2.ball_log.length > 0) {
-    await db.from('bspl_ball_log').insert(
+    const { error: ballErr2 } = await db.from('bspl_ball_log').insert(
       result.innings2.ball_log.map(b => ({
         innings_id:  inn2Row.id,
         over_number: b.over,
@@ -238,13 +239,14 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
         wicket_type: b.wicket_type,
       }))
     )
+    if (ballErr2) throw new Error(`Failed to insert ball log 2: ${ballErr2.message}`)
   }
 
   // ── 9c. Update match to completed ─────────────────────────────────────────
   // Only mark completed after innings + ball_log are persisted. MatchReplay
   // plays ball-by-ball from stored data whether status is 'live' or 'completed',
   // so users still get the full animated replay when they open the match.
-  await db.from('bspl_matches').update({
+  const { error: matchCompleteErr } = await db.from('bspl_matches').update({
     status:                'completed',
     toss_winner_team_id:   tossWinnerId,
     toss_decision:         tossDecision,
@@ -252,6 +254,7 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     result_summary:        resultSummary,
     winner_team_id:        result.winner_team_id,
   }).eq('id', matchId)
+  if (matchCompleteErr) throw new Error(`Failed to mark match completed: ${matchCompleteErr.message}`)
 
   // ── 9d. Upsert stamina ─────────────────────────────────────────────────────
   const confMap = new Map(
@@ -266,9 +269,10 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
   }))
 
   if (staminaUpserts.length > 0) {
-    await db.from('bspl_stamina').upsert(staminaUpserts, {
+    const { error: staminaErr } = await db.from('bspl_stamina').upsert(staminaUpserts, {
       onConflict: 'season_id,team_id,player_id',
     })
+    if (staminaErr) console.error(`[simulate] stamina upsert failed for match ${matchId}: ${staminaErr.message}`)
   }
 
   // ── 9e. Upsert player stats ────────────────────────────────────────────────
@@ -415,9 +419,10 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
   })
 
   if (statsUpserts.length > 0) {
-    await db.from('bspl_player_stats').upsert(statsUpserts, {
+    const { error: statsErr } = await db.from('bspl_player_stats').upsert(statsUpserts, {
       onConflict: 'season_id,team_id,player_id',
     })
+    if (statsErr) console.error(`[simulate] player stats upsert failed for match ${matchId}: ${statsErr.message}`)
   }
 
   // ── 9f. Upsert points table ────────────────────────────────────────────────
@@ -480,9 +485,10 @@ export async function simulateOne(matchId: string, db: SupabaseClient): Promise<
     }
   })
 
-  await db.from('bspl_points').upsert(pointsUpserts, {
+  const { error: pointsErr } = await db.from('bspl_points').upsert(pointsUpserts, {
     onConflict: 'season_id,team_id',
   })
+  if (pointsErr) console.error(`[simulate] points upsert failed for match ${matchId}: ${pointsErr.message}`)
 
   return resultSummary
 

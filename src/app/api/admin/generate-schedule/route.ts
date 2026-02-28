@@ -106,10 +106,11 @@ export async function POST(_req: NextRequest) {
   }
 
   // ── Update season status to in_progress ───────────────────────────────────
-  await db
+  const { error: seasonUpdateErr } = await db
     .from('bspl_seasons')
     .update({ status: 'in_progress' })
     .eq('id', season.id)
+  if (seasonUpdateErr) return NextResponse.json({ error: seasonUpdateErr.message }, { status: 500 })
 
   return NextResponse.json({
     ok:      true,
