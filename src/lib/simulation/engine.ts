@@ -32,6 +32,7 @@ function simulateBall(
   isSecondInnings: boolean,
   runsNeeded: number,
   ballsLeft: number,
+  avgFieldingRating: number,
   rand: () => number
 ): { outcome: BallOutcome; runs: number; isWicket: boolean; wicketType: string | null } {
   const wicketProb = effectiveBowlerWicketProb(bowlerSim, batterSim, venue, overNumber, isSecondInnings)
@@ -49,6 +50,17 @@ function simulateBall(
   if (r2 < wicketProb) {
     const wicketTypes = ['bowled', 'caught', 'lbw', 'caught', 'caught']
     const wType = wicketTypes[Math.floor(rand() * wicketTypes.length)]
+
+    // Catch conversion: better fielding teams hold more catches.
+    // Rating 1 → 55%, Rating 5 → 75% (default), Rating 10 → 100%
+    if (wType === 'caught') {
+      const catchProb = 0.50 + (avgFieldingRating / 20.0)
+      if (rand() > catchProb) {
+        // Dropped — becomes a boundary off the edge instead
+        return { outcome: '4', runs: 4, isWicket: false, wicketType: null }
+      }
+    }
+
     return { outcome: 'W', runs: 0, isWicket: true, wicketType: wType }
   }
 
@@ -99,6 +111,14 @@ function simulateInnings(
   seed: number
 ): InningsResult {
   const rand = seededRandom(seed)
+
+  // Bowling team's average fielding rating — used for catch conversion.
+  // Only XI members contribute; non-XI squad players don't field.
+  const bowlingXI = new Set(bowlingTeam.batting_order)
+  const bowlingXIPlayers = bowlingTeam.players.filter(p => bowlingXI.has(p.player.id))
+  const avgFieldingRating = bowlingXIPlayers.length > 0
+    ? bowlingXIPlayers.reduce((sum, p) => sum + p.player.fielding_rating, 0) / bowlingXIPlayers.length
+    : 5  // fallback: average fielding
 
   let totalRuns = 0
   let totalWickets = 0
@@ -153,7 +173,7 @@ function simulateInnings(
       const runsNeeded = isSecondInnings ? targetRuns - totalRuns + 1 : 0
       const ballsLeft = (TOTAL_OVERS - over) * 6 + (6 - legalBalls)
 
-      const ball = simulateBall(bowlerSim, batterSim, venue, over, isSecondInnings, runsNeeded, ballsLeft, rand)
+      const ball = simulateBall(bowlerSim, batterSim, venue, over, isSecondInnings, runsNeeded, ballsLeft, avgFieldingRating, rand)
 
       overBalls.push(ball.outcome)
       totalRuns += ball.runs

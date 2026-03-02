@@ -158,12 +158,15 @@ CREATE TABLE IF NOT EXISTS bspl_matches (
                           CHECK (condition IN ('dew_evening','crumbling_spin','overcast','slow_sticky','neutral')),
   scheduled_date        TIMESTAMPTZ NOT NULL,
   status                TEXT NOT NULL DEFAULT 'scheduled'
-                          CHECK (status IN ('scheduled','lineup_open','locked','completed')),
+                          CHECK (status IN ('scheduled','lineup_open','live','locked','completed')),
+  match_type            TEXT NOT NULL DEFAULT 'league'
+                          CHECK (match_type IN ('league','qualifier1','eliminator','qualifier2','final','practice')),
 
   -- Set after simulation
   toss_winner_team_id   UUID REFERENCES bspl_teams(id),
   toss_decision         TEXT CHECK (toss_decision IN ('bat','bowl')),
   batting_first_team_id UUID REFERENCES bspl_teams(id),
+  winner_team_id        UUID REFERENCES bspl_teams(id),
   result_summary        TEXT,
 
   created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -230,6 +233,8 @@ CREATE TABLE IF NOT EXISTS bspl_points (
   points                INTEGER NOT NULL DEFAULT 0,
   runs_for              INTEGER NOT NULL DEFAULT 0,
   runs_against          INTEGER NOT NULL DEFAULT 0,
+  overs_for             NUMERIC(8,3) NOT NULL DEFAULT 0,
+  overs_against         NUMERIC(8,3) NOT NULL DEFAULT 0,
   nrr                   NUMERIC(6,3) NOT NULL DEFAULT 0,
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 

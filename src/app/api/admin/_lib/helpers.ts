@@ -131,14 +131,19 @@ export function buildSimTeam(
   }
 }
 
-// ── Bot toss choice — condition-aware ─────────────────────────────────────────
-// Dew evening: chasing team benefits from dew (higher batting SR, worse economy for bowlers)
-// Overcast: pacers benefit bowling first (swing and seam movement in 1st innings)
-// All other conditions: bat first is safer
+// ── Bot toss choice — condition-aware with randomness ─────────────────────────
+// Dew evening: strongly prefer bowl (chase with dew = batting SR boost)
+// Overcast: strongly prefer bowl (swing/seam in 1st innings favours pacers)
+// Crumbling spin: slight preference for bat (pitch deteriorates, better to score first)
+// Slow sticky: slight preference for bat (low-scoring pitch, set a target)
+// Neutral: roughly 50/50 with a mild bat bias
 export function getBotTossChoice(condition: string): 'bat' | 'bowl' {
-  if (condition === 'dew_evening') return 'bowl'
-  if (condition === 'overcast')    return 'bowl'
-  return 'bat'
+  const r = Math.random()
+  if (condition === 'dew_evening')    return r < 0.85 ? 'bowl' : 'bat'
+  if (condition === 'overcast')       return r < 0.80 ? 'bowl' : 'bat'
+  if (condition === 'crumbling_spin') return r < 0.70 ? 'bat'  : 'bowl'
+  if (condition === 'slow_sticky')    return r < 0.65 ? 'bat'  : 'bowl'
+  return r < 0.55 ? 'bat' : 'bowl'  // neutral: slight bat preference
 }
 
 // ── Best bowling comparison: higher wickets wins, then lower runs ─────────────
