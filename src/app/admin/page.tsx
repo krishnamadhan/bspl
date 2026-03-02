@@ -167,7 +167,8 @@ function Section({ title, badge, children, headerRight }: {
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
-  const supabase = createClient()
+  // supabase client is only created on the browser; avoid invoking during SSR build
+  const supabase = typeof window !== 'undefined' ? createClient() : null
   const [authState, setAuthState] = useState<'loading' | 'ok' | 'denied'>('loading')
   const [seasonInfo, setSeasonInfo]   = useState<SeasonInfo | null>(null)
   const [allSeasons, setAllSeasons]   = useState<{ id: string; name: string; status: string }[]>([])
@@ -204,6 +205,7 @@ export default function AdminPage() {
 
   // ── Auth ────────────────────────────────────────────────────────────────────
   useEffect(() => {
+    if (!supabase) return
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { setAuthState('denied'); return }
       const { data: p } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
@@ -219,6 +221,7 @@ export default function AdminPage() {
 
   // ── Data loaders ────────────────────────────────────────────────────────────
   const loadSeasons = async () => {
+    if (!supabase) return
     const { data } = await supabase
       .from('bspl_seasons')
       .select('id, name, status, budget_cr, min_squad_size, max_squad_size')
@@ -246,7 +249,7 @@ export default function AdminPage() {
   }
 
   const loadTeams = async () => {
-    if (!seasonInfo) return
+    if (!supabase || !seasonInfo) return
 
     const { data: teamRows } = await supabase
       .from('bspl_teams')
@@ -285,7 +288,7 @@ export default function AdminPage() {
   }
 
   const loadPlayoffBracket = async () => {
-    if (!seasonInfo || seasonInfo.status !== 'playoffs') { setPlayoffBracket([]); return }
+    if (!supabase || !seasonInfo || seasonInfo.status !== 'playoffs') { setPlayoffBracket([]); return }
 
     const { data: raw } = await supabase
       .from('bspl_matches')
@@ -316,7 +319,7 @@ export default function AdminPage() {
   }
 
   const loadCompletedMatches = async () => {
-    if (!seasonInfo) return
+    if (!supabase || !seasonInfo) return
     const { data: raw } = await supabase
       .from('bspl_matches')
       .select('id, match_number, match_type, result_summary, team_a_id, team_b_id, team_a:bspl_teams!team_a_id(name), team_b:bspl_teams!team_b_id(name)')
@@ -338,7 +341,7 @@ export default function AdminPage() {
   }
 
   const loadMatches = async () => {
-    if (!seasonInfo) return
+    if (!supabase || !seasonInfo) return
     const { data: raw } = await supabase
       .from('bspl_matches')
       .select('id, match_number, match_day, status, match_type, winner_team_id, team_a_id, team_b_id, team_a:bspl_teams!team_a_id(name), team_b:bspl_teams!team_b_id(name), venue:bspl_venues(name)')

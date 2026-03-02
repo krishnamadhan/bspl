@@ -344,6 +344,7 @@ function simulateSuperOverInnings(
   bowlingTeam: SimTeam,
   venue: SimVenue,
   seed: number,
+  totalOvers: number,
 ): { runs: number; wickets: number } {
   const rand = seededRandom(seed)
 
@@ -373,7 +374,7 @@ function simulateSuperOverInnings(
     if (!batterSim || !bowlerSim) break
 
     // Super over is always over 1 (powerplay pace), no RRR pressure
-    const ball = simulateBall(bowlerSim, batterSim, venue, 1, false, 0, 6 - legalBalls, avgFieldingRating, rand)
+    const ball = simulateBall(bowlerSim, batterSim, venue, 1, false, 0, 6 - legalBalls, avgFieldingRating, rand, totalOvers)
     totalRuns += ball.runs
 
     if (ball.outcome === 'Wd') continue  // wide = extra ball, no legal ball count
@@ -412,8 +413,8 @@ export function simulateMatch(
 
   if (mainTied) {
     // Super over: chasing team (teamB) bats first
-    const soTeamB = simulateSuperOverInnings(teamB, teamA, venue, matchSeed + 100)
-    const soTeamA = simulateSuperOverInnings(teamA, teamB, venue, matchSeed + 200)
+    const soTeamB = simulateSuperOverInnings(teamB, teamA, venue, matchSeed + 100, totalOvers)
+    const soTeamA = simulateSuperOverInnings(teamA, teamB, venue, matchSeed + 200, totalOvers)
 
     if (soTeamB.runs > soTeamA.runs) {
       winnerTeamId = teamB.team_id

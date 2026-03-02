@@ -25,6 +25,9 @@ export async function simulateOne(
   if (match.status !== 'lineup_open') {
     throw new Error(`Match status is '${match.status}', expected 'lineup_open'`)
   }
+  // store some fields separately so nested functions don't lose null-safety
+  const seasonId = match.season_id
+  const { team_a_id: teamAId, team_b_id: teamBId, condition } = match
 
   // ── 1b. Load overs_per_innings from the season ────────────────────────────
   const { data: seasonRow } = await db
@@ -78,7 +81,7 @@ export async function simulateOne(
     const { data: prevMatch } = await db
       .from('bspl_matches')
       .select('id')
-      .eq('season_id', match.season_id)
+      .eq('season_id', seasonId)
       .eq('status', 'completed')
       .or(`team_a_id.eq.${teamId},team_b_id.eq.${teamId}`)
       .order('match_number', { ascending: false })
@@ -108,7 +111,7 @@ export async function simulateOne(
     // 2. Auto-pick from roster
     const roster = buildRosterForPick(rosters ?? [])
     const { xi, bowlingOrder } = pickXI(roster, totalOvers)
-    return { team_id: teamId, playing_xi: xi, bowling_order: bowlingOrder, toss_choice: getBotTossChoice(match.condition), is_submitted: true }
+    return { team_id: teamId, playing_xi: xi, bowling_order: bowlingOrder, toss_choice: getBotTossChoice(condition), is_submitted: true }
   }
 
   const rawA = lineups?.find((l: { team_id: string }) => l.team_id === match.team_a_id)
