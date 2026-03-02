@@ -391,14 +391,161 @@ function AllRoundView({ rows }: { rows: StatRow[] }) {
   )
 }
 
+// ─── Charts view ──────────────────────────────────────────────────────────────
+
+interface BarEntry {
+  label: string
+  sub: string
+  dotColor: string
+  value: number
+}
+
+function HorizontalBarChart({
+  title,
+  accentCls,
+  barCls,
+  valueSuffix,
+  entries,
+}: {
+  title: string
+  accentCls: string
+  barCls: string
+  valueSuffix?: string
+  entries: BarEntry[]
+}) {
+  const max = Math.max(...entries.map(e => e.value), 1)
+
+  return (
+    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+      <div className="px-5 py-3.5 border-b border-gray-800">
+        <p className={`text-xs font-semibold uppercase tracking-wider ${accentCls}`}>{title}</p>
+      </div>
+      <div className="px-5 py-4 space-y-3">
+        {entries.map((e, i) => (
+          <div key={i} className="flex items-center gap-3">
+            {/* Rank */}
+            <span className="text-xs text-gray-600 font-mono w-4 text-right flex-shrink-0">{i + 1}</span>
+
+            {/* Player info */}
+            <div className="w-36 flex-shrink-0 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: e.dotColor }} />
+                <p className="text-sm font-medium text-white truncate leading-tight">{e.label}</p>
+              </div>
+              <p className="text-xs text-gray-500 truncate pl-3.5">{e.sub}</p>
+            </div>
+
+            {/* Bar */}
+            <div className="flex-1 flex items-center gap-2">
+              <div className="flex-1 h-6 bg-gray-800 rounded-md overflow-hidden relative">
+                <div
+                  className={`h-full rounded-md ${barCls}`}
+                  style={{ width: `${(e.value / max) * 100}%` }}
+                />
+              </div>
+              <span className="text-sm font-bold tabular-nums w-10 text-right text-gray-200">
+                {e.value}{valueSuffix}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ChartsView({ rows }: { rows: StatRow[] }) {
+  const top10Runs = [...rows]
+    .sort((a, b) => b.total_runs - a.total_runs)
+    .slice(0, 10)
+
+  const top10Wkts = [...rows]
+    .filter(r => r.wickets > 0)
+    .sort((a, b) => b.wickets - a.wickets || a.bowling_economy - b.bowling_economy)
+    .slice(0, 10)
+
+  const top10Sixes = [...rows]
+    .filter(r => r.sixes > 0)
+    .sort((a, b) => b.sixes - a.sixes)
+    .slice(0, 10)
+
+  const top10Fours = [...rows]
+    .filter(r => r.fours > 0)
+    .sort((a, b) => b.fours - a.fours)
+    .slice(0, 10)
+
+  if (rows.length === 0) {
+    return (
+      <div className="text-center py-16 text-gray-500">
+        <p className="text-5xl mb-3">📈</p>
+        <p className="font-medium">No chart data yet</p>
+        <p className="text-sm text-gray-600 mt-1">Charts populate after the first simulated match.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid gap-5 md:grid-cols-2">
+      <HorizontalBarChart
+        title="🟠 Top Run Scorers"
+        accentCls="text-orange-400"
+        barCls="bg-orange-500/70"
+        entries={top10Runs.map(r => ({
+          label:    r.player_name,
+          sub:      r.team_name,
+          dotColor: r.team_color,
+          value:    r.total_runs,
+        }))}
+      />
+
+      <HorizontalBarChart
+        title="🟣 Top Wicket Takers"
+        accentCls="text-purple-400"
+        barCls="bg-purple-500/70"
+        entries={top10Wkts.map(r => ({
+          label:    r.player_name,
+          sub:      r.team_name,
+          dotColor: r.team_color,
+          value:    r.wickets,
+        }))}
+      />
+
+      <HorizontalBarChart
+        title="💚 Most Sixes"
+        accentCls="text-green-400"
+        barCls="bg-green-500/70"
+        entries={top10Sixes.map(r => ({
+          label:    r.player_name,
+          sub:      r.team_name,
+          dotColor: r.team_color,
+          value:    r.sixes,
+        }))}
+      />
+
+      <HorizontalBarChart
+        title="🔵 Most Fours"
+        accentCls="text-blue-400"
+        barCls="bg-blue-500/70"
+        entries={top10Fours.map(r => ({
+          label:    r.player_name,
+          sub:      r.team_name,
+          dotColor: r.team_color,
+          value:    r.fours,
+        }))}
+      />
+    </div>
+  )
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-type Tab = 'batting' | 'bowling' | 'allround'
+type Tab = 'batting' | 'bowling' | 'allround' | 'charts'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'batting',  label: '🏏 Batting' },
   { key: 'bowling',  label: '🎳 Bowling' },
   { key: 'allround', label: '⭐ All-Round' },
+  { key: 'charts',   label: '📈 Charts' },
 ]
 
 export default function StatsView({ rows }: { rows: StatRow[] }) {
@@ -407,7 +554,7 @@ export default function StatsView({ rows }: { rows: StatRow[] }) {
   return (
     <div className="space-y-5">
       {/* Tab bar */}
-      <div className="flex gap-1 bg-gray-900 rounded-xl p-1 border border-gray-800 w-fit">
+      <div className="flex gap-1 bg-gray-900 rounded-xl p-1 border border-gray-800 w-fit flex-wrap">
         {TABS.map(t => (
           <button
             key={t.key}
@@ -426,6 +573,7 @@ export default function StatsView({ rows }: { rows: StatRow[] }) {
       {tab === 'batting'  && <BattingView  rows={rows} />}
       {tab === 'bowling'  && <BowlingView  rows={rows} />}
       {tab === 'allround' && <AllRoundView rows={rows} />}
+      {tab === 'charts'   && <ChartsView   rows={rows} />}
     </div>
   )
 }

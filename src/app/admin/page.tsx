@@ -51,6 +51,15 @@ interface PlayoffMatch {
   winner: string | null
 }
 
+interface CompletedMatch {
+  id: string
+  match_number: number
+  match_type: string
+  team_a: string
+  team_b: string
+  result_summary: string | null
+}
+
 interface RawMatch {
   id: string
   match_number: number
@@ -165,6 +174,7 @@ export default function AdminPage() {
   const [teams, setTeams]             = useState<TeamRow[]>([])
   const [matches, setMatches]         = useState<MatchRow[]>([])
   const [playoffBracket, setPlayoffBracket] = useState<PlayoffMatch[]>([])
+  const [completedMatches, setCompletedMatches] = useState<CompletedMatch[]>([])
   const [toast, setToast]             = useState<{ msg: string; ok: boolean } | null>(null)
   const [isPending, startTransition]  = useTransition()
 
@@ -174,6 +184,7 @@ export default function AdminPage() {
   const [newBudget, setNewBudget] = useState('100')
   const [newMin, setNewMin]     = useState('11')
   const [newMax, setNewMax]     = useState('25')
+  const [newOvers, setNewOvers] = useState('5')
 
   // Bot team form
   const [botTeamName, setBotTeamName] = useState('')
@@ -304,6 +315,28 @@ export default function AdminPage() {
     })))
   }
 
+  const loadCompletedMatches = async () => {
+    if (!seasonInfo) return
+    const { data: raw } = await supabase
+      .from('bspl_matches')
+      .select('id, match_number, match_type, result_summary, team_a_id, team_b_id, team_a:bspl_teams!team_a_id(name), team_b:bspl_teams!team_b_id(name)')
+      .eq('season_id', seasonInfo.id)
+      .eq('status', 'completed')
+      .not('match_type', 'eq', 'practice')
+      .order('match_number', { ascending: false })
+      .limit(5)
+
+    if (!raw?.length) { setCompletedMatches([]); return }
+    setCompletedMatches(raw.map((m: Record<string, unknown>) => ({
+      id:             m.id as string,
+      match_number:   m.match_number as number,
+      match_type:     m.match_type as string,
+      team_a:         (unpack(m.team_a as { name: string } | null))?.name ?? '?',
+      team_b:         (unpack(m.team_b as { name: string } | null))?.name ?? '?',
+      result_summary: m.result_summary as string | null,
+    })))
+  }
+
   const loadMatches = async () => {
     if (!seasonInfo) return
     const { data: raw } = await supabase
@@ -372,7 +405,7 @@ export default function AdminPage() {
   }, [authState]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (seasonInfo) { loadTeams(); loadMatches(); loadPlayoffBracket() }
+    if (seasonInfo) { loadTeams(); loadMatches(); loadPlayoffBracket(); loadCompletedMatches() }
   }, [seasonInfo?.id, seasonInfo?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-poll every 20s when there are lineup-open matches (players are actively submitting)
@@ -414,6 +447,7 @@ export default function AdminPage() {
   const handleCreateSeason = () => handle(async () => {
     const json = await post('/api/admin/create-season', {
       name: newName, budget_cr: Number(newBudget), min_squad: Number(newMin), max_squad: Number(newMax),
+      overs_per_innings: parseInt(newOvers),
     })
     showToast(`Season "${json.season.name}" created`, true)
     setShowSeasonForm(false); setNewName('')
@@ -477,6 +511,7 @@ export default function AdminPage() {
         showToast(j.result ?? 'Match simulated', true)
         await loadMatches()
         await loadPlayoffBracket()
+        await loadCompletedMatches()
       } finally {
         simulatingRef.current = false
       }
@@ -491,6 +526,7 @@ export default function AdminPage() {
         showToast(`Simulated ${j.simulated} match(es)`, true)
         await loadMatches()
         await loadPlayoffBracket()
+        await loadCompletedMatches()
       } finally {
         simulatingRef.current = false
       }
@@ -498,6 +534,19 @@ export default function AdminPage() {
   }
   const handleAutoLineups  = () => handle(async () => { const j = await post('/api/admin/auto-lineups'); showToast(j.message ?? 'Bot lineups submitted', true); await loadMatches() })
   const handleFinalize     = (id: string) => handle(async () => { await post(`/api/match/${id}/complete`); showToast('Match finalized', true); await loadMatches(); await loadPlayoffBracket() })
+  const handleUndoSimulate = (m: CompletedMatch) => setConfirm({
+    title: 'Undo Simulation?',
+    body: `Reset M${m.match_number} (${m.team_a} vs ${m.team_b}) back to lineup_open. Stats and points will be reversed. Stamina is not reversed.`,
+    label: 'Undo',
+    variant: 'red',
+    fn: () => handle(async () => {
+      const j = await post(`/api/admin/undo-simulate/${m.id}`)
+      showToast(j.message ?? 'Simulation undone', true)
+      setConfirm(null)
+      await loadMatches()
+      await loadCompletedMatches()
+    }),
+  })
   const handleSetupTest    = () => handle(async () => { const j = await post('/api/admin/setup-test-season'); showToast(j.message ?? 'Test season set up', true); await loadSeasons(); await loadTeams() })
 
   const handleResetStamina = () => setConfirm({
@@ -544,6 +593,7 @@ export default function AdminPage() {
       await loadSeasons()
       await loadMatches()
       await loadPlayoffBracket()
+      await loadCompletedMatches()
     }),
   })
 
@@ -708,6 +758,22 @@ export default function AdminPage() {
                     type="number" value={newBudget} onChange={e => setNewBudget(e.target.value)} min={10} max={1000}
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400"
                   />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">Format</label>
+                  <div className="flex gap-2">
+                    {(['5', '10', '20'] as const).map(o => (
+                      <button
+                        key={o}
+                        onClick={() => setNewOvers(o)}
+                        className={`flex-1 py-1.5 text-sm font-semibold rounded-lg transition ${
+                          newOvers === o ? 'bg-yellow-400 text-gray-950' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                        }`}
+                      >
+                        T{o}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Min / Max Squad</label>
@@ -1041,6 +1107,45 @@ export default function AdminPage() {
                 })()}
               </>
             )}
+          </div>
+        </Section>
+      )}
+
+      {/* ── 3c. Recently Completed (Undo) ───────────────────────────────────── */}
+      {completedMatches.length > 0 && (
+        <Section
+          title="Recently Completed"
+          badge={<span className="text-xs text-gray-500">last {completedMatches.length}</span>}
+        >
+          <div className="divide-y divide-gray-800/60">
+            {completedMatches.map(m => {
+              const PLAYOFF_LABELS: Record<string, string> = { qualifier1: 'Q1', eliminator: 'EL', qualifier2: 'Q2', final: 'FINAL' }
+              const playoffLabel = PLAYOFF_LABELS[m.match_type] ?? null
+              return (
+                <div key={m.id} className="flex items-center gap-4 px-6 py-3">
+                  <span className="text-xs font-mono text-gray-500 w-10">M{m.match_number}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm flex items-center gap-2">
+                      {m.team_a} <span className="text-gray-500">vs</span> {m.team_b}
+                      {playoffLabel && (
+                        <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">{playoffLabel}</span>
+                      )}
+                    </p>
+                    {m.result_summary && (
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">{m.result_summary}</p>
+                    )}
+                  </div>
+                  <span className="text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/20">Done</span>
+                  <Btn
+                    label={isPending ? '…' : 'Undo'}
+                    onClick={() => handleUndoSimulate(m)}
+                    disabled={isPending}
+                    variant="red"
+                    size="sm"
+                  />
+                </div>
+              )
+            })}
           </div>
         </Section>
       )}

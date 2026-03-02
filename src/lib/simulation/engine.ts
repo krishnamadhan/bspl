@@ -11,7 +11,6 @@ import {
   clampConfidence,
 } from './formulas'
 
-const TOTAL_OVERS = 5
 const TOTAL_WICKETS = 10
 
 // ─── Seeded random for reproducible results ───────────────────────────────────
@@ -33,11 +32,12 @@ function simulateBall(
   runsNeeded: number,
   ballsLeft: number,
   avgFieldingRating: number,
-  rand: () => number
+  rand: () => number,
+  totalOvers: number
 ): { outcome: BallOutcome; runs: number; isWicket: boolean; wicketType: string | null } {
-  const wicketProb = effectiveBowlerWicketProb(bowlerSim, batterSim, venue, overNumber, isSecondInnings)
-  const runsPerBall = effectiveBowlerRunsPerBall(bowlerSim, batterSim, venue, overNumber, isSecondInnings)
-  const battingSR = effectiveBattingSR(batterSim, bowlerSim, venue, overNumber, isSecondInnings, runsNeeded, ballsLeft)
+  const wicketProb = effectiveBowlerWicketProb(bowlerSim, batterSim, venue, overNumber, isSecondInnings, totalOvers)
+  const runsPerBall = effectiveBowlerRunsPerBall(bowlerSim, batterSim, venue, overNumber, isSecondInnings, totalOvers)
+  const battingSR = effectiveBattingSR(batterSim, bowlerSim, venue, overNumber, isSecondInnings, runsNeeded, ballsLeft, totalOvers)
 
   const r = rand()
 
@@ -108,7 +108,8 @@ function simulateInnings(
   venue: SimVenue,
   isSecondInnings: boolean,
   targetRuns: number,
-  seed: number
+  seed: number,
+  totalOvers: number
 ): InningsResult {
   const rand = seededRandom(seed)
 
@@ -142,7 +143,7 @@ function simulateInnings(
     if (!bowlerStats[id]) bowlerStats[id] = { runs: 0, balls: 0, wickets: 0, wides: 0, noBalls: 0 }
   })
 
-  for (let over = 1; over <= TOTAL_OVERS; over++) {
+  for (let over = 1; over <= totalOvers; over++) {
     if (totalWickets >= TOTAL_WICKETS) break
     if (isSecondInnings && totalRuns > targetRuns) break
 
@@ -171,9 +172,9 @@ function simulateInnings(
         ?? battingTeam.players[0]
       if (!batterSim) break
       const runsNeeded = isSecondInnings ? targetRuns - totalRuns + 1 : 0
-      const ballsLeft = (TOTAL_OVERS - over) * 6 + (6 - legalBalls)
+      const ballsLeft = (totalOvers - over) * 6 + (6 - legalBalls)
 
-      const ball = simulateBall(bowlerSim, batterSim, venue, over, isSecondInnings, runsNeeded, ballsLeft, avgFieldingRating, rand)
+      const ball = simulateBall(bowlerSim, batterSim, venue, over, isSecondInnings, runsNeeded, ballsLeft, avgFieldingRating, rand, totalOvers)
 
       overBalls.push(ball.outcome)
       totalRuns += ball.runs
@@ -336,28 +337,101 @@ function computePostMatchUpdates(
   return { stamina: staminaUpdates, confidence: confidenceUpdates }
 }
 
+// ─── Super over (6 legal balls, 2-wicket limit per side) ─────────────────────
+// Convention: team that chased in the main match bats first in the super over.
+function simulateSuperOverInnings(
+  battingTeam: SimTeam,
+  bowlingTeam: SimTeam,
+  venue: SimVenue,
+  seed: number,
+): { runs: number; wickets: number } {
+  const rand = seededRandom(seed)
+
+  // Bowling team fielding rating for catch conversion
+  const bowlingXI = new Set(bowlingTeam.batting_order)
+  const bowlingXIPlayers = bowlingTeam.players.filter(p => bowlingXI.has(p.player.id))
+  const avgFieldingRating = bowlingXIPlayers.length > 0
+    ? bowlingXIPlayers.reduce((sum, p) => sum + p.player.fielding_rating, 0) / bowlingXIPlayers.length
+    : 5
+
+  // Best available bowler for the bowling team
+  const bowlerId = bowlingTeam.bowling_order[0]
+  const bowlerSim = bowlingTeam.players.find(p => p.player.id === bowlerId)
+    ?? bowlingTeam.players.find(p => p.player.role === 'bowler' || p.player.role === 'all-rounder')
+    ?? bowlingTeam.players[0]
+
+  let totalRuns = 0
+  let wickets = 0
+  let legalBalls = 0
+  let batterIndex = 0
+  let striker    = battingTeam.batting_order[batterIndex++]
+  let nonStriker = battingTeam.batting_order[batterIndex++] ?? battingTeam.batting_order[0]
+
+  while (legalBalls < 6 && wickets < 2) {
+    const batterSim = battingTeam.players.find(p => p.player.id === striker)
+      ?? battingTeam.players[0]
+    if (!batterSim || !bowlerSim) break
+
+    // Super over is always over 1 (powerplay pace), no RRR pressure
+    const ball = simulateBall(bowlerSim, batterSim, venue, 1, false, 0, 6 - legalBalls, avgFieldingRating, rand)
+    totalRuns += ball.runs
+
+    if (ball.outcome === 'Wd') continue  // wide = extra ball, no legal ball count
+    legalBalls++
+
+    if (ball.isWicket) {
+      wickets++
+      if (batterIndex < battingTeam.batting_order.length) {
+        striker = battingTeam.batting_order[batterIndex++]
+      }
+    } else if (ball.runs % 2 === 1) {
+      ;[striker, nonStriker] = [nonStriker, striker]
+    }
+  }
+
+  return { runs: totalRuns, wickets }
+}
+
 // ─── Full match simulation ────────────────────────────────────────────────────
 export function simulateMatch(
   teamA: SimTeam,        // batting first
   teamB: SimTeam,        // bowling first (chasing)
   venue: SimVenue,
-  matchSeed: number
+  matchSeed: number,
+  totalOvers: number = 5
 ): MatchResult {
-  const innings1 = simulateInnings(teamA, teamB, venue, false, 0, matchSeed)
+  const innings1 = simulateInnings(teamA, teamB, venue, false, 0, matchSeed, totalOvers)
   const target = innings1.total_runs
-  const innings2 = simulateInnings(teamB, teamA, venue, true, target, matchSeed + 1)
+  const innings2 = simulateInnings(teamB, teamA, venue, true, target, matchSeed + 1, totalOvers)
 
-  const isTie    = innings2.total_runs === target
+  const mainTied = innings2.total_runs === target
   const teamAWon = innings2.total_runs < target
-  const winnerTeamId = isTie ? null : (teamAWon ? teamA.team_id : teamB.team_id)
 
-  let resultSummary = ''
-  if (isTie) {
-    resultSummary = `Match tied — both teams scored ${target}`
+  let winnerTeamId: string | null
+  let resultSummary: string
+
+  if (mainTied) {
+    // Super over: chasing team (teamB) bats first
+    const soTeamB = simulateSuperOverInnings(teamB, teamA, venue, matchSeed + 100)
+    const soTeamA = simulateSuperOverInnings(teamA, teamB, venue, matchSeed + 200)
+
+    if (soTeamB.runs > soTeamA.runs) {
+      winnerTeamId = teamB.team_id
+      resultSummary = `Tied — Super Over: ${teamB.team_id} won! (${soTeamB.runs}/${soTeamB.wickets} vs ${soTeamA.runs}/${soTeamA.wickets})`
+    } else if (soTeamA.runs > soTeamB.runs) {
+      winnerTeamId = teamA.team_id
+      resultSummary = `Tied — Super Over: ${teamA.team_id} won! (${soTeamA.runs}/${soTeamA.wickets} vs ${soTeamB.runs}/${soTeamB.wickets})`
+    } else {
+      // Double tie (extremely rare) — award to chasing team
+      winnerTeamId = teamB.team_id
+      resultSummary = `Tied — Super Over also tied — ${teamB.team_id} won (chased)`
+    }
   } else if (teamAWon) {
+    winnerTeamId = teamA.team_id
     const margin = target - innings2.total_runs
     resultSummary = `${teamA.team_id} won by ${margin} run${margin !== 1 ? 's' : ''}`
   } else {
+    winnerTeamId = teamB.team_id
     const wicketsLeft = 10 - innings2.total_wickets
     resultSummary = `${teamB.team_id} won by ${wicketsLeft} wicket${wicketsLeft !== 1 ? 's' : ''}`
   }
@@ -371,7 +445,7 @@ export function simulateMatch(
     innings2,
     winner_team_id: winnerTeamId,
     margin_runs: teamAWon ? target - innings2.total_runs : null,
-    margin_wickets: (!teamAWon && !isTie) ? 10 - innings2.total_wickets : null,
+    margin_wickets: (!teamAWon && !mainTied) ? 10 - innings2.total_wickets : null,
     result_summary: resultSummary,
     stamina_updates: [...teamAUpdates.stamina, ...teamBUpdates.stamina],
     confidence_updates: [...teamAUpdates.confidence, ...teamBUpdates.confidence],

@@ -16,13 +16,14 @@ export async function POST() {
 
   const { data: season } = await db
     .from('bspl_seasons')
-    .select('id, name')
+    .select('id, name, overs_per_innings')
     .eq('status', 'playoffs')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
   if (!season) return NextResponse.json({ error: 'No playoffs season found' }, { status: 404 })
+  const totalOvers = (season as any).overs_per_innings ?? 5
 
   // Block if Q2 already exists
   const { data: existQ2 } = await db
@@ -78,7 +79,7 @@ export async function POST() {
     return NextResponse.json({ error: insertErr?.message ?? 'Insert failed' }, { status: 500 })
   }
 
-  await autoFillBotLineups(db, season.id, created)
+  await autoFillBotLineups(db, season.id, created, totalOvers)
 
   return NextResponse.json({
     ok: true,

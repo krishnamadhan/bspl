@@ -237,6 +237,14 @@ export default async function PracticeDetailPage({
   const cond  = COND[rawMatch.condition] ?? COND.neutral
   const badge = STATUS_BADGE[rawMatch.status] ?? STATUS_BADGE.lineup_open
 
+  // ── Load overs_per_innings for this season ─────────────────────────────────
+  const { data: seasonOvers } = await supabase
+    .from('bspl_seasons')
+    .select('overs_per_innings')
+    .eq('id', rawMatch.season_id)
+    .maybeSingle()
+  const totalOvers = (seasonOvers as any)?.overs_per_innings ?? 5
+
   // ── User's team in this match's season ─────────────────────────────────────
   const { data: myTeam } = await supabase
     .from('bspl_teams')
@@ -501,6 +509,7 @@ export default async function PracticeDetailPage({
             myTeamId={myTeam.id}
             squad={squad}
             existingLineup={existingLineup ?? null}
+            totalOvers={totalOvers}
           />
         </div>
       </div>

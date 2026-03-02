@@ -22,7 +22,7 @@ export async function POST() {
   // ── 1. Find the active season ───────────────────────────────────────────────
   const { data: season } = await db
     .from('bspl_seasons')
-    .select('id, name, status')
+    .select('id, name, status, overs_per_innings')
     .in('status', ['draft_locked', 'in_progress'])
     .order('created_at', { ascending: false })
     .limit(1)
@@ -34,6 +34,7 @@ export async function POST() {
       { status: 404 },
     )
   }
+  const totalOvers = (season as any).overs_per_innings ?? 5
 
   // Guard: don't create playoff matches if they already exist
   const { count: existing } = await db
@@ -146,7 +147,7 @@ export async function POST() {
   if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
 
   // ── 5. Open lineups + auto-fill bots ────────────────────────────────────────
-  await autoFillBotLineups(db, season.id, created ?? [])
+  await autoFillBotLineups(db, season.id, created ?? [], totalOvers)
 
   // ── 6. Season → playoffs ────────────────────────────────────────────────────
   await db.from('bspl_seasons').update({ status: 'playoffs' }).eq('id', season.id)
@@ -160,6 +161,7 @@ export async function autoFillBotLineups(
   db: ReturnType<typeof adminClient>,
   seasonId: string,
   matches: Array<{ id: string; team_a_id: string; team_b_id: string; condition?: string }>,
+  totalOvers: number = 5,
 ) {
   for (const match of matches) {
     await db.from('bspl_matches').update({ status: 'lineup_open' }).eq('id', match.id)
@@ -193,11 +195,11 @@ export async function autoFillBotLineups(
         const { data: prev } = await db
           .from('bspl_lineups').select('playing_xi, bowling_order, toss_choice')
           .eq('match_id', prevMatch.id).eq('team_id', teamId).eq('is_submitted', true).maybeSingle()
-        if (prev?.playing_xi?.length === 11 && prev?.bowling_order?.length === 5) {
+        if (prev?.playing_xi?.length === 11 && prev?.bowling_order?.length === totalOvers) {
           const allInRoster =
             prev.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
             prev.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
-          if (allInRoster && isValidBowlingOrder(prev.bowling_order)) {
+          if (allInRoster && isValidBowlingOrder(prev.bowling_order, totalOvers)) {
             xi = prev.playing_xi
             bowling = prev.bowling_order
           }
@@ -206,7 +208,7 @@ export async function autoFillBotLineups(
 
       // Fall back to auto-pick from current roster
       if (xi.length !== 11) {
-        const picked = pickXI(buildRosterForPick(rosters ?? []))
+        const picked = pickXI(buildRosterForPick(rosters ?? []), totalOvers)
         xi = picked.xi
         bowling = picked.bowlingOrder
       }

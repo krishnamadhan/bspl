@@ -94,11 +94,13 @@ CREATE TABLE IF NOT EXISTS bspl_seasons (
   status                TEXT NOT NULL DEFAULT 'draft_open'
                           CHECK (status IN ('draft_open','draft_locked','in_progress','playoffs','completed')),
   draft_lock_date       TIMESTAMPTZ NOT NULL,
+  overs_per_innings     INTEGER NOT NULL DEFAULT 5,
   total_teams           INTEGER NOT NULL DEFAULT 6,
   budget_cr             NUMERIC(6,2) NOT NULL DEFAULT 100,
   min_squad_size        INTEGER NOT NULL DEFAULT 15,
   max_squad_size        INTEGER NOT NULL DEFAULT 25,
-  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (overs_per_innings IN (5, 10, 20))
 );
 
 -- ─── 5. Teams ─────────────────────────────────────────────────
@@ -211,7 +213,7 @@ CREATE TABLE IF NOT EXISTS bspl_innings (
 CREATE TABLE IF NOT EXISTS bspl_ball_log (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   innings_id            UUID NOT NULL REFERENCES bspl_innings(id) ON DELETE CASCADE,
-  over_number           INTEGER NOT NULL CHECK (over_number BETWEEN 1 AND 5),
+  over_number           INTEGER NOT NULL CHECK (over_number BETWEEN 1 AND 20),
   ball_number           INTEGER NOT NULL CHECK (ball_number BETWEEN 1 AND 10),  -- allows extras
   batsman_id            UUID NOT NULL REFERENCES players(id),
   bowler_id             UUID NOT NULL REFERENCES players(id),
@@ -240,6 +242,26 @@ CREATE TABLE IF NOT EXISTS bspl_points (
 
   UNIQUE (season_id, team_id)
 );
+
+-- ── Fantasy scores ────────────────────────────────────────────────────────────
+CREATE TABLE bspl_fantasy_scores (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  season_id UUID NOT NULL REFERENCES bspl_seasons(id) ON DELETE CASCADE,
+  match_id  UUID NOT NULL REFERENCES bspl_matches(id) ON DELETE CASCADE,
+  team_id   UUID NOT NULL REFERENCES bspl_teams(id) ON DELETE CASCADE,
+  player_id UUID NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+
+  -- Per-match breakdown
+  batting_pts  INTEGER NOT NULL DEFAULT 0,
+  bowling_pts  INTEGER NOT NULL DEFAULT 0,
+  bonus_pts    INTEGER NOT NULL DEFAULT 0,
+  total_pts    INTEGER NOT NULL DEFAULT 0,
+
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+
+  UNIQUE (season_id, match_id, team_id, player_id)
+);
+CREATE INDEX ON bspl_fantasy_scores (season_id, player_id);
 
 -- ─── 13. Season player stats (cumulative) ─────────────────────
 CREATE TABLE IF NOT EXISTS bspl_player_stats (
@@ -286,6 +308,7 @@ ALTER TABLE bspl_innings        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bspl_ball_log       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bspl_points         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bspl_player_stats   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bspl_fantasy_scores ENABLE ROW LEVEL SECURITY;
 
 -- Public read for reference data (idempotent)
 DROP POLICY IF EXISTS "players public read"   ON players;
@@ -298,6 +321,7 @@ DROP POLICY IF EXISTS "innings public read"   ON bspl_innings;
 DROP POLICY IF EXISTS "ball_log public read"  ON bspl_ball_log;
 DROP POLICY IF EXISTS "points public read"    ON bspl_points;
 DROP POLICY IF EXISTS "stats public read"     ON bspl_player_stats;
+DROP POLICY IF EXISTS "fantasy public read"   ON bspl_fantasy_scores;
 DROP POLICY IF EXISTS "stamina own team read" ON bspl_stamina;
 DROP POLICY IF EXISTS "lineup own read"       ON bspl_lineups;
 DROP POLICY IF EXISTS "lineup own write"      ON bspl_lineups;
@@ -317,6 +341,7 @@ CREATE POLICY "innings public read"   ON bspl_innings      FOR SELECT USING (tru
 CREATE POLICY "ball_log public read"  ON bspl_ball_log     FOR SELECT USING (true);
 CREATE POLICY "points public read"    ON bspl_points       FOR SELECT USING (true);
 CREATE POLICY "stats public read"     ON bspl_player_stats FOR SELECT USING (true);
+CREATE POLICY "fantasy public read"   ON bspl_fantasy_scores FOR SELECT USING (true);
 
 -- Stamina: only owner can see their own team's stamina
 CREATE POLICY "stamina own team read" ON bspl_stamina FOR SELECT

@@ -42,6 +42,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'You need a team to create a practice match' }, { status: 400 })
   }
 
+  // ── Load overs_per_innings for this season ─────────────────────────────────
+  const { data: seasonRow } = await db
+    .from('bspl_seasons')
+    .select('overs_per_innings')
+    .eq('id', myTeam.season_id)
+    .single()
+  const totalOvers = seasonRow?.overs_per_innings ?? 5
+
   if (opponent_team_id === myTeam.id) {
     return NextResponse.json({ error: 'Cannot play against your own team' }, { status: 400 })
   }
@@ -97,8 +105,8 @@ export async function POST(req: NextRequest) {
 
     if (rosters?.length) {
       const roster = buildRosterForPick(rosters)
-      const { xi, bowlingOrder } = pickXI(roster)
-      if (xi.length === 11 && bowlingOrder.length === 5) {
+      const { xi, bowlingOrder } = pickXI(roster, totalOvers)
+      if (xi.length === 11 && bowlingOrder.length === totalOvers) {
         await db.from('bspl_lineups').insert({
           match_id:      match.id,
           team_id:       opponent.id,

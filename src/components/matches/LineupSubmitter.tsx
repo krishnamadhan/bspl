@@ -26,6 +26,7 @@ interface Props {
   myTeamId: string
   squad: SquadPlayer[]
   existingLineup: ExistingLineup
+  totalOvers?: number
 }
 
 const ROLE_META: Record<string, { label: string; cls: string }> = {
@@ -55,7 +56,7 @@ function canBowl(p: SquadPlayer) {
   return p.role === 'bowler' || p.role === 'all-rounder'
 }
 
-export default function LineupSubmitter({ matchId, myTeamId, squad, existingLineup }: Props) {
+export default function LineupSubmitter({ matchId, myTeamId, squad, existingLineup, totalOvers = 5 }: Props) {
   const [selectedXI, setSelectedXI] = useState<string[]>(existingLineup?.playing_xi ?? [])
   const [bowlingOrder, setBowlingOrder] = useState<string[]>(existingLineup?.bowling_order ?? [])
   const [tossChoice, setTossChoice] = useState<'bat' | 'bowl' | null>(
@@ -85,14 +86,15 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
   function toggleBowler(id: string) {
     setNotice(null)
     if (!selectedXI.includes(id)) return
+    const maxOversPerBowler = totalOvers <= 10 ? 2 : 4
     setBowlingOrder(bo => {
       const count = bo.filter(b => b === id).length
-      if (count >= 2) {
-        // Already bowling 2 overs — remove all slots for this bowler
+      if (count >= maxOversPerBowler) {
+        // Already at max overs — remove all slots for this bowler
         return bo.filter(b => b !== id)
       }
-      if (bo.length >= 5) {
-        setNotice({ type: 'error', msg: 'All 5 overs already assigned.' })
+      if (bo.length >= totalOvers) {
+        setNotice({ type: 'error', msg: `All ${totalOvers} overs already assigned.` })
         return bo
       }
       return [...bo, id]
@@ -138,16 +140,18 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
       setNotice({ type: 'error', msg: `Need at least 3 bowlers/all-rounders in XI (${bowlerCount} selected).` })
       return
     }
-    if (bowlingOrder.length !== 5) {
-      setNotice({ type: 'error', msg: `Assign exactly 5 overs (${bowlingOrder.length}/5 set).` })
+    const maxOversPerBowler = totalOvers <= 10 ? 2 : 4
+    const minDistinct = totalOvers <= 10 ? 3 : 5
+    if (bowlingOrder.length !== totalOvers) {
+      setNotice({ type: 'error', msg: `Assign exactly ${totalOvers} overs (${bowlingOrder.length}/${totalOvers} set).` })
       return
     }
-    // No bowler can bowl more than 2 overs
+    // No bowler can bowl more than maxOversPerBowler overs
     const overCount: Record<string, number> = {}
     for (const id of bowlingOrder) overCount[id] = (overCount[id] ?? 0) + 1
     for (const [id, cnt] of Object.entries(overCount)) {
-      if (cnt > 2) {
-        setNotice({ type: 'error', msg: `${playerMap[id]?.name ?? 'A bowler'} is assigned ${cnt} overs — max 2 allowed.` })
+      if (cnt > maxOversPerBowler) {
+        setNotice({ type: 'error', msg: `${playerMap[id]?.name ?? 'A bowler'} is assigned ${cnt} overs — max ${maxOversPerBowler} allowed.` })
         return
       }
     }
@@ -158,10 +162,10 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
         return
       }
     }
-    // Minimum 4 different bowlers
+    // Minimum distinct bowlers
     const uniqueBowlers = new Set(bowlingOrder).size
-    if (uniqueBowlers < 4) {
-      setNotice({ type: 'error', msg: `At least 4 different bowlers must be used (currently ${uniqueBowlers}). Assign more bowlers across the 5 overs.` })
+    if (uniqueBowlers < minDistinct) {
+      setNotice({ type: 'error', msg: `At least ${minDistinct} different bowlers must be used (currently ${uniqueBowlers}). Assign more bowlers across the ${totalOvers} overs.` })
       return
     }
     if (!tossChoice) {
@@ -215,7 +219,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
   }).length
 
   const xiComplete       = selectedXI.length === 11
-  const bowlComplete     = bowlingOrder.length === 5
+  const bowlComplete     = bowlingOrder.length === totalOvers
   const constraintsMet   = wkCount === 1 && bowlerCount >= 3
   const readyToSubmit    = xiComplete && bowlComplete && tossChoice !== null && constraintsMet
 
@@ -234,7 +238,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
           {selectedXI.length}/11 players
         </span>
         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${bowlComplete ? 'bg-green-500/20 text-green-300' : 'bg-gray-800 text-gray-400'}`}>
-          {bowlingOrder.length}/5 overs
+          {bowlingOrder.length}/{totalOvers} overs
         </span>
         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${tossChoice ? 'bg-green-500/20 text-green-300' : 'bg-gray-800 text-gray-400'}`}>
           {tossChoice ? `Toss: ${tossChoice === 'bat' ? 'Bat First' : 'Bowl First'}` : 'Toss: not set'}
@@ -365,6 +369,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
                       {/* Bowl toggle (only for bowlers/AR) */}
                       {canBowl(p) && (() => {
+                        const maxOversPerBowler = totalOvers <= 10 ? 2 : 4
                         const overCount = bowlingOrder.filter(b => b === id).length
                         const overNums  = bowlingOrder
                           .map((b, i) => b === id ? i + 1 : null)
@@ -374,12 +379,12 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                             onClick={e => { e.stopPropagation(); toggleBowler(id) }}
                             className={`text-xs px-2 py-0.5 rounded transition flex-shrink-0 ${
                               overCount > 0
-                                ? overCount === 2
+                                ? overCount >= maxOversPerBowler
                                   ? 'bg-orange-400/20 text-orange-300'
                                   : 'bg-yellow-400/20 text-yellow-300'
                                 : 'bg-gray-800 text-gray-500 hover:text-gray-300'
                             }`}
-                            title={overCount === 2 ? 'Click to remove from bowling' : overCount === 1 ? 'Click to add 2nd over' : 'Assign to bowl'}
+                            title={overCount >= maxOversPerBowler ? 'Click to remove from bowling' : overCount > 0 ? `Click to add another over (max ${maxOversPerBowler})` : 'Assign to bowl'}
                           >
                             {overCount === 0 ? 'Bowl' : `Ov ${overNums.join('+')} (${overCount})`}
                           </button>
@@ -411,12 +416,12 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
             <h2 className="font-semibold text-sm text-gray-300 uppercase tracking-wide">
               Bowling Order{' '}
               <span className={`font-normal ${bowlComplete ? 'text-green-400' : 'text-gray-500'}`}>
-                ({bowlingOrder.length}/5)
+                ({bowlingOrder.length}/{totalOvers})
               </span>
             </h2>
 
             <div className="space-y-1.5">
-              {[0, 1, 2, 3, 4].map(i => {
+              {Array.from({ length: totalOvers }, (_, i) => i).map(i => {
                 const bid    = bowlingOrder[i]
                 const bowler = bid ? playerMap[bid] : null
 
@@ -504,7 +509,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
           {!readyToSubmit && !loading && (
             <p className="text-xs text-gray-600 text-center">
-              11 players (1 WK · 3+ bowlers/AR) · 5 overs (max 2/bowler · no back-to-back · min 4 bowlers) · Toss preference
+              11 players (1 WK · 3+ bowlers/AR) · {totalOvers} overs (max {totalOvers <= 10 ? 2 : 4}/bowler · no back-to-back · min {totalOvers <= 10 ? 3 : 5} bowlers) · Toss preference
             </p>
           )}
         </div>

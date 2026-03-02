@@ -26,6 +26,14 @@ export async function POST(
     )
   }
 
+  // Load overs_per_innings for this season
+  const { data: seasonRow } = await db
+    .from('bspl_seasons')
+    .select('overs_per_innings')
+    .eq('id', match.season_id)
+    .single()
+  const totalOvers = seasonRow?.overs_per_innings ?? 5
+
   // Open lineup window
   const { error: openErr } = await db.from('bspl_matches').update({ status: 'lineup_open' }).eq('id', matchId)
   if (openErr) return NextResponse.json({ error: `Failed to open match: ${openErr.message}` }, { status: 500 })
@@ -70,12 +78,12 @@ export async function POST(
           .eq('is_submitted', true)
           .maybeSingle()
 
-        if (prevLineup?.playing_xi?.length === 11 && prevLineup?.bowling_order?.length === 5) {
+        if (prevLineup?.playing_xi?.length === 11 && prevLineup?.bowling_order?.length === totalOvers) {
           // Validate all player IDs are still in the current roster
           const allInRoster =
             prevLineup.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
             prevLineup.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
-          if (allInRoster && isValidBowlingOrder(prevLineup.bowling_order)) {
+          if (allInRoster && isValidBowlingOrder(prevLineup.bowling_order, totalOvers)) {
             playing_xi   = prevLineup.playing_xi
             bowling_order = prevLineup.bowling_order
           }
@@ -85,7 +93,7 @@ export async function POST(
       // Fall back to auto-pick if no valid previous lineup
       if (!playing_xi) {
         const rosterPicks = buildRosterForPick(rosters ?? [])
-        const { xi, bowlingOrder } = pickXI(rosterPicks)
+        const { xi, bowlingOrder } = pickXI(rosterPicks, totalOvers)
         playing_xi    = xi
         bowling_order = bowlingOrder
       }

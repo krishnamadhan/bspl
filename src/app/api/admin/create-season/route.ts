@@ -12,11 +12,14 @@ export async function POST(req: NextRequest) {
   const maxSquad      = Number(body.max_squad  ?? 25)
   const maxTeams      = Number(body.max_teams  ?? 8)
   const draftLockDate = body.draft_lock_date   // ISO string or null
+  const oversPerInnings = Number(body.overs_per_innings ?? 5)
 
   if (!name) return NextResponse.json({ error: 'Season name is required' }, { status: 400 })
   if (budget < 10 || budget > 1000) return NextResponse.json({ error: 'Budget must be 10–1000 Cr' }, { status: 400 })
   if (minSquad < 11 || maxSquad > 30 || minSquad > maxSquad)
     return NextResponse.json({ error: 'Invalid squad size range' }, { status: 400 })
+  if (![5, 10, 20].includes(oversPerInnings))
+    return NextResponse.json({ error: 'overs_per_innings must be 5, 10, or 20' }, { status: 400 })
 
   const db = adminClient()
 
@@ -40,12 +43,13 @@ export async function POST(req: NextRequest) {
     .from('bspl_seasons')
     .insert({
       name,
-      status:          'draft_open',
-      draft_lock_date: draftLockDate ?? new Date(Date.now() + 7 * 86400_000).toISOString(),
-      total_teams:     maxTeams,
-      budget_cr:       budget,
-      min_squad_size:  minSquad,
-      max_squad_size:  maxSquad,
+      status:           'draft_open',
+      draft_lock_date:  draftLockDate ?? new Date(Date.now() + 7 * 86400_000).toISOString(),
+      total_teams:      maxTeams,
+      budget_cr:        budget,
+      min_squad_size:   minSquad,
+      max_squad_size:   maxSquad,
+      overs_per_innings: oversPerInnings,
     })
     .select('id, name')
     .single()

@@ -25,6 +25,14 @@ export async function simulateOne(
   if (match.status !== 'lineup_open') {
     throw new Error(`Match status is '${match.status}', expected 'lineup_open'`)
   }
+
+  // ── 1b. Load overs_per_innings from the season ────────────────────────────
+  const { data: seasonRow } = await db
+    .from('bspl_seasons')
+    .select('overs_per_innings')
+    .eq('id', match.season_id)
+    .single()
+  const totalOvers = seasonRow?.overs_per_innings ?? 5
   // Practice matches skip stamina / player-stats / points updates
   // (isPractice is set by the caller; we re-confirm via DB to be safe)
   const effectivelyPractice = isPractice || match.match_type === 'practice'
@@ -86,12 +94,12 @@ export async function simulateOne(
         .eq('is_submitted', true)
         .maybeSingle()
 
-      if (prev?.playing_xi?.length === 11 && prev?.bowling_order?.length === 5) {
+      if (prev?.playing_xi?.length === 11 && prev?.bowling_order?.length === totalOvers) {
         // Validate all player IDs are still in the current roster AND bowling order is valid
         const allInRoster =
           prev.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
           prev.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
-        if (allInRoster && isValidBowlingOrder(prev.bowling_order)) {
+        if (allInRoster && isValidBowlingOrder(prev.bowling_order, totalOvers)) {
           return { team_id: teamId, ...prev, is_submitted: true }
         }
       }
@@ -99,7 +107,7 @@ export async function simulateOne(
 
     // 2. Auto-pick from roster
     const roster = buildRosterForPick(rosters ?? [])
-    const { xi, bowlingOrder } = pickXI(roster)
+    const { xi, bowlingOrder } = pickXI(roster, totalOvers)
     return { team_id: teamId, playing_xi: xi, bowling_order: bowlingOrder, toss_choice: getBotTossChoice(match.condition), is_submitted: true }
   }
 
@@ -168,12 +176,12 @@ export async function simulateOne(
     return h
   }
   const matchSeed = (Date.now() ^ hashMatchId(matchId)) % 1_000_000
-  const result    = simulateMatch(battingFirst, bowlingFirst, simVenue, matchSeed)
+  const result    = simulateMatch(battingFirst, bowlingFirst, simVenue, matchSeed, totalOvers)
 
   // Substitute UUIDs in result_summary with team names
   const resultSummary = result.result_summary
-    .replace(battingFirst.team_id, teamName.get(battingFirst.team_id) ?? battingFirst.team_id)
-    .replace(bowlingFirst.team_id, teamName.get(bowlingFirst.team_id) ?? bowlingFirst.team_id)
+    .replaceAll(battingFirst.team_id, teamName.get(battingFirst.team_id) ?? battingFirst.team_id)
+    .replaceAll(bowlingFirst.team_id, teamName.get(bowlingFirst.team_id) ?? bowlingFirst.team_id)
 
   // ── 9a. Insert innings rows ────────────────────────────────────────────────
   // Must succeed before we mark the match as completed. If innings insert
@@ -432,6 +440,58 @@ export async function simulateOne(
       onConflict: 'season_id,team_id,player_id',
     })
     if (statsErr) console.error(`[simulate] player stats upsert failed for match ${matchId}: ${statsErr.message}`)
+  }
+
+  // ── 9g. Insert fantasy scores ──────────────────────────────────────────────
+  function cnToDecOvers(cn: number): number {
+    const full = Math.floor(cn)
+    const rem  = Math.round((cn % 1) * 10)
+    return (full * 6 + rem) / 6
+  }
+
+  if (!effectivelyPractice) {
+    const fantasyUpserts = [...matchStats.values()].map(ms => {
+      // Batting points
+      let batting_pts = ms.match_runs                      // +1pt per run
+      batting_pts    += ms.match_fours                     // +1pt per four
+      batting_pts    += ms.match_sixes * 2                 // +2pt per six
+      if (ms.match_runs >= 20) batting_pts += 15           // +15pt milestone bonus
+      if (ms.batted && ms.match_dismissed && ms.match_runs === 0) batting_pts -= 5  // -5pt duck
+
+      // Bowling points
+      let bowling_pts = ms.match_wickets * 25              // +25pt per wicket
+      if (ms.match_wickets >= 2) bowling_pts += 15         // +15pt bonus for 2+ wickets
+
+      // Economy bonus/penalty (only if bowled at least 1 full over = 6 legal balls)
+      const legalBalls = cnToBalls(ms.match_overs)
+      if (legalBalls >= 6) {
+        const decOvers = cnToDecOvers(ms.match_overs)
+        const economy  = ms.match_runs_conceded / decOvers
+        if (economy < 8)  bowling_pts += 10
+        if (economy > 15) bowling_pts -= 10
+      }
+
+      const bonus_pts = 0
+      const total_pts = batting_pts + bowling_pts + bonus_pts
+
+      return {
+        season_id:   match.season_id,
+        match_id:    matchId,
+        team_id:     ms.team_id,
+        player_id:   ms.player_id,
+        batting_pts,
+        bowling_pts,
+        bonus_pts,
+        total_pts,
+      }
+    })
+
+    if (fantasyUpserts.length > 0) {
+      const { error: fantasyErr } = await db.from('bspl_fantasy_scores').upsert(fantasyUpserts, {
+        onConflict: 'season_id,match_id,team_id,player_id',
+      })
+      if (fantasyErr) console.error(`[simulate] fantasy scores upsert failed for match ${matchId}: ${fantasyErr.message}`)
+    }
   }
 
   // ── 9f. Upsert points table ────────────────────────────────────────────────

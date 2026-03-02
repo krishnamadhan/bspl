@@ -11,12 +11,13 @@ export async function POST() {
   // ── Get all lineup_open matches for the active season ──────────────────────
   const { data: season } = await db
     .from('bspl_seasons')
-    .select('id')
+    .select('id, overs_per_innings')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
   if (!season) return NextResponse.json({ error: 'No active season' }, { status: 400 })
+  const totalOvers = (season as any).overs_per_innings ?? 5
 
   const { data: matches } = await db
     .from('bspl_matches')
@@ -82,8 +83,8 @@ export async function POST() {
       const roster = rosterByTeam.get(teamId)
       if (!roster?.length) continue
 
-      const { xi, bowlingOrder } = pickXI(roster)
-      if (xi.length < 11 || bowlingOrder.length < 5) continue
+      const { xi, bowlingOrder } = pickXI(roster, totalOvers)
+      if (xi.length < 11 || bowlingOrder.length < totalOvers) continue
 
       upserts.push({
         match_id:      match.id,

@@ -13,7 +13,7 @@ export type PickRosterPlayer = {
   price_cr: number
 }
 
-export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder: string[] } {
+export function pickXI(roster: PickRosterPlayer[], totalOvers: number = 5): { xi: string[]; bowlingOrder: string[] } {
   const sorted = [...roster].sort((a, b) => b.price_cr - a.price_cr)
 
   const xi: typeof sorted = []
@@ -61,9 +61,9 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
   }
 
   // Bowling order rules (enforced here and validated on lineup submission):
-  //   1. Max 2 overs per bowler
+  //   1. Max 2 overs per bowler (T5/T10) or 4 overs (T20)
   //   2. No bowler bowls consecutive overs
-  //   3. Minimum 4 different bowlers across 5 overs
+  //   3. Minimum 3 distinct bowlers (T5/T10) or 5 distinct bowlers (T20)
   //
   // With 4+ canBowl: one bowler gets 2 overs (PP + death), rest get 1 each.
   // With 3 canBowl:  best gets 2, others get 1+2 → only 3 different (edge case, pickXI tries to avoid this).
@@ -77,24 +77,25 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
       return (b.wicket_prob ?? 0) - (a.wicket_prob ?? 0)
     })
 
-  // In a 5-over format (max 2 overs per bowler), need at least 3 distinct bowlers.
-  // If we have fewer, pull in part-timers from the XI who have bowling stats.
-  if (canBowl.length < 3) {
+  // Need enough distinct bowlers to cover all overs without consecutive repeats.
+  // Minimum: 3 distinct for T5/T10, 5 distinct for T20.
+  const minDistinctBowlers = totalOvers <= 10 ? 3 : 5
+  if (canBowl.length < minDistinctBowlers) {
     const partTimers = xi
       .filter(p =>
         p.wicket_prob !== null &&
         !canBowl.find(c => c.player_id === p.player_id)
       )
       .sort((a, b) => (a.bowling_economy ?? 99) - (b.bowling_economy ?? 99))
-    canBowl = [...canBowl, ...partTimers.slice(0, 3 - canBowl.length)]
+    canBowl = [...canBowl, ...partTimers.slice(0, minDistinctBowlers - canBowl.length)]
   }
 
-  const MAX_OVERS_PER_BOWLER = 2
+  const MAX_OVERS_PER_BOWLER = totalOvers <= 5 ? 2 : totalOvers <= 10 ? 2 : 4
   const oversAssigned: Record<string, number> = {}
   const bowlingOrder: string[] = []
   let prevBowlerId: string | null = null
 
-  for (let slot = 0; slot < 5; slot++) {
+  for (let slot = 0; slot < totalOvers; slot++) {
     // Primary: under max overs AND not the same as previous over (no consecutive)
     let eligible = canBowl.filter(p =>
       (oversAssigned[p.player_id] ?? 0) < MAX_OVERS_PER_BOWLER &&
@@ -117,8 +118,8 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
     if (eligible.length === 0) break
 
     let pick: typeof canBowl[0]
-    if (slot === 0 || slot === 4) {
-      // Over 1 (powerplay) and over 5 (death): best eligible bowler by economy
+    if (slot === 0 || slot === totalOvers - 1) {
+      // Over 1 (powerplay) and last over (death): best eligible bowler by economy
       pick = eligible[0]
     } else {
       // Middle overs: prioritise bowlers who haven't bowled yet to ensure variety
@@ -133,26 +134,28 @@ export function pickXI(roster: PickRosterPlayer[]): { xi: string[]; bowlingOrder
 
   return {
     xi:           xi.slice(0, 11).map(p => p.player_id),
-    bowlingOrder: bowlingOrder.slice(0, 5),
+    bowlingOrder: bowlingOrder.slice(0, totalOvers),
   }
 }
 
 /**
- * Validates a 5-over bowling order:
- *   - exactly 5 entries
+ * Validates a bowling order for the given format:
+ *   - exactly totalOvers entries
  *   - no consecutive overs by the same bowler
- *   - no bowler gets more than 2 overs
- *   - at least 3 distinct bowlers
+ *   - no bowler gets more than maxOvers (2 for T5/T10, 4 for T20)
+ *   - at least minDistinct distinct bowlers (3 for T5/T10, 5 for T20)
  */
-export function isValidBowlingOrder(order: string[]): boolean {
-  if (order.length !== 5) return false
+export function isValidBowlingOrder(order: string[], totalOvers: number = 5): boolean {
+  if (order.length !== totalOvers) return false
+  const maxOvers = totalOvers <= 10 ? 2 : 4
+  const minDistinct = totalOvers <= 10 ? 3 : 5
   const overs = new Map<string, number>()
   for (let i = 0; i < order.length; i++) {
     if (i > 0 && order[i] === order[i - 1]) return false   // consecutive
     overs.set(order[i], (overs.get(order[i]) ?? 0) + 1)
-    if ((overs.get(order[i]) ?? 0) > 2) return false        // max 2 overs
+    if ((overs.get(order[i]) ?? 0) > maxOvers) return false // max overs per bowler
   }
-  if (overs.size < 3) return false                          // min 3 distinct
+  if (overs.size < minDistinct) return false                // min distinct bowlers
   return true
 }
 

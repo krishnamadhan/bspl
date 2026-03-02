@@ -323,10 +323,11 @@ export default async function MatchDetailPage({
   // My team in the current season
   const { data: season } = await supabase
     .from('bspl_seasons')
-    .select('id')
+    .select('id, overs_per_innings')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
+  const totalOvers = (season as any)?.overs_per_innings ?? 5
 
   const { data: myTeam } = season
     ? await supabase
@@ -623,6 +624,7 @@ export default async function MatchDetailPage({
             myTeamId={myTeam.id}
             squad={squad}
             existingLineup={existingLineup ?? null}
+            totalOvers={totalOvers}
           />
         </div>
       </div>

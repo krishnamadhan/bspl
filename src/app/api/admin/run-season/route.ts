@@ -21,13 +21,14 @@ export async function POST() {
   // ── Find active season ────────────────────────────────────────────────────
   const { data: season } = await db
     .from('bspl_seasons')
-    .select('id, name, status')
+    .select('id, name, status, overs_per_innings')
     .neq('status', 'completed')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
   if (!season) return NextResponse.json({ error: 'No active season found' }, { status: 404 })
+  const totalOvers = (season as any).overs_per_innings ?? 5
   if (season.status !== 'in_progress') {
     return NextResponse.json(
       { error: `Season status is '${season.status}'; must be 'in_progress' to run matches` },
@@ -88,11 +89,11 @@ export async function POST() {
           .eq('is_submitted', true)
           .maybeSingle()
 
-        if (prevLineup?.playing_xi?.length === 11 && prevLineup?.bowling_order?.length === 5) {
+        if (prevLineup?.playing_xi?.length === 11 && prevLineup?.bowling_order?.length === totalOvers) {
           const allInRoster =
             prevLineup.playing_xi.every((pid: string) => rosterPlayerIds.has(pid)) &&
             prevLineup.bowling_order.every((pid: string) => rosterPlayerIds.has(pid))
-          if (allInRoster && isValidBowlingOrder(prevLineup.bowling_order)) {
+          if (allInRoster && isValidBowlingOrder(prevLineup.bowling_order, totalOvers)) {
             playing_xi    = prevLineup.playing_xi
             bowling_order = prevLineup.bowling_order
           }
@@ -102,7 +103,7 @@ export async function POST() {
       // Fall back to auto-pick from current roster
       if (!playing_xi) {
         const rosterPicks = buildRosterForPick(rosters ?? [])
-        const { xi, bowlingOrder } = pickXI(rosterPicks)
+        const { xi, bowlingOrder } = pickXI(rosterPicks, totalOvers)
         playing_xi    = xi
         bowling_order = bowlingOrder
       }
@@ -158,8 +159,8 @@ export async function POST() {
       const rosterPicks = buildRosterForPick(rosters ?? [])
       if (!rosterPicks.length) continue
 
-      const { xi, bowlingOrder } = pickXI(rosterPicks)
-      if (xi.length < 11 || bowlingOrder.length < 5) continue
+      const { xi, bowlingOrder } = pickXI(rosterPicks, totalOvers)
+      if (xi.length < 11 || bowlingOrder.length < totalOvers) continue
 
       const { error: upsertErr2 } = await db.from('bspl_lineups').upsert(
         {

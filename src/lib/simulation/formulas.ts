@@ -19,22 +19,35 @@ export function effectiveMultiplier(stamina: number, confidence: number): number
   return (stamina / 100) * confidence
 }
 
-// ─── Phase multiplier (powerplay=overs 1-2, middle=3-4, death=5) ─────────────
+// ─── Phase multiplier (format-aware thresholds) ───────────────────────────────
+// T5  (totalOvers ≤ 5):  pp=1-2, middle=3-4, death=5+
+// T10 (totalOvers ≤ 10): pp=1-3, middle=4-7, death=8+
+// T20 (totalOvers > 10): pp=1-6, middle=7-15, death=16+
 
-export function getPhaseIndex(overNumber: number): 'powerplay' | 'middle' | 'death' {
-  if (overNumber <= 2) return 'powerplay'
-  if (overNumber <= 4) return 'middle'
-  return 'death'
+export function getPhaseIndex(overNumber: number, totalOvers: number): 'powerplay' | 'middle' | 'death' {
+  if (totalOvers <= 5) {
+    if (overNumber <= 2) return 'powerplay'
+    if (overNumber <= 4) return 'middle'
+    return 'death'
+  } else if (totalOvers <= 10) {
+    if (overNumber <= 3) return 'powerplay'
+    if (overNumber <= 7) return 'middle'
+    return 'death'
+  } else {
+    if (overNumber <= 6) return 'powerplay'
+    if (overNumber <= 15) return 'middle'
+    return 'death'
+  }
 }
 
-export function batsmanPhaseMultiplier(player: Player, overNumber: number): number {
-  const phase = getPhaseIndex(overNumber)
+export function batsmanPhaseMultiplier(player: Player, overNumber: number, totalOvers: number): number {
+  const phase = getPhaseIndex(overNumber, totalOvers)
   return player.phase_rating[phase]
 }
 
-export function bowlerPhaseMultiplier(player: Player, overNumber: number): number {
+export function bowlerPhaseMultiplier(player: Player, overNumber: number, totalOvers: number): number {
   if (!player.bowling_phase_rating) return 1.0
-  const phase = getPhaseIndex(overNumber)
+  const phase = getPhaseIndex(overNumber, totalOvers)
   return player.bowling_phase_rating[phase]
 }
 
@@ -132,12 +145,13 @@ export function effectiveBattingSR(
   overNumber: number,
   isSecondInnings: boolean,
   runsNeeded: number,
-  ballsLeft: number
+  ballsLeft: number,
+  totalOvers: number = 5
 ): number {
   const base = batter.player.base_stats.batting_sr
 
   const core = effectiveMultiplier(batter.stamina, batter.confidence)
-  const phase = batsmanPhaseMultiplier(batter.player, overNumber)
+  const phase = batsmanPhaseMultiplier(batter.player, overNumber, totalOvers)
   const matchup = matchupModifier(batter.player, bowler.player)
   const home = homeGroundBoost(batter.player, venue.venue.id)
 
@@ -168,7 +182,8 @@ export function effectiveBowlerWicketProb(
   batter: SimPlayer,
   venue: SimVenue,
   overNumber: number,
-  isSecondInnings: boolean
+  isSecondInnings: boolean,
+  totalOvers: number = 5
 ): number {
   // Players with no bowler_type are part-timers. Their wicket_prob stats are often
   // based on tiny IPL samples (e.g. 1 wicket in 3 balls = 33%). Cap them at 0.06
@@ -179,7 +194,7 @@ export function effectiveBowlerWicketProb(
     : rawBase
 
   const core = effectiveMultiplier(bowler.stamina, bowler.confidence)
-  const phase = bowlerPhaseMultiplier(bowler.player, overNumber)
+  const phase = bowlerPhaseMultiplier(bowler.player, overNumber, totalOvers)
   const matchup = matchupModifier(batter.player, bowler.player)
   const home = homeGroundBoost(bowler.player, venue.venue.id)
 
@@ -210,9 +225,10 @@ export function effectiveBowlerWicketProb(
   // Batter quality: elite batters are harder to dismiss (better technique, footwork, reading)
   const consistency = batterConsistencyMod(batter.player.price_cr)
 
-  // T5 format: batters swing hard from ball 1, dismissal rate is inherently higher than T20
-  const T5_WICKET_BOOST = 2.0
-  return Math.min(base * core * phase * matchup * home * pitchMod * condMod * bowlerDewPenalty * T5_WICKET_BOOST * experience * consistency, 0.45)
+  // Short-format boost: batters swing hard from ball 1; inherently higher wicket rate than T20.
+  // T5: 2.0×, T10: 1.5×, T20: 1.0× (no boost — base stats are already T20-calibrated)
+  const FORMAT_WICKET_BOOST = totalOvers <= 5 ? 2.0 : totalOvers <= 10 ? 1.5 : 1.0
+  return Math.min(base * core * phase * matchup * home * pitchMod * condMod * bowlerDewPenalty * FORMAT_WICKET_BOOST * experience * consistency, 0.45)
 }
 
 // ─── Effective bowling economy (runs per ball) ────────────────────────────────
@@ -222,13 +238,14 @@ export function effectiveBowlerRunsPerBall(
   batter: SimPlayer,
   venue: SimVenue,
   overNumber: number,
-  isSecondInnings: boolean
+  isSecondInnings: boolean,
+  totalOvers: number = 5
 ): number {
   const baseEcon = bowler.player.base_stats.bowling_economy ?? 9.0
   const baseRPB = baseEcon / 6
 
   const bowlerCore = effectiveMultiplier(bowler.stamina, bowler.confidence)
-  const bowlerPhase = bowlerPhaseMultiplier(bowler.player, overNumber)
+  const bowlerPhase = bowlerPhaseMultiplier(bowler.player, overNumber, totalOvers)
 
   // Venue pitch economy modifier for bowler type
   let pitchEconMod = 1.0
