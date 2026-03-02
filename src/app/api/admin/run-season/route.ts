@@ -177,7 +177,8 @@ export async function POST() {
     }
   }
 
-  // ── Step 3: simulate all ready matches ────────────────────────────────────
+  // ── Step 3: simulate all lineup_open matches ──────────────────────────────
+  // simulateOne auto-fills any missing lineups, so no pre-check needed
   const { data: allOpen } = await db
     .from('bspl_matches')
     .select('id, match_number')
@@ -185,21 +186,7 @@ export async function POST() {
     .eq('status', 'lineup_open')
     .order('match_number')
 
-  // Filter to those with both lineups submitted
-  const { data: lineups } = allOpen?.length
-    ? await db
-        .from('bspl_lineups')
-        .select('match_id')
-        .in('match_id', allOpen.map(m => m.id))
-        .eq('is_submitted', true)
-    : { data: [] }
-
-  const lineupCount = new Map<string, number>()
-  for (const l of lineups ?? []) {
-    lineupCount.set(l.match_id, (lineupCount.get(l.match_id) ?? 0) + 1)
-  }
-
-  const ready = (allOpen ?? []).filter(m => lineupCount.get(m.id) === 2)
+  const ready = allOpen ?? []
 
   const results: Array<{ matchNumber: number; matchId: string; result?: string; error?: string }> = []
 

@@ -152,12 +152,12 @@ function Section({ title, badge, children, headerRight }: {
 }) {
   return (
     <section className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h2 className="font-semibold text-lg">{title}</h2>
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-800 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="font-semibold text-base sm:text-lg">{title}</h2>
           {badge}
         </div>
-        {headerRight}
+        {headerRight && <div className="shrink-0">{headerRight}</div>}
       </div>
       {children}
     </section>
@@ -167,8 +167,12 @@ function Section({ title, badge, children, headerRight }: {
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
-  // supabase client is only created on the browser; avoid invoking during SSR build
-  const supabase = typeof window !== 'undefined' ? createClient() : null
+  // Supabase browser client — created once via ref (null during SSR)
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
+  if (typeof window !== 'undefined' && !supabaseRef.current) {
+    supabaseRef.current = createClient()
+  }
+  const supabase = supabaseRef.current
   const [authState, setAuthState] = useState<'loading' | 'ok' | 'denied'>('loading')
   const [seasonInfo, setSeasonInfo]   = useState<SeasonInfo | null>(null)
   const [allSeasons, setAllSeasons]   = useState<{ id: string; name: string; status: string }[]>([])
@@ -655,9 +659,12 @@ export default function AdminPage() {
 
       {/* ── Toast ──────────────────────────────────────────────────────────── */}
       {toast && (
-        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-xl font-medium text-sm animate-in slide-in-from-top-2 ${
-          toast.ok ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`}>
+        <div
+          className={`fixed right-4 left-4 sm:left-auto sm:right-6 z-50 px-5 py-3 rounded-xl shadow-xl font-medium text-sm max-w-sm sm:max-w-xs mx-auto sm:mx-0 ${
+            toast.ok ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+          }`}
+          style={{ top: 'max(1.5rem, env(safe-area-inset-top, 1.5rem))' }}
+        >
           {toast.msg}
         </div>
       )}
@@ -909,22 +916,22 @@ export default function AdminPage() {
         <Section
           title="Matches"
           headerRight={
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap justify-end gap-2">
               <button
                 onClick={() => loadMatches()}
-                className="text-xs text-gray-400 hover:text-white transition px-2 py-1 rounded-lg border border-gray-700 hover:border-gray-500 flex items-center gap-1"
+                className="text-xs text-gray-400 hover:text-white transition px-2 py-1 rounded-lg border border-gray-700 hover:border-gray-500 flex items-center gap-1 shrink-0"
                 title={lastRefreshed ? `Last refreshed: ${lastRefreshed.toLocaleTimeString()}` : 'Refresh lineup status'}
               >
-                ↻ {lastRefreshed ? lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Refresh'}
+                ↻ {lastRefreshed ? lastRefreshed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Refresh'}
               </button>
               {lineupOpenMatches.length > 0 && (
-                <Btn label={isPending ? '…' : '🤖 Auto Bot Lineups'} onClick={handleAutoLineups} disabled={isPending} variant="gray" size="sm" />
+                <Btn label={isPending ? '…' : '🤖 Bots'} onClick={handleAutoLineups} disabled={isPending} variant="gray" size="sm" />
               )}
               {lineupOpenMatches.length > 0 && (
-                <Btn label={isPending ? 'Running…' : `▶ Run All (${lineupOpenMatches.length})`} onClick={handleSimulateAll} disabled={isPending} variant="yellow" size="sm" />
+                <Btn label={isPending ? '…' : `▶ Run (${lineupOpenMatches.length})`} onClick={handleSimulateAll} disabled={isPending} variant="yellow" size="sm" />
               )}
               {scheduledMatches.length > 0 && (
-                <Btn label={isPending ? 'Running…' : `⚡ Run Full Season (${scheduledMatches.length + lineupOpenMatches.length} left)`} onClick={handleRunSeason} disabled={isPending} variant="green" size="sm" />
+                <Btn label={isPending ? '…' : `⚡ Full Season`} onClick={handleRunSeason} disabled={isPending} variant="green" size="sm" />
               )}
             </div>
           }
@@ -933,17 +940,17 @@ export default function AdminPage() {
 
             {/* Live matches */}
             {liveMatches.map(m => (
-              <div key={m.id} className="flex items-center gap-4 px-6 py-4 bg-red-500/5">
-                <span className="text-xs font-mono text-gray-500 w-10">M{m.match_number}</span>
+              <div key={m.id} className="flex items-center gap-3 px-4 py-4 bg-red-500/5">
+                <span className="text-xs font-mono text-gray-500 w-8 shrink-0">M{m.match_number}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">
+                  <p className="font-medium text-sm truncate">
                     {m.team_a?.name ?? '?'} <span className="text-gray-500">vs</span> {m.team_b?.name ?? '?'}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">{m.venue?.name}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">{m.venue?.name}</p>
                 </div>
-                <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded border border-red-500/30 animate-pulse">● LIVE</span>
-                <div className="flex gap-2">
-                  <Link href={`/matches/${m.id}`} className="text-xs bg-gray-700 text-gray-300 hover:bg-gray-600 px-3 py-1.5 rounded-lg font-semibold transition">
+                <span className="text-xs bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded border border-red-500/30 animate-pulse shrink-0">LIVE</span>
+                <div className="flex gap-1.5 shrink-0">
+                  <Link href={`/matches/${m.id}`} className="text-xs bg-gray-700 text-gray-300 hover:bg-gray-600 px-2 py-1.5 rounded-lg font-semibold transition">
                     Watch
                   </Link>
                   <Btn label={isPending ? '…' : 'Finalize'} onClick={() => handleFinalize(m.id)} disabled={isPending} variant="gray" size="sm" />
@@ -957,23 +964,21 @@ export default function AdminPage() {
               const PLAYOFF_LABELS: Record<string, string> = { qualifier1: 'Q1', eliminator: 'EL', qualifier2: 'Q2', final: 'FINAL' }
               const playoffLabel = PLAYOFF_LABELS[m.match_type] ?? null
               return (
-                <div key={m.id} className="flex items-center gap-4 px-6 py-4">
-                  <span className="text-xs font-mono text-gray-500 w-10">M{m.match_number}</span>
+                <div key={m.id} className="flex items-center gap-3 px-4 py-4">
+                  <span className="text-xs font-mono text-gray-500 w-8 shrink-0">M{m.match_number}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm flex items-center gap-2">
-                      {m.team_a?.name ?? '?'} <span className="text-gray-500">vs</span> {m.team_b?.name ?? '?'}
+                    <p className="font-medium text-sm flex items-center gap-1.5 flex-wrap">
+                      <span className="truncate">{m.team_a?.name ?? '?'} <span className="text-gray-500">vs</span> {m.team_b?.name ?? '?'}</span>
                       {playoffLabel && (
-                        <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">{playoffLabel}</span>
+                        <span className="text-xs bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30 shrink-0">{playoffLabel}</span>
                       )}
                     </p>
                     <p className="text-xs mt-0.5">
-                      {m.venue?.name} ·{' '}
                       {allIn
                         ? <span className="text-green-400">Both lineups in ✓</span>
-                        : <span className="text-yellow-400">Pending: {m.pending_teams.join(', ')} (will auto-fill)</span>}
+                        : <span className="text-yellow-400">Pending: {m.pending_teams.join(', ')}</span>}
                     </p>
                   </div>
-                  <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded border border-blue-500/20">Lineups Open</span>
                   <Btn
                     label={isPending ? '…' : '▶ Run'}
                     onClick={() => handleSimulate(m.id)}
@@ -988,21 +993,20 @@ export default function AdminPage() {
             {/* Scheduled matches — grouped by round/day */}
             {days.map(([day, dayMatches]) => (
               <div key={day}>
-                <div className="px-6 py-2 bg-gray-800/30 flex items-center gap-2">
+                <div className="px-4 py-2 bg-gray-800/30 flex items-center gap-2">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Round {day}</span>
                   <span className="text-xs text-gray-600">({dayMatches.length} match{dayMatches.length !== 1 ? 'es' : ''})</span>
                 </div>
                 {dayMatches.map(m => (
-                  <div key={m.id} className="flex items-center gap-4 px-6 py-3">
-                    <span className="text-xs font-mono text-gray-500 w-10">M{m.match_number}</span>
+                  <div key={m.id} className="flex items-center gap-3 px-4 py-3">
+                    <span className="text-xs font-mono text-gray-500 w-8 shrink-0">M{m.match_number}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">
+                      <p className="font-medium text-sm truncate">
                         {m.team_a?.name ?? '?'} <span className="text-gray-500">vs</span> {m.team_b?.name ?? '?'}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">{m.venue?.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">{m.venue?.name}</p>
                     </div>
-                    <span className="text-xs bg-gray-700/50 text-gray-400 px-2 py-0.5 rounded">Scheduled</span>
-                    <Btn label={isPending ? '…' : 'Open Lineups'} onClick={() => handleOpenLineups(m.id)} disabled={isPending} variant="gray" size="sm" />
+                    <Btn label={isPending ? '…' : 'Open'} onClick={() => handleOpenLineups(m.id)} disabled={isPending} variant="gray" size="sm" />
                   </div>
                 ))}
               </div>
