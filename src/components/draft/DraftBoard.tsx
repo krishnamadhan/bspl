@@ -356,11 +356,19 @@ export default function DraftBoard({
           </p>
         </div>
 
-        {!draftOpen && myRoster.length > 0 && (
-          <div className="bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 flex items-center gap-3">
+        {!draftOpen && (
+          <div className={`border rounded-xl px-4 py-3 flex items-center gap-3 ${
+            myRoster.length > 0
+              ? 'bg-gray-900 border-gray-700'
+              : 'bg-amber-500/5 border-amber-500/20'
+          }`}>
             <span className="text-gray-400 text-sm">
-              🔒 Showing your squad for <span className="text-white font-medium">{season.name}</span>.
-              {myTeam.is_locked ? ' Locked by admin.' : ' Draft window has closed.'}
+              {myRoster.length > 0 ? (
+                <>🔒 Showing your squad for <span className="text-white font-medium">{season.name}</span>.
+                {myTeam.is_locked ? ' Locked by admin.' : ' Draft window has closed.'}</>
+              ) : (
+                <>⚠️ <span className="text-amber-300">Draft is closed.</span> <span className="text-gray-500">No players were picked for {season.name}. Wait for the next draft window.</span></>
+              )}
             </span>
           </div>
         )}
