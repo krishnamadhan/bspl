@@ -79,6 +79,23 @@ export default async function TeamPage() {
         .eq('season_id', season.id)
     : { data: [] }
 
+  // Season record + ranking
+  const [{ data: pointsRow }, { data: allStandings }] = await Promise.all([
+    season
+      ? supabase.from('bspl_points')
+          .select('played, won, lost, points, nrr')
+          .eq('team_id', myTeam.id).eq('season_id', season.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    season
+      ? supabase.from('bspl_points')
+          .select('team_id')
+          .eq('season_id', season.id)
+          .order('points', { ascending: false })
+          .order('nrr', { ascending: false })
+      : Promise.resolve({ data: [] }),
+  ])
+  const myRank = ((allStandings ?? []).findIndex((r: any) => r.team_id === myTeam.id)) + 1
+
   // Next upcoming match for my team
   const { data: nextMatch } = season
     ? await supabase
@@ -154,6 +171,14 @@ export default async function TeamPage() {
       players={players}
       nextMatch={nextMatch as any}
       seasonName={season?.name ?? ''}
+      myRecord={pointsRow ? {
+        rank: myRank,
+        played: pointsRow.played,
+        won: pointsRow.won,
+        lost: pointsRow.lost,
+        points: pointsRow.points,
+        nrr: Number(pointsRow.nrr),
+      } : null}
     />
   )
 }

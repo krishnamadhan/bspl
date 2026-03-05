@@ -48,11 +48,21 @@ interface NextMatch {
   venue: { name: string; city: string; pitch_type: string }
 }
 
+interface MyRecord {
+  rank: number
+  played: number
+  won: number
+  lost: number
+  points: number
+  nrr: number
+}
+
 interface TeamRosterProps {
   myTeam: { id: string; name: string; color: string; budget_remaining: number; is_locked: boolean }
   players: TeamPlayer[]
   nextMatch: NextMatch | null
   seasonName: string
+  myRecord?: MyRecord | null
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -222,7 +232,7 @@ function PlayerCard({ p }: { p: TeamPlayer }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function TeamRoster({ myTeam, players, nextMatch, seasonName }: TeamRosterProps) {
+export default function TeamRoster({ myTeam, players, nextMatch, seasonName, myRecord }: TeamRosterProps) {
   const [view, setView] = useState<View>('role')
 
   // Derived counts
@@ -264,6 +274,14 @@ export default function TeamRoster({ myTeam, players, nextMatch, seasonName }: T
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold">{myTeam.name}</h1>
             <p className="text-sm text-gray-400">{seasonName} · {players.length} players · Rs{totalSpent.toFixed(1)}Cr spent</p>
+            {myRecord && myRecord.played > 0 && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                #{myRecord.rank} in standings ·{' '}
+                <span className="text-green-400">{myRecord.won}W</span>{' '}
+                <span className="text-gray-500">{myRecord.lost}L</span>{' '}
+                · {myRecord.points} pts
+              </p>
+            )}
           </div>
           {myTeam.is_locked && (
             <span className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 px-2 py-1 rounded-full shrink-0">
