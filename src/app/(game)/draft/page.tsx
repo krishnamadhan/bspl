@@ -43,6 +43,29 @@ export default async function DraftPage() {
         .eq('team_id', myTeam.id)
     : { data: [] }
 
+  // Player IDs owned by OTHER teams in this season (for "Taken" display)
+  let takenIds: string[] = []
+  if (season) {
+    const { data: allSeasonTeams } = await supabase
+      .from('bspl_teams')
+      .select('id')
+      .eq('season_id', season.id)
+
+    if (allSeasonTeams?.length) {
+      const otherTeamIds = allSeasonTeams
+        .map(t => t.id)
+        .filter(id => id !== myTeam?.id)
+
+      if (otherTeamIds.length) {
+        const { data: otherRosters } = await supabase
+          .from('bspl_rosters')
+          .select('player_id')
+          .in('team_id', otherTeamIds)
+        takenIds = (otherRosters ?? []).map(r => r.player_id)
+      }
+    }
+  }
+
   const draftOpen =
     season?.status === 'draft_open' && !!myTeam && !myTeam.is_locked
 
@@ -61,6 +84,7 @@ export default async function DraftPage() {
       seasonBudget={season?.budget_cr ?? 100}
       minSquad={season?.min_squad_size ?? 15}
       maxSquad={season?.max_squad_size ?? 25}
+      takenIds={takenIds}
     />
   )
 }

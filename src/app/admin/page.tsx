@@ -77,6 +77,39 @@ interface RawMatch {
 const unpack = <T,>(v: T | T[] | null): T | null =>
   Array.isArray(v) ? (v[0] ?? null) : v
 
+// ── Auction types ──────────────────────────────────────────────────────────────
+
+interface AuctionAdminRow {
+  id: string
+  player_id: string
+  status: 'open' | 'sold' | 'unsold'
+  base_price: number
+  current_bid: number
+  current_bidder_team_id: string | null
+  winning_bid: number | null
+  player_name?: string
+  player_role?: string
+  player_ipl_team?: string
+  current_bidder_name?: string
+}
+
+interface SoldAuction {
+  id: string
+  player_name: string
+  winning_bid: number
+  winning_team_name: string
+  closed_at: string
+}
+
+interface PlayerSearchResult {
+  id: string
+  name: string
+  role: string
+  price_cr: number
+  price_tier: string
+  ipl_team: string
+}
+
 // ── Status metadata ────────────────────────────────────────────────────────────
 
 const SEASON_STATUS: Record<string, { label: string; cls: string }> = {
@@ -202,6 +235,13 @@ export default function AdminPage() {
 
   // Dev tools
   const [devOpen, setDevOpen] = useState(false)
+
+  // Auction
+  const [auctionOpen, setAuctionOpen]       = useState<AuctionAdminRow | null>(null)
+  const [soldToday, setSoldToday]           = useState<SoldAuction[]>([])
+  const [playerSearch, setPlayerSearch]     = useState('')
+  const [playerResults, setPlayerResults]   = useState<PlayerSearchResult[]>([])
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerSearchResult | null>(null)
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
 
   // Ref guard: prevents double-submit before React re-renders `isPending`
@@ -344,6 +384,79 @@ export default function AdminPage() {
     })))
   }
 
+  const loadAuction = async () => {
+    if (!supabase || !seasonInfo) return
+
+    // Current open auction with player + bidder info
+    const { data: open } = await supabase
+      .from('bspl_auction')
+      .select('id, player_id, status, base_price, current_bid, current_bidder_team_id, winning_bid')
+      .eq('season_id', seasonInfo.id)
+      .eq('status', 'open')
+      .maybeSingle()
+
+    if (open) {
+      const { data: player } = await supabase
+        .from('players')
+        .select('name, role, ipl_team')
+        .eq('id', open.player_id)
+        .single()
+      const bidderName = open.current_bidder_team_id
+        ? (await supabase.from('bspl_teams').select('name').eq('id', open.current_bidder_team_id).single()).data?.name
+        : undefined
+      setAuctionOpen({
+        ...open,
+        player_name: player?.name,
+        player_role: player?.role,
+        player_ipl_team: player?.ipl_team,
+        current_bidder_name: bidderName ?? undefined,
+      })
+    } else {
+      setAuctionOpen(null)
+    }
+
+    // Sold auctions from today
+    const today = new Date().toISOString().split('T')[0]
+    const { data: sold } = await supabase
+      .from('bspl_auction')
+      .select('id, player_id, winning_bid, winning_team_id, closed_at')
+      .eq('season_id', seasonInfo.id)
+      .eq('status', 'sold')
+      .gte('closed_at', `${today}T00:00:00`)
+      .order('closed_at', { ascending: false })
+
+    if (sold?.length) {
+      const playerIds = sold.map((s: Record<string, unknown>) => s.player_id as string)
+      const teamIds   = sold.map((s: Record<string, unknown>) => s.winning_team_id as string).filter(Boolean)
+      const [{ data: players }, { data: winTeams }] = await Promise.all([
+        supabase.from('players').select('id, name').in('id', playerIds),
+        supabase.from('bspl_teams').select('id, name').in('id', teamIds),
+      ])
+      const pMap = new Map((players ?? []).map((p: { id: string; name: string }) => [p.id, p.name]))
+      const tMap = new Map((winTeams ?? []).map((t: { id: string; name: string }) => [t.id, t.name]))
+      setSoldToday(sold.map((s: Record<string, unknown>) => ({
+        id:                s.id as string,
+        player_name:       pMap.get(s.player_id as string) ?? 'Unknown',
+        winning_bid:       Number(s.winning_bid),
+        winning_team_name: tMap.get(s.winning_team_id as string) ?? 'Unknown',
+        closed_at:         s.closed_at as string,
+      })))
+    } else {
+      setSoldToday([])
+    }
+  }
+
+  const searchPlayers = async (q: string) => {
+    if (!supabase || q.length < 2) { setPlayerResults([]); return }
+    const { data } = await supabase
+      .from('players')
+      .select('id, name, role, price_cr, price_tier, ipl_team')
+      .ilike('name', `%${q}%`)
+      .order('price_cr', { ascending: false })
+      .limit(10)
+    setPlayerResults(data ?? [])
+  }
+
   const loadMatches = async () => {
     if (!supabase || !seasonInfo) return
     const { data: raw } = await supabase
@@ -412,7 +525,7 @@ export default function AdminPage() {
   }, [authState]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (seasonInfo) { loadTeams(); loadMatches(); loadPlayoffBracket(); loadCompletedMatches() }
+    if (seasonInfo) { loadTeams(); loadMatches(); loadPlayoffBracket(); loadCompletedMatches(); loadAuction() }
   }, [seasonInfo?.id, seasonInfo?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-poll every 20s when there are lineup-open matches (players are actively submitting)
@@ -555,6 +668,34 @@ export default function AdminPage() {
     }),
   })
   const handleSetupTest    = () => handle(async () => { const j = await post('/api/admin/setup-test-season'); showToast(j.message ?? 'Test season set up', true); await loadSeasons(); await loadTeams() })
+
+  // ── Auction handlers ─────────────────────────────────────────────────────────
+  const handleOpenAuction = () => handle(async () => {
+    if (!selectedPlayer || !seasonInfo) return
+    const j = await post('/api/admin/auction/open', { season_id: seasonInfo.id, player_id: selectedPlayer.id })
+    showToast(j.message ?? `Auction opened for ${selectedPlayer.name}`, true)
+    setSelectedPlayer(null); setPlayerSearch(''); setPlayerResults([])
+    await loadAuction()
+  })
+
+  const handleCloseAuction = (action: 'sold' | 'unsold') => {
+    if (!auctionOpen) return
+    const isSold = action === 'sold'
+    setConfirm({
+      title: isSold ? 'Confirm Sale' : 'Mark Unsold',
+      body: isSold
+        ? `Sell ${auctionOpen.player_name ?? 'player'} to ${auctionOpen.current_bidder_name ?? 'highest bidder'} for ${auctionOpen.current_bid} Cr?`
+        : `Mark ${auctionOpen.player_name ?? 'player'} as unsold? They'll return to the draft pool.`,
+      label: isSold ? 'Sold ✓' : 'Unsold ✗',
+      variant: isSold ? 'yellow' : 'red',
+      fn: () => handle(async () => {
+        const j = await post('/api/admin/auction/close', { auction_id: auctionOpen.id, action })
+        showToast(j.message ?? (isSold ? 'Sold!' : 'Marked unsold'), true)
+        setConfirm(null)
+        await loadAuction()
+      }),
+    })
+  }
 
   const handleResetStamina = () => setConfirm({
     title: 'Reset All Stamina?',
@@ -1153,6 +1294,112 @@ export default function AdminPage() {
                 </div>
               )
             })}
+          </div>
+        </Section>
+      )}
+
+      {/* ── Auction Control ─────────────────────────────────────────────────── */}
+      {activeSeason && (
+        <Section
+          title="🔨 Auction Control"
+          badge={
+            auctionOpen
+              ? <span className="text-xs bg-red-500/20 text-red-300 px-2 py-0.5 rounded border border-red-500/30 animate-pulse">LIVE</span>
+              : <span className="text-xs bg-gray-600/30 text-gray-400 px-2 py-0.5 rounded border border-gray-600/30">Idle</span>
+          }
+          headerRight={
+            auctionOpen
+              ? <div className="flex gap-2">
+                  <Btn label="Sold ✓" onClick={() => handleCloseAuction('sold')} disabled={isPending || !auctionOpen.current_bidder_team_id} variant="green" size="sm" />
+                  <Btn label="Unsold ✗" onClick={() => handleCloseAuction('unsold')} disabled={isPending} variant="red" size="sm" />
+                </div>
+              : undefined
+          }
+        >
+          <div className="p-6 space-y-4">
+            {/* Currently open auction */}
+            {auctionOpen ? (
+              <div className="bg-yellow-400/5 border border-yellow-400/20 rounded-xl p-4 space-y-2">
+                <p className="text-xs text-yellow-400/70 font-semibold uppercase tracking-wide">Currently open</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-lg">{auctionOpen.player_name ?? auctionOpen.player_id}</p>
+                    <p className="text-gray-400 text-sm capitalize">{auctionOpen.player_role} · {auctionOpen.player_ipl_team}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-yellow-400 text-2xl font-bold">{auctionOpen.current_bid} Cr</p>
+                    {auctionOpen.current_bidder_name
+                      ? <p className="text-gray-400 text-xs">by {auctionOpen.current_bidder_name}</p>
+                      : <p className="text-gray-600 text-xs">no bids yet</p>
+                    }
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-400">Search for a player to put up for auction:</p>
+                <input
+                  type="text"
+                  placeholder="Search player name…"
+                  value={playerSearch}
+                  onChange={e => {
+                    setPlayerSearch(e.target.value)
+                    searchPlayers(e.target.value)
+                  }}
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-400/50"
+                />
+                {playerResults.length > 0 && (
+                  <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden divide-y divide-gray-700/60">
+                    {playerResults.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => { setSelectedPlayer(p); setPlayerResults([]); setPlayerSearch(p.name) }}
+                        className={`w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-gray-700/60 transition text-sm ${selectedPlayer?.id === p.id ? 'bg-yellow-400/10' : ''}`}
+                      >
+                        <div>
+                          <span className="font-medium">{p.name}</span>
+                          <span className="text-gray-500 ml-2 text-xs capitalize">{p.role} · {p.ipl_team}</span>
+                        </div>
+                        <span className="text-yellow-400 text-xs font-semibold">{p.price_cr} Cr</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {selectedPlayer && (
+                  <div className="flex items-center justify-between bg-yellow-400/5 border border-yellow-400/20 rounded-lg px-4 py-3">
+                    <div>
+                      <p className="font-semibold text-sm">{selectedPlayer.name}</p>
+                      <p className="text-gray-400 text-xs capitalize">{selectedPlayer.role} · {selectedPlayer.price_cr} Cr base</p>
+                    </div>
+                    <Btn
+                      label={isPending ? 'Opening…' : 'Open Auction'}
+                      onClick={handleOpenAuction}
+                      disabled={isPending}
+                      variant="yellow"
+                      size="sm"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Today's sold players */}
+            {soldToday.length > 0 && (
+              <div>
+                <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-2">Sold Today</p>
+                <div className="space-y-1.5">
+                  {soldToday.map(s => (
+                    <div key={s.id} className="flex items-center justify-between text-sm bg-gray-800/60 rounded-lg px-3 py-2">
+                      <span className="font-medium">{s.player_name}</span>
+                      <div className="flex items-center gap-3 text-xs text-gray-400">
+                        <span>{s.winning_team_name}</span>
+                        <span className="text-yellow-400 font-semibold">{s.winning_bid} Cr</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </Section>
       )}

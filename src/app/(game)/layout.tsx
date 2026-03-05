@@ -17,6 +17,7 @@ export default async function GameLayout({ children }: { children: React.ReactNo
   const navLinks = [
     { href: '/dashboard', label: '🏠 Home' },
     { href: '/draft', label: '📋 Draft' },
+    { href: '/auction', label: '🔨 Auction' },
     { href: '/team', label: '🧢 My Team' },
     { href: '/matches', label: '🏏 Matches' },
     { href: '/practice', label: '🎯 Practice' },

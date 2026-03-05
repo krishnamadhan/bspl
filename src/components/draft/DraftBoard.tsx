@@ -50,6 +50,7 @@ interface DraftBoardProps {
   seasonBudget: number
   minSquad: number
   maxSquad: number
+  takenIds: string[]
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -90,6 +91,7 @@ export default function DraftBoard({
   seasonBudget,
   minSquad,
   maxSquad,
+  takenIds,
 }: DraftBoardProps) {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
@@ -143,6 +145,12 @@ export default function DraftBoard({
     [players, rosterIds]
   )
 
+  // Players already picked by other teams — can't be added
+  const takenByOther = useMemo(
+    () => new Set(takenIds.filter(id => !rosterIds.has(id))),
+    [takenIds, rosterIds]
+  )
+
   const squadStats = useMemo(() => {
     const iplCounts: Record<string, number> = {}
     let wk = 0, bat = 0, ar = 0, bowl = 0
@@ -169,9 +177,10 @@ export default function DraftBoard({
 
   // ── Actions ────────────────────────────────────────────────────────────────
   const addPlayer = useCallback(async (player: DraftPlayer) => {
-    if (!myTeam || !draftOpen || rosterIds.has(player.id)) return
+    if (!myTeam || !draftOpen || rosterIds.has(player.id) || takenByOther.has(player.id)) return
     setNotice(null)
 
+    // Client-side pre-checks (UX only — server re-validates all of these)
     if (budgetLeft < player.price_cr) {
       setNotice({ msg: `Budget too low — need Rs${player.price_cr}Cr, have Rs${budgetLeft.toFixed(1)}Cr`, type: 'error' })
       return
@@ -189,34 +198,30 @@ export default function DraftBoard({
     setLoadingId(player.id)
     const newBudget = parseFloat((budgetLeft - player.price_cr).toFixed(2))
 
-    // Optimistic
+    // Optimistic UI update
     setRosterIds(prev => new Set([...prev, player.id]))
     setPurchases(prev => ({ ...prev, [player.id]: player.price_cr }))
     setBudgetLeft(newBudget)
 
-    const { error: err1 } = await supabase.from('bspl_rosters').insert({
-      team_id: myTeam.id,
-      player_id: player.id,
-      purchase_price: player.price_cr,
+    const res = await fetch('/api/teams/draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_id: player.id }),
     })
+    const json = await res.json()
 
-    if (err1) {
+    if (!res.ok) {
+      // Rollback optimistic update
       setRosterIds(prev => { const s = new Set(prev); s.delete(player.id); return s })
       setPurchases(prev => { const c = { ...prev }; delete c[player.id]; return c })
       setBudgetLeft(budgetLeft)
-      setNotice({ msg: 'Failed to add player — try again', type: 'error' })
+      setNotice({ msg: json.error ?? 'Failed to add player — try again', type: 'error' })
     } else {
-      const { error: budgetErr } = await supabase
-        .from('bspl_teams')
-        .update({ budget_remaining: newBudget })
-        .eq('id', myTeam.id)
-      if (budgetErr) {
-        // Player is added to roster but budget sync failed — warn user to refresh
-        setNotice({ msg: 'Player added, but budget sync failed — refresh the page to see accurate budget', type: 'error' })
-      }
+      // Sync confirmed budget from server to avoid drift
+      if (typeof json.budget_remaining === 'number') setBudgetLeft(json.budget_remaining)
     }
     setLoadingId(null)
-  }, [myTeam, draftOpen, rosterIds, budgetLeft, maxSquad, squadStats])
+  }, [myTeam, draftOpen, rosterIds, takenByOther, budgetLeft, maxSquad, squadStats])
 
   const removePlayer = useCallback(async (player: DraftPlayer) => {
     if (!myTeam || !draftOpen || !rosterIds.has(player.id)) return
@@ -453,17 +458,20 @@ export default function DraftBoard({
         {/* Player list */}
         <div className="space-y-1.5">
           {filteredPlayers.map(player => {
-            const inSquad  = rosterIds.has(player.id)
-            const loading  = loadingId === player.id
-            const canAfford = budgetLeft >= player.price_cr
-            const full     = rosterIds.size >= maxSquad
-            const capped   = !inSquad && (squadStats.iplCounts[player.ipl_team] ?? 0) >= MAX_FROM_IPL_TEAM
+            const inSquad    = rosterIds.has(player.id)
+            const takenOther = !inSquad && takenByOther.has(player.id)
+            const loading    = loadingId === player.id
+            const canAfford  = budgetLeft >= player.price_cr
+            const full       = rosterIds.size >= maxSquad
+            const capped     = !inSquad && !takenOther && (squadStats.iplCounts[player.ipl_team] ?? 0) >= MAX_FROM_IPL_TEAM
 
             return (
               <div
                 key={player.id}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 border transition-colors ${
-                  inSquad ? 'bg-yellow-400/5 border-yellow-400/30' : 'bg-gray-900 border-gray-800 hover:border-gray-700'
+                  inSquad    ? 'bg-yellow-400/5 border-yellow-400/30'
+                  : takenOther ? 'bg-gray-900 border-gray-800 opacity-40'
+                  : 'bg-gray-900 border-gray-800 hover:border-gray-700'
                 }`}
               >
                 {/* Role icon */}
@@ -501,11 +509,12 @@ export default function DraftBoard({
                 {draftOpen ? (
                   <button
                     onClick={() => inSquad ? removePlayer(player) : addPlayer(player)}
-                    disabled={loading || (!inSquad && (!canAfford || full || capped))}
+                    disabled={loading || takenOther || (!inSquad && (!canAfford || full || capped))}
                     title={
-                      !canAfford ? 'Not enough budget'
-                      : capped    ? `Max ${MAX_FROM_IPL_TEAM} from ${player.ipl_team}`
-                      : full      ? 'Squad full'
+                      takenOther  ? 'Already picked by another team'
+                      : !canAfford ? 'Not enough budget'
+                      : capped     ? `Max ${MAX_FROM_IPL_TEAM} from ${player.ipl_team}`
+                      : full       ? 'Squad full'
                       : undefined
                     }
                     className={`shrink-0 w-[72px] text-xs font-semibold py-1.5 rounded-lg transition ${
@@ -513,13 +522,16 @@ export default function DraftBoard({
                         ? 'bg-gray-700 text-gray-500 cursor-wait'
                         : inSquad
                           ? 'bg-yellow-400/15 text-yellow-400 border border-yellow-400/30 hover:bg-red-500/15 hover:text-red-400 hover:border-red-400/30'
-                          : !canAfford || full || capped
+                          : takenOther
                             ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                            : 'bg-yellow-400 text-gray-950 hover:bg-yellow-300'
+                            : !canAfford || full || capped
+                              ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                              : 'bg-yellow-400 text-gray-950 hover:bg-yellow-300'
                     }`}
                   >
-                    {loading    ? '…'
-                    : inSquad   ? '✓ Added'
+                    {loading     ? '…'
+                    : inSquad    ? '✓ Added'
+                    : takenOther ? 'Taken'
                     : !canAfford ? 'Budget'
                     : capped     ? 'Capped'
                     : full       ? 'Full'

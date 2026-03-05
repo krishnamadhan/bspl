@@ -89,7 +89,7 @@ export async function POST() {
     return NextResponse.json({ error: 'No players found. Seed players first.' }, { status: 400 })
   }
 
-  // ── 5. Find teams that already have a full roster (≥11 players) ──────────────
+  // ── 5. Find teams that already have a full roster (≥SQUAD_SIZE players) ───────
   const { data: existingRosters } = await db
     .from('bspl_rosters')
     .select('team_id, player_id')
@@ -100,6 +100,12 @@ export async function POST() {
   for (const r of existingRosters ?? []) {
     if (!existingByTeam.has(r.team_id)) existingByTeam.set(r.team_id, new Set())
     existingByTeam.get(r.team_id)!.add(r.player_id)
+  }
+
+  // Globally owned = any player already in ANY team's roster
+  const globallyOwned = new Set<string>()
+  for (const playerIds of existingByTeam.values()) {
+    for (const id of playerIds) globallyOwned.add(id)
   }
 
   // Only draft for BOT teams that have fewer than SQUAD_SIZE players
@@ -118,9 +124,10 @@ export async function POST() {
     })
   }
 
-  // ── 6. Round-robin snake draft ───────────────────────────────────────────────
-  // Team 0 gets players at index 0, n, 2n...
-  // Team 1 gets players at index 1, n+1, 2n+1...  etc.
+  // ── 6. Round-robin snake draft (unowned players only) ────────────────────────
+  // Filter out players already owned by any team (real user or bot)
+  const availablePlayers = allPlayers.filter(p => !globallyOwned.has(p.id))
+
   const n = teamsToDraft.length
   const rosterInserts: { team_id: string; player_id: string; purchase_price: number }[] = []
   const budgetUsed   = new Map<string, number>()
@@ -128,12 +135,12 @@ export async function POST() {
   for (let slot = 0; slot < SQUAD_SIZE; slot++) {
     for (let ti = 0; ti < n; ti++) {
       const playerIndex = slot * n + ti
-      if (playerIndex >= allPlayers.length) break
+      if (playerIndex >= availablePlayers.length) break
 
       const team   = teamsToDraft[ti]
-      const player = allPlayers[playerIndex]
+      const player = availablePlayers[playerIndex]
 
-      // Skip if team already has this player
+      // Skip if this bot team already has this player (shouldn't happen after filtering, but guard)
       if (existingByTeam.get(team.id)?.has(player.id)) continue
 
       rosterInserts.push({

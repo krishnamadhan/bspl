@@ -80,6 +80,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: teamErr?.message ?? 'Failed to create team' }, { status: 500 })
   }
 
+  // Collect all player IDs already owned by any team in this season
+  // so bots only pick from the remaining pool
+  const { data: teamsInSeason } = await db
+    .from('bspl_teams')
+    .select('id')
+    .eq('season_id', season.id)
+
+  const { data: allOwnedRosters } = (teamsInSeason?.length ?? 0) > 0
+    ? await db
+        .from('bspl_rosters')
+        .select('player_id')
+        .in('team_id', teamsInSeason!.map(t => t.id))
+    : { data: [] }
+
+  const globallyOwnedIds = new Set((allOwnedRosters ?? []).map(r => r.player_id))
+
   // Auto-draft squad by role quotas.
   // Each bot picks from the top 3× candidate pool for variety — bots are competitive
   // (always include some elite players) but different each time (random within tier).
@@ -102,7 +118,8 @@ export async function POST(req: NextRequest) {
       .select('id, price_cr')
       .eq('role', role)
       .order('price_cr', { ascending: false })
-    playersByRole[role] = data ?? []
+    // Exclude players already owned by any team in this season
+    playersByRole[role] = (data ?? []).filter(p => !globallyOwnedIds.has(p.id))
   }
 
   // Build draft list respecting quotas with stratified random selection
@@ -114,14 +131,16 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Fill remaining slots — pick randomly from top 2× available (by price), excluding already drafted
+  // Fill remaining slots — pick randomly from top 2× available (by price),
+  // excluding already drafted AND globally owned by other teams
   const draftedIds = new Set(drafted.map(d => d.player_id))
+  const excludeIds = new Set([...draftedIds, ...globallyOwnedIds])
   const remaining = SQUAD_SIZE - drafted.length
   if (remaining > 0) {
     const { data: fillPlayers } = await db
       .from('players')
       .select('id, price_cr')
-      .not('id', 'in', `(${[...draftedIds].join(',')})`)
+      .not('id', 'in', excludeIds.size > 0 ? `(${[...excludeIds].join(',')})` : '(00000000-0000-0000-0000-000000000000)')
       .order('price_cr', { ascending: false })
       .limit(remaining * 2)
     const shuffledFill = (fillPlayers ?? []).sort(() => Math.random() - 0.5).slice(0, remaining)
