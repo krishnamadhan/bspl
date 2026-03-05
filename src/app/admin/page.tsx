@@ -539,6 +539,13 @@ export default function AdminPage() {
     return () => clearInterval(interval)
   }, [seasonInfo?.id, matches]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-poll auction every 3s so admin sees live bids without refreshing
+  useEffect(() => {
+    if (!seasonInfo) return
+    const interval = setInterval(() => loadAuction(), 3000)
+    return () => clearInterval(interval)
+  }, [seasonInfo?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── API helpers ─────────────────────────────────────────────────────────────
   const post = async (url: string, body?: object, timeoutMs = 90_000) => {
     const controller = new AbortController()

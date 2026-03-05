@@ -32,6 +32,21 @@ interface MyTeam {
   budget_remaining: number
 }
 
+interface TeamRosterEntry {
+  player_id: string
+  player_name: string
+  role: string
+  purchase_price: number
+}
+
+interface TeamWithRoster {
+  id: string
+  name: string
+  color: string
+  budget_remaining: number
+  roster: TeamRosterEntry[]
+}
+
 interface AuctionRoomProps {
   seasonId: string | null
   initialAuction: AuctionRow | null
@@ -74,6 +89,8 @@ export default function AuctionRoom({
   const [playerInfo, setPlayerInfo] = useState<PlayerInfo | null>(initialPlayerInfo)
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
   const [bidding, setBidding] = useState(false)
+  const [teamsList, setTeamsList] = useState<TeamWithRoster[]>([])
+  const [expandedTeam, setExpandedTeam] = useState<string | null>(null)
 
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok })
@@ -125,6 +142,51 @@ export default function AuctionRoom({
     return () => clearInterval(interval)
   }, [seasonId])
 
+  // Poll teams + rosters every 5s
+  useEffect(() => {
+    if (!seasonId) return
+    const supabase = createClient()
+
+    const pollTeams = async () => {
+      const { data: teams } = await supabase
+        .from('bspl_teams')
+        .select('id, name, color, budget_remaining')
+        .eq('season_id', seasonId)
+        .order('budget_remaining', { ascending: false })
+      if (!teams?.length) return
+
+      const teamIds = teams.map(t => t.id)
+      const { data: rosters } = await supabase
+        .from('bspl_rosters')
+        .select('team_id, player_id, purchase_price, players(name, role)')
+        .in('team_id', teamIds)
+
+      const rosterByTeam = new Map<string, TeamRosterEntry[]>()
+      for (const r of rosters ?? []) {
+        if (!rosterByTeam.has(r.team_id)) rosterByTeam.set(r.team_id, [])
+        const pl = r.players as { name: string; role: string } | null
+        rosterByTeam.get(r.team_id)!.push({
+          player_id: r.player_id,
+          player_name: pl?.name ?? 'Unknown',
+          role: pl?.role ?? '',
+          purchase_price: Number(r.purchase_price),
+        })
+      }
+
+      setTeamsList(teams.map(t => ({
+        id: t.id,
+        name: t.name,
+        color: t.color,
+        budget_remaining: Number(t.budget_remaining),
+        roster: (rosterByTeam.get(t.id) ?? []).sort((a, b) => b.purchase_price - a.purchase_price),
+      })))
+    }
+
+    pollTeams()
+    const interval = setInterval(pollTeams, 5000)
+    return () => clearInterval(interval)
+  }, [seasonId])
+
   // Bid handler
   const placeBid = async (increment: 0.5 | 1.0 | 2.0) => {
     if (!auction || bidding) return
@@ -150,16 +212,18 @@ export default function AuctionRoom({
 
   // Derived values
   const currentBidder = auction?.current_bidder_team_id
-    ? allTeams.find(t => t.id === auction.current_bidder_team_id) ?? null
+    ? (teamsList.find(t => t.id === auction.current_bidder_team_id) ?? allTeams.find(t => t.id === auction.current_bidder_team_id) ?? null)
     : null
   const amWinning = !!myTeam && auction?.current_bidder_team_id === myTeam.id
+  const myTeamLive = teamsList.find(t => t.id === myTeam?.id)
+  const myBudget = myTeamLive ? myTeamLive.budget_remaining : Number(myTeam?.budget_remaining ?? 0)
   const canBid = (newBid: number) =>
     !!myTeam &&
     !!auction &&
     auction.status === 'open' &&
     !amWinning &&
     !bidding &&
-    Number(myTeam.budget_remaining) >= newBid
+    myBudget >= newBid
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
@@ -180,7 +244,7 @@ export default function AuctionRoom({
         <h1 className="text-2xl font-bold">🔨 Live Auction</h1>
         {myTeam && (
           <span className="text-sm text-gray-400 ml-auto">
-            Budget: <span className="text-yellow-400 font-semibold">{formatCr(Number(myTeam.budget_remaining))}</span>
+            Budget: <span className="text-yellow-400 font-semibold">{formatCr(myBudget)}</span>
           </span>
         )}
       </div>
@@ -340,6 +404,51 @@ export default function AuctionRoom({
               </p>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Teams, purses & squads */}
+      {teamsList.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-1">Teams &amp; Purses</h2>
+          {teamsList.map(team => {
+            const isExpanded = expandedTeam === team.id
+            const isMe = team.id === myTeam?.id
+            const roleOrder: Record<string, number> = { 'wicket-keeper': 0, batsman: 1, 'all-rounder': 2, bowler: 3 }
+            const sorted = [...team.roster].sort((a, b) => (roleOrder[a.role] ?? 4) - (roleOrder[b.role] ?? 4))
+            return (
+              <div key={team.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-800/40 transition"
+                  onClick={() => setExpandedTeam(isExpanded ? null : team.id)}
+                >
+                  <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: team.color }} />
+                  <span className="font-medium text-sm flex-1 truncate">
+                    {team.name}
+                    {isMe && <span className="text-yellow-400 text-xs ml-2">(you)</span>}
+                  </span>
+                  <span className="text-yellow-400 text-sm font-semibold whitespace-nowrap">{formatCr(team.budget_remaining)}</span>
+                  <span className="text-gray-500 text-xs whitespace-nowrap">{team.roster.length}pl</span>
+                  <span className="text-gray-600 text-xs ml-1">{isExpanded ? '▲' : '▼'}</span>
+                </button>
+                {isExpanded && (
+                  <div className="border-t border-gray-800 divide-y divide-gray-800/60 max-h-56 overflow-y-auto">
+                    {sorted.length === 0 ? (
+                      <p className="text-gray-500 text-xs py-3 text-center">No players yet</p>
+                    ) : (
+                      sorted.map(p => (
+                        <div key={p.player_id} className="flex items-center gap-2 px-4 py-2 text-xs">
+                          <span className="w-4 text-center">{ROLE_ICONS[p.role] ?? '🏏'}</span>
+                          <span className="text-gray-200 flex-1 truncate">{p.player_name}</span>
+                          <span className="text-gray-400 whitespace-nowrap">{formatCr(p.purchase_price)}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
