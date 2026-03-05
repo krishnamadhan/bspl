@@ -28,6 +28,8 @@ type PracticeRow = {
   status: string
   condition: string
   scheduled_date: string
+  result_summary: string | null
+  winner_team_id: string | null
   team_a: { id: string; name: string; color: string } | { id: string; name: string; color: string }[] | null
   team_b: { id: string; name: string; color: string } | { id: string; name: string; color: string }[] | null
   venue:  { name: string; city: string } | { name: string; city: string }[] | null
@@ -89,7 +91,7 @@ export default async function PracticePage() {
     ? await supabase
         .from('bspl_matches')
         .select(`
-          id, status, condition, scheduled_date,
+          id, status, condition, scheduled_date, result_summary, winner_team_id,
           team_a:bspl_teams!team_a_id (id, name, color),
           team_b:bspl_teams!team_b_id (id, name, color),
           venue:bspl_venues!venue_id (name, city)
@@ -148,7 +150,11 @@ export default async function PracticePage() {
           </div>
 
           {m.status === 'completed' && (
-            <p className="text-xs text-gray-500 mt-2 text-center">Watch replay →</p>
+            m.result_summary ? (
+              <p className="text-xs text-green-400/80 mt-2 text-center truncate">{m.result_summary}</p>
+            ) : (
+              <p className="text-xs text-gray-500 mt-2 text-center">Watch replay →</p>
+            )
           )}
         </div>
         <div className="px-4 pb-3 flex items-center justify-between">
