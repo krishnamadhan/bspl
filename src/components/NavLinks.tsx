@@ -61,7 +61,7 @@ export default function NavLinks({ links }: { links: NavLink[] }) {
               }`}
             >
               <span className="text-[20px] leading-none">{emoji}</span>
-              <span className={`text-[9px] leading-none truncate w-full text-center font-medium ${
+              <span className={`text-[11px] leading-none truncate w-full text-center font-medium ${
                 isActive ? 'text-yellow-400' : 'text-gray-500'
               }`}>
                 {shortText}

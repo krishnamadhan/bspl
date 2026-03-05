@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export type SquadPlayer = {
@@ -57,6 +58,7 @@ function canBowl(p: SquadPlayer) {
 }
 
 export default function LineupSubmitter({ matchId, myTeamId, squad, existingLineup, totalOvers = 5 }: Props) {
+  const router = useRouter()
   const [selectedXI, setSelectedXI] = useState<string[]>(existingLineup?.playing_xi ?? [])
   const [bowlingOrder, setBowlingOrder] = useState<string[]>(existingLineup?.bowling_order ?? [])
   const [tossChoice, setTossChoice] = useState<'bat' | 'bowl' | null>(
@@ -200,8 +202,8 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
         type: 'success',
         msg: existingLineup?.is_submitted ? 'Lineup updated successfully!' : 'Lineup submitted! Good luck!',
       })
-      // Refresh the page so the server-rendered "✓ Lineup submitted" badge syncs
-      setTimeout(() => window.location.reload(), 1500)
+      // Refresh server data so the "✓ Lineup submitted" badge syncs
+      setTimeout(() => router.refresh(), 1500)
     }
   }
 
@@ -344,7 +346,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
             {selectedXI.length === 0 ? (
               <p className="text-gray-600 text-sm py-4 text-center">
-                Tap players on the left to add them
+                Select players on the left to add them
               </p>
             ) : (
               <div className="space-y-1.5">

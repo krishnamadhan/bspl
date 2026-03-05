@@ -12,7 +12,7 @@ const SEASON_STATUS: Record<string, { label: string; cls: string }> = {
   draft_locked:  { label: 'Draft Locked',  cls: 'bg-orange-400 text-gray-950' },
   in_progress:   { label: 'In Progress',   cls: 'bg-green-400 text-gray-950' },
   playoffs:      { label: 'Playoffs!',     cls: 'bg-yellow-300 text-gray-950' },
-  completed:     { label: 'Completed',     cls: 'bg-gray-600 text-gray-200' },
+  completed:     { label: 'Completed',     cls: 'bg-gray-600 text-gray-100' },
 }
 
 const COND: Record<string, { label: string; color: string }> = {
@@ -299,7 +299,7 @@ export default async function DashboardPage() {
                     <div className="text-center flex-1">
                       <div
                         className="w-10 h-10 rounded-full mx-auto mb-2 border-2"
-                        style={{ backgroundColor: teamA?.color + '33', borderColor: teamA?.color }}
+                        style={{ backgroundColor: teamA ? teamA.color + '33' : undefined, borderColor: teamA?.color }}
                       />
                       <p className={`font-bold ${isMyA ? 'text-yellow-400' : ''}`}>{teamA?.name}</p>
                       {isMyA && <p className="text-xs text-yellow-400/70">Your team</p>}
@@ -313,7 +313,7 @@ export default async function DashboardPage() {
                     <div className="text-center flex-1">
                       <div
                         className="w-10 h-10 rounded-full mx-auto mb-2 border-2"
-                        style={{ backgroundColor: teamB?.color + '33', borderColor: teamB?.color }}
+                        style={{ backgroundColor: teamB ? teamB.color + '33' : undefined, borderColor: teamB?.color }}
                       />
                       <p className={`font-bold ${isMyB ? 'text-yellow-400' : ''}`}>{teamB?.name}</p>
                       {isMyB && <p className="text-xs text-yellow-400/70">Your team</p>}
