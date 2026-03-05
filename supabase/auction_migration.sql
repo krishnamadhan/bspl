@@ -26,6 +26,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS bspl_auction_one_open_per_season
 
 -- Enable Realtime replication for live bid updates
 ALTER TABLE bspl_auction REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE bspl_auction;
 
 -- ─── Row Level Security ───────────────────────────────────────
 ALTER TABLE bspl_auction ENABLE ROW LEVEL SECURITY;
@@ -45,5 +46,5 @@ CREATE POLICY "auction admin write" ON bspl_auction
   );
 
 -- ─── Note ─────────────────────────────────────────────────────
--- After running this migration, enable Realtime for bspl_auction:
---   Supabase Dashboard → Database → Replication → toggle bspl_auction ON
+-- The ALTER PUBLICATION line above handles Realtime enablement.
+-- No manual dashboard step needed.
