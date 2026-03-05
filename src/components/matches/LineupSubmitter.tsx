@@ -353,8 +353,6 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                 {selectedXI.map((id, idx) => {
                   const p = playerMap[id]
                   if (!p) return null
-                  const isBowling = bowlingOrder.includes(id)
-                  const bowlPos   = bowlingOrder.indexOf(id)
 
                   return (
                     <div

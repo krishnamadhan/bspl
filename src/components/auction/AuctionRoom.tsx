@@ -91,6 +91,7 @@ export default function AuctionRoom({
   const [bidding, setBidding] = useState(false)
   const [teamsList, setTeamsList] = useState<TeamWithRoster[]>([])
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null)
+  const [bidFlash, setBidFlash] = useState(false)
 
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok })
@@ -133,6 +134,11 @@ export default function AuctionRoom({
         // Only update if something actually changed (avoid re-renders)
         if (!data && !prev) return prev
         if (data && prev && data.id === prev.id && data.current_bid === prev.current_bid && data.status === prev.status) return prev
+        // Flash when bid goes up
+        if (data && prev && data.id === prev.id && Number(data.current_bid) > Number(prev.current_bid)) {
+          setBidFlash(true)
+          setTimeout(() => setBidFlash(false), 900)
+        }
         return data as AuctionRow | null
       })
     }
@@ -164,7 +170,7 @@ export default function AuctionRoom({
       const rosterByTeam = new Map<string, TeamRosterEntry[]>()
       for (const r of rosters ?? []) {
         if (!rosterByTeam.has(r.team_id)) rosterByTeam.set(r.team_id, [])
-        const pl = r.players as { name: string; role: string } | null
+        const pl = (Array.isArray(r.players) ? r.players[0] : r.players) as { name: string; role: string } | null
         rosterByTeam.get(r.team_id)!.push({
           player_id: r.player_id,
           player_name: pl?.name ?? 'Unknown',
@@ -251,33 +257,32 @@ export default function AuctionRoom({
 
       {/* Sold overlay */}
       {auction?.status === 'sold' && (
-        <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-6 text-center space-y-2">
-          <p className="text-4xl">🏆</p>
-          <p className="text-xl font-bold text-green-400">SOLD!</p>
-          <p className="text-gray-300">
-            <span className="font-semibold text-white">{playerInfo?.name ?? 'Player'}</span>
-            {' '}to{' '}
-            <span
-              className="font-semibold"
-              style={{ color: currentBidder?.color ?? '#fff' }}
-            >
-              {currentBidder?.name ?? 'Unknown Team'}
-            </span>
-          </p>
-          <p className="text-yellow-400 text-2xl font-bold">{formatCr(Number(auction.winning_bid ?? auction.current_bid))}</p>
-          <p className="text-gray-500 text-sm mt-2">Waiting for admin to open the next bid…</p>
+        <div className="border-2 border-green-500/40 rounded-2xl p-8 text-center space-y-3 bg-green-500/5">
+          <p className="text-6xl animate-bounce">🏆</p>
+          <p className="text-3xl font-black text-green-300 tracking-tight">SOLD!</p>
+          <div className="space-y-1">
+            <p className="text-white font-bold text-lg">{playerInfo?.name ?? 'Player'}</p>
+            <p className="text-gray-400 text-sm capitalize">{playerInfo?.role?.replace('-', ' ')} · {playerInfo?.ipl_team}</p>
+          </div>
+          <div
+            className="inline-block px-5 py-2 rounded-xl font-bold text-lg"
+            style={{ backgroundColor: currentBidder?.color ? currentBidder.color + '33' : '#ffffff11', color: currentBidder?.color ?? '#fff', border: `2px solid ${currentBidder?.color ?? '#666'}` }}
+          >
+            {currentBidder?.name ?? 'Unknown Team'}
+          </div>
+          <p className="text-yellow-400 text-3xl font-black">{formatCr(Number(auction.winning_bid ?? auction.current_bid))}</p>
+          <p className="text-gray-600 text-xs pt-1">Waiting for next player…</p>
         </div>
       )}
 
       {/* Unsold overlay */}
       {auction?.status === 'unsold' && (
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 text-center space-y-2">
-          <p className="text-4xl">❌</p>
-          <p className="text-xl font-bold text-gray-400">UNSOLD</p>
-          <p className="text-gray-400">
-            <span className="text-white">{playerInfo?.name ?? 'Player'}</span> returns to the draft pool
-          </p>
-          <p className="text-gray-500 text-sm mt-2">Waiting for admin to open the next bid…</p>
+        <div className="border border-gray-700 rounded-2xl p-8 text-center space-y-3 bg-gray-800/40">
+          <p className="text-5xl">🚫</p>
+          <p className="text-2xl font-black text-gray-400 tracking-tight">UNSOLD</p>
+          <p className="text-white font-semibold">{playerInfo?.name ?? 'Player'}</p>
+          <p className="text-gray-500 text-sm">Returns to the draft pool at base price</p>
+          <p className="text-gray-600 text-xs pt-1">Waiting for next player…</p>
         </div>
       )}
 
@@ -352,7 +357,12 @@ export default function AuctionRoom({
           <div className="px-6 py-5">
             <div className="text-center mb-4">
               <p className="text-gray-500 text-sm mb-1">Current Bid</p>
-              <p className="text-4xl font-bold text-yellow-400">{formatCr(Number(auction.current_bid))}</p>
+              <p
+                className={`text-4xl font-bold transition-all duration-300 ${bidFlash ? 'text-green-300 scale-110' : 'text-yellow-400 scale-100'}`}
+                style={{ display: 'block' }}
+              >
+                {formatCr(Number(auction.current_bid))}
+              </p>
               {currentBidder ? (
                 <div className="flex items-center justify-center gap-2 mt-2">
                   <span

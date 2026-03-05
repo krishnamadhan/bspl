@@ -36,7 +36,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Player not found' }, { status: 404 })
   }
 
-  const startPrice = (base_price != null && base_price > 0) ? base_price : Number(player.price_cr)
+  if (base_price != null && (isNaN(base_price) || base_price <= 0 || base_price > 1000)) {
+    return NextResponse.json({ error: 'base_price must be a positive number ≤ 1000 Cr' }, { status: 400 })
+  }
+  const startPrice = (base_price != null && base_price > 0) ? Math.round(base_price * 100) / 100 : Number(player.price_cr)
 
   const { data: auction, error } = await db
     .from('bspl_auction')

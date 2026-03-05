@@ -106,6 +106,7 @@ export default function DraftBoard({
   const [budgetLeft, setBudgetLeft] = useState(myTeam?.budget_remaining ?? seasonBudget)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [notice, setNotice] = useState<{ msg: string; type: 'error' | 'ok' } | null>(null)
+  const [pickedId, setPickedId] = useState<string | null>(null)
 
   // Filters
   const [search, setSearch]     = useState('')
@@ -219,6 +220,9 @@ export default function DraftBoard({
     } else {
       // Sync confirmed budget from server to avoid drift
       if (typeof json.budget_remaining === 'number') setBudgetLeft(json.budget_remaining)
+      // Flash pick celebration
+      setPickedId(player.id)
+      setTimeout(() => setPickedId(null), 1200)
     }
     setLoadingId(null)
   }, [myTeam, draftOpen, rosterIds, takenByOther, budgetLeft, maxSquad, squadStats])
@@ -465,11 +469,14 @@ export default function DraftBoard({
             const full       = rosterIds.size >= maxSquad
             const capped     = !inSquad && !takenOther && (squadStats.iplCounts[player.ipl_team] ?? 0) >= MAX_FROM_IPL_TEAM
 
+            const justPicked = pickedId === player.id
+
             return (
               <div
                 key={player.id}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 border transition-colors ${
-                  inSquad    ? 'bg-yellow-400/5 border-yellow-400/30'
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 border transition-all duration-300 ${
+                  justPicked   ? 'bg-green-400/15 border-green-400/60 scale-[1.01]'
+                  : inSquad    ? 'bg-yellow-400/5 border-yellow-400/30'
                   : takenOther ? 'bg-gray-900 border-gray-800 opacity-40'
                   : 'bg-gray-900 border-gray-800 hover:border-gray-700'
                 }`}

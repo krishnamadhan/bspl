@@ -33,7 +33,7 @@ interface Props {
   completeUrl?:  string
 }
 
-type FlashEvent = { type: 'four' | 'six' | 'wicket'; subtitle?: string }
+type FlashEvent = { type: 'four' | 'six' | 'wicket' | 'milestone' | 'hattrick'; subtitle?: string }
 type PlayerCard = { type: 'bowler' | 'batsman'; name: string; statsLine?: string }
 
 // ── Commentary ────────────────────────────────────────────────────────────────
@@ -175,18 +175,30 @@ function BallDot({ outcome, pulse }: { outcome: string; pulse?: boolean }) {
 function FlashOverlay({ event }: { event: FlashEvent }) {
   const cfg =
     event.type === 'wicket'
-      ? { bg: 'bg-red-950/95', border: 'border-red-500', text: 'text-red-300', emoji: '💥', label: 'WICKET!' }
+      ? { bg: 'bg-red-950/98', border: 'border-red-500', text: 'text-red-300', emoji: '💥', label: 'WICKET!' }
       : event.type === 'six'
-      ? { bg: 'bg-emerald-950/95', border: 'border-emerald-500', text: 'text-emerald-300', emoji: '🚀', label: 'SIX!' }
-      : { bg: 'bg-blue-950/95', border: 'border-blue-500', text: 'text-blue-300', emoji: '🎯', label: 'FOUR!' }
+      ? { bg: 'bg-emerald-950/98', border: 'border-emerald-400', text: 'text-emerald-300', emoji: '🚀', label: 'SIX!' }
+      : event.type === 'milestone'
+      ? { bg: 'bg-yellow-950/98', border: 'border-yellow-400', text: 'text-yellow-300', emoji: '🏏', label: event.subtitle ?? 'MILESTONE!' }
+      : event.type === 'hattrick'
+      ? { bg: 'bg-purple-950/98', border: 'border-purple-400', text: 'text-purple-300', emoji: '🎩', label: 'HAT-TRICK ALERT!' }
+      : { bg: 'bg-blue-950/98', border: 'border-blue-500', text: 'text-blue-300', emoji: '🎯', label: 'FOUR!' }
+
+  const isMilestone = event.type === 'milestone' || event.type === 'hattrick'
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none bg-black/40">
-      <div className={`${cfg.bg} border-2 ${cfg.border} rounded-3xl px-14 py-10 text-center shadow-2xl`}>
-        <div className="text-7xl mb-3 animate-bounce">{cfg.emoji}</div>
-        <div className={`text-6xl font-black tracking-tight ${cfg.text}`}>{cfg.label}</div>
-        {event.subtitle && (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none bg-black/50 backdrop-blur-[2px]">
+      <div
+        className={`${cfg.bg} border-2 ${cfg.border} rounded-3xl px-14 py-10 text-center shadow-2xl`}
+        style={{ animation: 'flashIn 0.2s ease-out' }}
+      >
+        <div className={`text-7xl mb-3 ${isMilestone ? 'animate-spin' : 'animate-bounce'}`} style={isMilestone ? { animationDuration: '1s' } : {}}>{cfg.emoji}</div>
+        <div className={`font-black tracking-tight ${cfg.text} ${isMilestone ? 'text-4xl' : 'text-6xl'}`}>{cfg.label}</div>
+        {!isMilestone && event.subtitle && (
           <div className="text-gray-300 text-sm mt-2.5 capitalize tracking-wide">{event.subtitle}</div>
+        )}
+        {event.type === 'hattrick' && event.subtitle && (
+          <div className="text-purple-200 text-base mt-2 font-semibold">{event.subtitle}</div>
         )}
       </div>
     </div>
@@ -452,6 +464,41 @@ export default function MatchReplay({
 
     const ball     = balls[revealed - 1]
     const prevBall = revealed > 1 ? balls[revealed - 2] : null
+    const priorBalls = balls.slice(0, revealed - 1)
+
+    // ── Milestones: track per-batter running totals ─────────────────────────
+    if (!ball.is_wicket && ball.outcome !== 'Wd' && ball.outcome !== 'Nb') {
+      const prevRuns = priorBalls
+        .filter(b => b.batsman_id === ball.batsman_id && !b.is_wicket && b.outcome !== 'Wd')
+        .reduce((s, b) => s + b.runs_scored, 0)
+      const newRuns = prevRuns + ball.runs_scored
+      const batterName = shortName(playerNames[ball.batsman_id] ?? 'Batter')
+      for (const ms of [25, 50, 75, 100]) {
+        if (prevRuns < ms && newRuns >= ms) {
+          const label = ms === 50 ? `⚡ HALF CENTURY! ${batterName} – 50!`
+                      : ms === 100 ? `💯 CENTURY! ${batterName} – 100!!`
+                      : ms === 25 ? `${batterName} reaches 25`
+                      : `${batterName} – ${ms} up!`
+          setTimeout(() => setFlash({ type: 'milestone', subtitle: label }), 0)
+          break
+        }
+      }
+    }
+
+    // ── Hat-trick alert: same bowler takes 2 consecutive wickets ────────────
+    if (ball.is_wicket) {
+      const bowlerWickets = priorBalls.filter(b => b.is_wicket && b.bowler_id === ball.bowler_id)
+      const recentWicket = bowlerWickets[bowlerWickets.length - 1]
+      if (recentWicket) {
+        // Check if the wicket just before was also this bowler's and on prev legal delivery
+        const prevLegal = priorBalls.filter(b => b.outcome !== 'Wd' && b.outcome !== 'Nb')
+        const lastPrevLegal = prevLegal[prevLegal.length - 1]
+        if (lastPrevLegal?.is_wicket && lastPrevLegal.bowler_id === ball.bowler_id) {
+          const bowlerName = shortName(playerNames[ball.bowler_id] ?? 'Bowler')
+          setTimeout(() => setFlash({ type: 'hattrick', subtitle: `${bowlerName} on a hat-trick next ball!` }), 200)
+        }
+      }
+    }
 
     // Flash overlay — deferred to avoid synchronous setState in effect
     if (ball.is_wicket) {
@@ -532,20 +579,44 @@ export default function MatchReplay({
       }
       tryComplete()
     }
-  }, [phase, completeUrl]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [phase, completeUrl])
 
   // ── Done: show result banner + full scorecard ───────────────────────────────
   if (phase === 'done') {
+    const isTied = resultSummary.toLowerCase().includes('tied') || resultSummary.toLowerCase().includes('super over')
+    const winnerColor = isTied ? 'border-yellow-500/40 bg-yellow-500/5' : 'border-green-500/30 bg-green-500/8'
+
     return (
       <>
         {flash && <FlashOverlay event={flash} />}
         <div className="space-y-5">
-          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-center">
-            <div className="flex items-center justify-center gap-2 mb-1">
-              <span className="text-green-400 text-xl">🏆</span>
-              <p className="text-green-400 font-bold text-lg">{resultSummary}</p>
+          {/* Result banner */}
+          <div className={`border-2 rounded-2xl p-6 text-center space-y-2 ${winnerColor}`}>
+            <div className="text-5xl mb-2">{isTied ? '⚡' : '🏆'}</div>
+            <p className={`font-black text-xl leading-snug ${isTied ? 'text-yellow-300' : 'text-green-300'}`}>
+              {resultSummary}
+            </p>
+            {/* Innings summary pills */}
+            <div className="flex justify-center gap-4 mt-3 flex-wrap">
+              {[innings1, innings2].map((inn, i) => (
+                <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2 text-center">
+                  <div className="flex items-center gap-1.5 justify-center mb-1">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: inn.team_color }} />
+                    <span className="text-xs text-gray-400 font-medium">{inn.team_name}</span>
+                  </div>
+                  <div className="text-2xl font-bold tabular-nums">
+                    {inn.total_runs}
+                    <span className="text-gray-500 text-lg">/{inn.total_wickets}</span>
+                  </div>
+                  <div className="text-gray-500 text-xs">
+                    ({(() => {
+                      const lb = inn.balls.filter(b => b.outcome !== 'Wd' && b.outcome !== 'Nb').length
+                      return `${Math.floor(lb / 6)}.${lb % 6}`
+                    })()} ov)
+                  </div>
+                </div>
+              ))}
             </div>
-            <p className="text-gray-500 text-xs">Full scorecard below</p>
           </div>
           {children}
         </div>
@@ -571,7 +642,10 @@ export default function MatchReplay({
   const lastRevealed = visibleBalls[visibleBalls.length - 1]
 
   // Nail-biter indicator: last over and within 10 runs
-  const isNailbiter = phase === 'inn2' && target && legalBalls >= 24 && (target - runs) <= 10 && (target - runs) > 0
+  const runsLeft = target ? target - runs : 0
+  const ballsRemaining = 30 - legalBalls
+  const isNailbiter = phase === 'inn2' && target && legalBalls >= 18 && runsLeft <= 12 && runsLeft > 0
+  const isLastBall = phase === 'inn2' && target && legalBalls === 29 && runsLeft > 0
 
   return (
     <>
@@ -599,12 +673,22 @@ export default function MatchReplay({
           </button>
         </div>
 
+        {/* Last ball drama */}
+        {isLastBall && (
+          <div className="bg-red-500/15 border-2 border-red-500/50 rounded-xl px-4 py-3 flex items-center gap-2 animate-pulse">
+            <span className="text-2xl">🔥</span>
+            <span className="text-red-300 font-black text-base">
+              LAST BALL! Need {runsLeft} run{runsLeft !== 1 ? 's' : ''}!
+            </span>
+          </div>
+        )}
+
         {/* Nail-biter banner */}
-        {isNailbiter && (
+        {isNailbiter && !isLastBall && (
           <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2.5 flex items-center gap-2 animate-pulse">
             <span className="text-yellow-400 text-lg">⚡</span>
             <span className="text-yellow-300 font-semibold text-sm">
-              NAIL-BITER! Need {target! - runs} off {30 - legalBalls} balls!
+              NAIL-BITER! Need {runsLeft} off {ballsRemaining} ball{ballsRemaining !== 1 ? 's' : ''}!
             </span>
           </div>
         )}

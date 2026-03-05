@@ -401,6 +401,9 @@ export function simulateMatch(
   matchSeed: number,
   totalOvers: number = 5
 ): MatchResult {
+  if (totalOvers < 1 || totalOvers > 50 || !Number.isInteger(totalOvers)) {
+    throw new Error(`Invalid totalOvers: ${totalOvers}. Must be an integer between 1 and 50.`)
+  }
   const innings1 = simulateInnings(teamA, teamB, venue, false, 0, matchSeed, totalOvers)
   const target = innings1.total_runs
   const innings2 = simulateInnings(teamB, teamA, venue, true, target, matchSeed + 1, totalOvers)
