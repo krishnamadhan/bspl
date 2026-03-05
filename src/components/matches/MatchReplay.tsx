@@ -263,7 +263,7 @@ function fmtOvers(legalBalls: number) {
 // ── Live scoreboard panel ─────────────────────────────────────────────────────
 
 function Scoreboard({
-  innings, runs, wickets, legalBalls, crr, target, striker, bowler, playerNames,
+  innings, runs, wickets, legalBalls, crr, target, striker, bowler, playerNames, totalBalls,
 }: {
   innings:     ReplayInnings
   runs:        number
@@ -274,10 +274,11 @@ function Scoreboard({
   striker?:    string
   bowler?:     string
   playerNames: Record<string, string>
+  totalBalls:  number
 }) {
-  const ballsLeft  = 30 - legalBalls
+  const ballsLeft  = totalBalls - legalBalls
   const runsNeeded = target ? Math.max(0, target - runs) : null
-  const rrr = (target && legalBalls < 30 && legalBalls > 0)
+  const rrr = (target && legalBalls < totalBalls && legalBalls > 0)
     ? runsNeeded! / (ballsLeft / 6)
     : null
 
@@ -361,7 +362,10 @@ function Intermission({
   // Compute actual overs completed from the ball log
   const legalBalls1 = inn1.balls.filter(b => b.outcome !== 'Wd' && b.outcome !== 'Nb').length
   const inn1OvStr   = `${Math.floor(legalBalls1 / 6)}.${legalBalls1 % 6}`
-  const rrr         = (target / 30) * 6
+  // Total overs in this format — max over seen; minimum 5 (T5 default)
+  const totalOvs  = Math.max(5, ...inn1.balls.map(b => b.over))
+  const totalBalls = totalOvs * 6
+  const rrr         = (target / totalBalls) * 6
 
   return (
     <div className="max-w-sm mx-auto text-center py-10 space-y-5">
@@ -385,7 +389,7 @@ function Intermission({
         <p className="text-yellow-400 text-xs uppercase tracking-widest font-semibold">Target</p>
         <p className="text-5xl font-black text-yellow-300 tabular-nums">{target}</p>
         <p className="text-gray-400 text-xs">
-          off 30 balls · RRR{' '}
+          off {totalBalls} balls · RRR{' '}
           <span className={
             rrr > 12 ? 'text-red-400 font-semibold' :
             rrr > 8  ? 'text-yellow-400 font-semibold' :
@@ -641,11 +645,16 @@ export default function MatchReplay({
   // The very last revealed ball — we pulse it briefly
   const lastRevealed = visibleBalls[visibleBalls.length - 1]
 
-  // Nail-biter indicator: last over and within 10 runs
+  // Derive format from ball log: max over seen in both innings → total balls
+  const allBalls = [...innings1.balls, ...innings2.balls]
+  const matchTotalOvers = Math.max(5, ...allBalls.map(b => b.over))
+  const matchTotalBalls = matchTotalOvers * 6
+
+  // Nail-biter indicator: last 2 overs and within 12 runs
   const runsLeft = target ? target - runs : 0
-  const ballsRemaining = 30 - legalBalls
-  const isNailbiter = phase === 'inn2' && target && legalBalls >= 18 && runsLeft <= 12 && runsLeft > 0
-  const isLastBall = phase === 'inn2' && target && legalBalls === 29 && runsLeft > 0
+  const ballsRemaining = matchTotalBalls - legalBalls
+  const isNailbiter = phase === 'inn2' && target && ballsRemaining <= 12 && runsLeft <= 12 && runsLeft > 0
+  const isLastBall = phase === 'inn2' && target && legalBalls === matchTotalBalls - 1 && runsLeft > 0
 
   return (
     <>
@@ -704,6 +713,7 @@ export default function MatchReplay({
           striker={striker}
           bowler={bowler}
           playerNames={playerNames}
+          totalBalls={matchTotalBalls}
         />
 
         {/* Player intro card */}
