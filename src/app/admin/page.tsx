@@ -242,6 +242,7 @@ export default function AdminPage() {
   const [playerSearch, setPlayerSearch]     = useState('')
   const [playerResults, setPlayerResults]   = useState<PlayerSearchResult[]>([])
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerSearchResult | null>(null)
+  const [auctionBasePrice, setAuctionBasePrice] = useState<number | ''>('')
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
 
   // Ref guard: prevents double-submit before React re-renders `isPending`
@@ -672,9 +673,10 @@ export default function AdminPage() {
   // ── Auction handlers ─────────────────────────────────────────────────────────
   const handleOpenAuction = () => handle(async () => {
     if (!selectedPlayer || !seasonInfo) return
-    const j = await post('/api/admin/auction/open', { season_id: seasonInfo.id, player_id: selectedPlayer.id })
+    const bp = auctionBasePrice !== '' ? Number(auctionBasePrice) : undefined
+    const j = await post('/api/admin/auction/open', { season_id: seasonInfo.id, player_id: selectedPlayer.id, base_price: bp })
     showToast(j.message ?? `Auction opened for ${selectedPlayer.name}`, true)
-    setSelectedPlayer(null); setPlayerSearch(''); setPlayerResults([])
+    setSelectedPlayer(null); setPlayerSearch(''); setPlayerResults([]); setAuctionBasePrice('')
     await loadAuction()
   })
 
@@ -1353,7 +1355,7 @@ export default function AdminPage() {
                     {playerResults.map(p => (
                       <button
                         key={p.id}
-                        onClick={() => { setSelectedPlayer(p); setPlayerResults([]); setPlayerSearch(p.name) }}
+                        onClick={() => { setSelectedPlayer(p); setPlayerResults([]); setPlayerSearch(p.name); setAuctionBasePrice(p.price_cr) }}
                         className={`w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-gray-700/60 transition text-sm ${selectedPlayer?.id === p.id ? 'bg-yellow-400/10' : ''}`}
                       >
                         <div>
@@ -1366,18 +1368,36 @@ export default function AdminPage() {
                   </div>
                 )}
                 {selectedPlayer && (
-                  <div className="flex items-center justify-between bg-yellow-400/5 border border-yellow-400/20 rounded-lg px-4 py-3">
-                    <div>
-                      <p className="font-semibold text-sm">{selectedPlayer.name}</p>
-                      <p className="text-gray-400 text-xs capitalize">{selectedPlayer.role} · {selectedPlayer.price_cr} Cr base</p>
+                  <div className="bg-yellow-400/5 border border-yellow-400/20 rounded-lg px-4 py-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-sm">{selectedPlayer.name}</p>
+                        <p className="text-gray-400 text-xs capitalize">{selectedPlayer.role} · listed at {selectedPlayer.price_cr} Cr</p>
+                      </div>
                     </div>
-                    <Btn
-                      label={isPending ? 'Opening…' : 'Open Auction'}
-                      onClick={handleOpenAuction}
-                      disabled={isPending}
-                      variant="yellow"
-                      size="sm"
-                    />
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <label className="text-xs text-gray-400 mb-1 block">Starting bid (Cr)</label>
+                        <input
+                          type="number"
+                          min={0.5}
+                          step={0.5}
+                          value={auctionBasePrice}
+                          onChange={e => setAuctionBasePrice(e.target.value === '' ? '' : Number(e.target.value))}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400"
+                          placeholder={String(selectedPlayer.price_cr)}
+                        />
+                      </div>
+                      <div className="pt-5">
+                        <Btn
+                          label={isPending ? 'Opening…' : 'Open Auction'}
+                          onClick={handleOpenAuction}
+                          disabled={isPending}
+                          variant="yellow"
+                          size="sm"
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

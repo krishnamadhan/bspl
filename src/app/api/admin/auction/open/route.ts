@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { season_id, player_id } = body as { season_id?: string; player_id?: string }
+  const { season_id, player_id, base_price } = body as { season_id?: string; player_id?: string; base_price?: number }
 
   if (!season_id || !player_id) {
     return NextResponse.json({ error: 'season_id and player_id are required' }, { status: 400 })
@@ -36,14 +36,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Player not found' }, { status: 404 })
   }
 
+  const startPrice = (base_price != null && base_price > 0) ? base_price : Number(player.price_cr)
+
   const { data: auction, error } = await db
     .from('bspl_auction')
     .insert({
       season_id,
       player_id,
       status: 'open',
-      base_price: player.price_cr,
-      current_bid: player.price_cr,
+      base_price: startPrice,
+      current_bid: startPrice,
     })
     .select('id')
     .single()
