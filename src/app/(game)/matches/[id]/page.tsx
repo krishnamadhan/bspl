@@ -284,6 +284,21 @@ function unpack<T>(v: T | T[] | null): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v
 }
 
+function FormDots({ form }: { form: ('W' | 'L')[] }) {
+  if (form.length === 0) return <span className="text-gray-700 text-xs">—</span>
+  return (
+    <div className="flex gap-1">
+      {[...form].reverse().map((r, i) => (
+        <span
+          key={i}
+          title={r === 'W' ? 'Win' : 'Loss'}
+          className={`inline-block w-4 h-4 rounded-full ${r === 'W' ? 'bg-green-500' : 'bg-gray-600'}`}
+        />
+      ))}
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function MatchDetailPage({
@@ -342,6 +357,32 @@ export default async function MatchDetailPage({
   const amPlaying = myTeam && (teamA?.id === myTeam.id || teamB?.id === myTeam.id)
 
   const matchDate = new Date(rawMatch.scheduled_date)
+
+  // ── Form guide: last 3 results for each team ─────────────────────────────
+  const teamIds = [teamA?.id, teamB?.id].filter(Boolean) as string[]
+  const { data: recentResults } = season && teamIds.length
+    ? await supabase
+        .from('bspl_matches')
+        .select('id, team_a_id, team_b_id, winner_team_id')
+        .eq('season_id', season.id)
+        .eq('status', 'completed')
+        .or(`team_a_id.in.(${teamIds.join(',')}),team_b_id.in.(${teamIds.join(',')})`)
+        .neq('id', id)  // exclude this match itself
+        .order('match_number', { ascending: false })
+        .limit(10)
+    : { data: null }
+
+  const formByTeam: Record<string, ('W' | 'L')[]> = {}
+  for (const m of recentResults ?? []) {
+    for (const tid of [m.team_a_id, m.team_b_id]) {
+      if (!teamIds.includes(tid)) continue
+      if (!formByTeam[tid]) formByTeam[tid] = []
+      if (formByTeam[tid].length < 3 && m.winner_team_id) {
+        formByTeam[tid].push(m.winner_team_id === tid ? 'W' : 'L')
+      }
+    }
+  }
+  const teamForm = { a: formByTeam[teamA?.id ?? ''] ?? [], b: formByTeam[teamB?.id ?? ''] ?? [] }
 
   // ─── LIVE or COMPLETED ─────────────────────────────────────────────────────
   if (rawMatch.status === 'live' || rawMatch.status === 'completed') {
@@ -569,7 +610,7 @@ export default async function MatchDetailPage({
           </div>
 
           <div className="flex items-center justify-around gap-4 mb-4">
-            {[teamA, teamB].map(team => (
+            {[teamA, teamB].map((team, ti) => (
               <div key={team?.id} className="text-center">
                 <div className="w-8 h-8 rounded-full mx-auto mb-1.5" style={{ backgroundColor: team?.color ?? '#888' }} />
                 {team?.id === myTeam.id ? (
@@ -583,6 +624,11 @@ export default async function MatchDetailPage({
                   ? <p className="text-xs text-yellow-400">← You</p>
                   : <p className="text-xs text-gray-500">View Squad →</p>
                 }
+                {(ti === 0 ? teamForm.a : teamForm.b).length > 0 && (
+                  <div className="flex justify-center mt-1">
+                    <FormDots form={ti === 0 ? teamForm.a : teamForm.b} />
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -652,6 +698,9 @@ export default async function MatchDetailPage({
               ? <p className="text-xs text-yellow-400 mt-1">Your team</p>
               : <p className="text-xs text-gray-500 mt-1">View Squad</p>
             }
+            {teamForm.a.length > 0 && (
+              <div className="flex justify-center mt-2"><FormDots form={teamForm.a} /></div>
+            )}
           </div>
           <span className="text-gray-700 text-3xl font-bold flex-shrink-0">vs</span>
           <div className="flex-1 text-center">
@@ -663,6 +712,9 @@ export default async function MatchDetailPage({
               ? <p className="text-xs text-yellow-400 mt-1">Your team</p>
               : <p className="text-xs text-gray-500 mt-1">View Squad</p>
             }
+            {teamForm.b.length > 0 && (
+              <div className="flex justify-center mt-2"><FormDots form={teamForm.b} /></div>
+            )}
           </div>
         </div>
 
