@@ -99,31 +99,30 @@ export default function AuctionRoom({
     }
   }, [auction?.player_id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Realtime subscription
+  // Poll for auction updates every 2 seconds
   useEffect(() => {
     if (!seasonId) return
     const supabase = createClient()
 
-    const channel = supabase
-      .channel('auction-room')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bspl_auction',
-          filter: `season_id=eq.${seasonId}`,
-        },
-        (payload) => {
-          const row = payload.new as AuctionRow
-          if (row.status === 'open' || row.status === 'sold' || row.status === 'unsold') {
-            setAuction(row)
-          }
-        },
-      )
-      .subscribe()
+    const poll = async () => {
+      const { data } = await supabase
+        .from('bspl_auction')
+        .select('*')
+        .eq('season_id', seasonId)
+        .order('opened_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      setAuction((prev) => {
+        // Only update if something actually changed (avoid re-renders)
+        if (!data && !prev) return prev
+        if (data && prev && data.id === prev.id && data.current_bid === prev.current_bid && data.status === prev.status) return prev
+        return data as AuctionRow | null
+      })
+    }
 
-    return () => { supabase.removeChannel(channel) }
+    poll() // immediate on mount
+    const interval = setInterval(poll, 2000)
+    return () => clearInterval(interval)
   }, [seasonId])
 
   // Bid handler
