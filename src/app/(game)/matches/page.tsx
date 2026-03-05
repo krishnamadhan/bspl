@@ -155,7 +155,9 @@ function MatchCard({
 
         {/* Result or date — result hidden to avoid spoiling the replay */}
         {match.status === 'completed' ? (
-          <p className="text-xs text-gray-500 mt-2 text-center">Tap to watch replay →</p>
+          <p className="text-xs text-gray-500 mt-2 text-center">Watch replay →</p>
+        ) : match.status === 'lineup_open' && isMyMatch ? (
+          <p className="text-xs text-yellow-400 font-semibold mt-2 text-center">📋 Submit your lineup →</p>
         ) : (
           <p className="text-xs text-gray-500 mt-2 text-center">
             {new Date(match.scheduled_date).toLocaleDateString('en-IN', {

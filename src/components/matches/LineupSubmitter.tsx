@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -68,6 +68,13 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
   const [notice, setNotice] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
   const playerMap = Object.fromEntries(squad.map(p => [p.id, p]))
+
+  // Auto-dismiss error notices after 4s
+  useEffect(() => {
+    if (notice?.type !== 'error') return
+    const t = setTimeout(() => setNotice(null), 4000)
+    return () => clearTimeout(t)
+  }, [notice])
 
   // ── Squad actions ──────────────────────────────────────────────────────────
 
@@ -457,7 +464,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                       </>
                     ) : (
                       <span className="text-gray-600 text-xs italic">
-                        — tap &quot;Bowl&quot; on a player above
+                        — click &quot;Bowl&quot; on a player to assign
                       </span>
                     )}
                   </div>

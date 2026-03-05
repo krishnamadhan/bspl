@@ -144,7 +144,7 @@ export default function AuctionRoom({
     }
 
     poll() // immediate on mount
-    const interval = setInterval(poll, 2000)
+    const interval = setInterval(poll, 3000)
     return () => clearInterval(interval)
   }, [seasonId])
 
@@ -431,6 +431,8 @@ export default function AuctionRoom({
                 <button
                   className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-800/40 transition"
                   onClick={() => setExpandedTeam(isExpanded ? null : team.id)}
+                  aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${team.name} squad`}
+                  aria-expanded={isExpanded}
                 >
                   <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: team.color }} />
                   <span className="font-medium text-sm flex-1 truncate">

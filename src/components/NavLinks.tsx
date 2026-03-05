@@ -27,6 +27,7 @@ export default function NavLinks({ links }: { links: NavLink[] }) {
             <Link
               key={link.href}
               href={link.href}
+              aria-current={isActive ? 'page' : undefined}
               className={`text-sm px-3 py-1.5 rounded-lg transition whitespace-nowrap ${
                 isActive
                   ? 'text-yellow-400 bg-gray-800 font-medium'
@@ -56,6 +57,7 @@ export default function NavLinks({ links }: { links: NavLink[] }) {
             <Link
               key={link.href}
               href={link.href}
+              aria-current={isActive ? 'page' : undefined}
               className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 min-w-0 transition-colors touch-manipulation ${
                 isActive ? 'text-yellow-400' : 'text-gray-500 active:text-gray-300'
               }`}

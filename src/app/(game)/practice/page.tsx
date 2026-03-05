@@ -148,7 +148,7 @@ export default async function PracticePage() {
           </div>
 
           {m.status === 'completed' && (
-            <p className="text-xs text-gray-500 mt-2 text-center">Tap to watch replay →</p>
+            <p className="text-xs text-gray-500 mt-2 text-center">Watch replay →</p>
           )}
         </div>
         <div className="px-4 pb-3 flex items-center justify-between">

@@ -44,7 +44,11 @@ export default async function GameLayout({ children }: { children: React.ReactNo
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 pb-28 sm:pb-8">
+      {/* pb accounts for bottom nav (56px) + safe area on notched phones */}
+      <main
+        className="max-w-7xl mx-auto px-4 py-6 sm:pb-8"
+        style={{ paddingBottom: 'max(1.5rem, calc(4.5rem + env(safe-area-inset-bottom, 0px)))' }}
+      >
         {children}
       </main>
     </div>

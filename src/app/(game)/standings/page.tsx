@@ -32,6 +32,13 @@ function FormDot({ result }: { result: 'W' | 'L' }) {
 export default async function StandingsPage() {
   const supabase = await createClient()
 
+  // Current user's team (for "(you)" badge)
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: myTeamRow } = user
+    ? await supabase.from('bspl_teams').select('id').eq('owner_id', user.id).maybeSingle()
+    : { data: null }
+  const myTeamId = myTeamRow?.id ?? null
+
   // Active season
   const { data: season } = await supabase
     .from('bspl_seasons')
@@ -88,7 +95,6 @@ export default async function StandingsPage() {
     .select('id, team_a_id, team_b_id, winner_team_id')
     .eq('season_id', season.id)
     .eq('status', 'completed')
-    .eq('match_type', 'league')   // only league games count for form guide
     .order('match_number', { ascending: false })   // newest first
 
   const formGuide: Record<string, ('W' | 'L')[]> = {}
@@ -186,6 +192,7 @@ export default async function StandingsPage() {
                 {standings.map((row, i) => {
                   const isQualifier  = i < 4
                   const isFirstElim  = i === 4
+                  const isMyTeam     = row.team_id === myTeamId
                   const nrr          = Number(row.nrr ?? 0)
                   const form         = [...(formGuide[row.team_id] ?? [])].reverse() // oldest→newest
 
@@ -204,7 +211,7 @@ export default async function StandingsPage() {
 
                       <tr
                         className={`border-b border-gray-800/50 transition-colors hover:bg-gray-800/30 ${
-                          isQualifier ? 'bg-yellow-400/3' : ''
+                          isMyTeam ? 'bg-blue-400/5' : isQualifier ? 'bg-yellow-400/3' : ''
                         }`}
                       >
                         {/* Rank */}
@@ -221,7 +228,10 @@ export default async function StandingsPage() {
                               className="w-3 h-3 rounded-full flex-shrink-0"
                               style={{ backgroundColor: row.team?.color ?? '#6b7280' }}
                             />
-                            <span className="font-semibold group-hover:underline">{row.team?.name ?? '—'}</span>
+                            <span className={`font-semibold group-hover:underline ${isMyTeam ? 'text-blue-300' : ''}`}>{row.team?.name ?? '—'}</span>
+                            {isMyTeam && (
+                              <span className="text-blue-400 text-xs font-bold">you</span>
+                            )}
                             {isQualifier && (
                               <span className="text-yellow-400/60 text-xs hidden sm:inline">Q</span>
                             )}
