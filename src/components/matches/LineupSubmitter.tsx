@@ -457,7 +457,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                       </>
                     ) : (
                       <span className="text-gray-600 text-xs italic">
-                        — tap "Bowl" on a player above
+                        — tap &quot;Bowl&quot; on a player above
                       </span>
                     )}
                   </div>

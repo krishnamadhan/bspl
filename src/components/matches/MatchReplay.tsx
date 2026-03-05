@@ -425,13 +425,12 @@ export default function MatchReplay({
     const balls = phase === 'inn1' ? innings1.balls : innings2.balls
 
     if (revealed >= balls.length) {
-      // Innings complete
-      if (phase === 'inn1') {
-        setPhase('intermission')
-      } else {
-        setPhase('done')
-      }
-      return
+      // Innings complete — defer to avoid synchronous setState in effect
+      const t = setTimeout(() => {
+        if (phase === 'inn1') setPhase('intermission')
+        else setPhase('done')
+      }, 0)
+      return () => clearTimeout(t)
     }
 
     const ball    = balls[revealed]
@@ -454,23 +453,23 @@ export default function MatchReplay({
     const ball     = balls[revealed - 1]
     const prevBall = revealed > 1 ? balls[revealed - 2] : null
 
-    // Flash overlay
+    // Flash overlay — deferred to avoid synchronous setState in effect
     if (ball.is_wicket) {
-      setFlash({ type: 'wicket', subtitle: ball.wicket_type ?? undefined })
+      setTimeout(() => setFlash({ type: 'wicket', subtitle: ball.wicket_type ?? undefined }), 0)
     } else if (ball.outcome === '6') {
-      setFlash({ type: 'six' })
+      setTimeout(() => setFlash({ type: 'six' }), 0)
     } else if (ball.outcome === '4') {
-      setFlash({ type: 'four' })
+      setTimeout(() => setFlash({ type: 'four' }), 0)
     }
 
-    // Player intro card
+    // Player intro card — deferred to avoid synchronous setState in effect
     if (revealed === 1) {
       // First ball of this innings → opening bowler
-      setPlayerCard({
+      setTimeout(() => setPlayerCard({
         type: 'bowler',
         name: playerNames[ball.bowler_id] ?? 'Unknown',
         statsLine: 'Opens the bowling',
-      })
+      }), 0)
     } else if (prevBall && ball.over !== prevBall.over && !prevBall.is_wicket) {
       // New over started (not because a wicket ended the previous over on the last ball)
       const priorBalls = balls.slice(0, revealed - 1)
@@ -485,18 +484,18 @@ export default function MatchReplay({
       const statsLine = bStats.legal > 0
         ? `${ovStr} ov · ${bStats.runs} runs · ${bStats.wkts} wkt${bStats.wkts !== 1 ? 's' : ''}`
         : 'First spell'
-      setPlayerCard({
+      setTimeout(() => setPlayerCard({
         type: 'bowler',
         name: playerNames[ball.bowler_id] ?? 'Unknown',
         statsLine,
-      })
+      }), 0)
     } else if (prevBall?.is_wicket) {
       // New batsman arriving after a wicket
-      setPlayerCard({
+      setTimeout(() => setPlayerCard({
         type: 'batsman',
         name: playerNames[ball.batsman_id] ?? 'Unknown',
         statsLine: 'New batsman in',
-      })
+      }), 0)
     }
   }, [phase, revealed]) // eslint-disable-line react-hooks/exhaustive-deps
 

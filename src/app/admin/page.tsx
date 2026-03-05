@@ -359,7 +359,7 @@ export default function AdminPage() {
 
     // Use service-role endpoint so RLS doesn't hide real-player lineup submissions
     const matchIdParam = raw.map(m => m.id).join(',')
-    let submittedByMatch = new Map<string, Set<string>>()
+    const submittedByMatch = new Map<string, Set<string>>()
     try {
       const res = await fetch(`/api/admin/lineup-counts?match_ids=${encodeURIComponent(matchIdParam)}`)
       if (res.ok) {

@@ -55,6 +55,27 @@ function fmt(overs: number) {
   return balls === 0 ? `${full}` : `${full}.${balls}`
 }
 
+function Section({
+  title, items, inningsMap, myTeamId,
+}: {
+  title: string
+  items: MatchRow[]
+  inningsMap: Record<string, InningsSnap[]>
+  myTeamId: string | undefined
+}) {
+  if (items.length === 0) return null
+  return (
+    <div className="space-y-3">
+      <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{title}</h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {items.map(m => (
+          <MatchCard key={m.id} match={m} innings={inningsMap[m.id] ?? []} myTeamId={myTeamId} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function MatchCard({
   match,
   innings,
@@ -215,20 +236,6 @@ export default async function MatchesPage() {
   const upcoming = matches.filter(m => m.status === 'scheduled')
   const done     = [...matches.filter(m => m.status === 'completed')].reverse()
 
-  function Section({ title, items }: { title: string; items: MatchRow[] }) {
-    if (items.length === 0) return null
-    return (
-      <div className="space-y-3">
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{title}</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {items.map(m => (
-            <MatchCard key={m.id} match={m} innings={inningsMap[m.id] ?? []} myTeamId={myTeam?.id} />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -242,9 +249,9 @@ export default async function MatchesPage() {
         <p className="text-gray-500 text-center py-12">No matches scheduled yet.</p>
       ) : (
         <div className="space-y-8">
-          <Section title="Action Required" items={active} />
-          <Section title="Upcoming" items={upcoming} />
-          <Section title="Results" items={done} />
+          <Section title="Action Required" items={active} inningsMap={inningsMap} myTeamId={myTeam?.id} />
+          <Section title="Upcoming" items={upcoming} inningsMap={inningsMap} myTeamId={myTeam?.id} />
+          <Section title="Results" items={done} inningsMap={inningsMap} myTeamId={myTeam?.id} />
         </div>
       )}
     </div>
