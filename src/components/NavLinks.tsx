@@ -51,7 +51,6 @@ export default function NavLinks({ links }: { links: NavLink[] }) {
           const shortText = text === 'Standings' ? 'Table'
             : text === 'My Team' ? 'Team'
             : text === 'Practice' ? 'Practice'
-            : text === 'Fantasy' ? 'Fantasy'
             : text
           return (
             <Link

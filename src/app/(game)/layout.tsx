@@ -21,7 +21,6 @@ export default async function GameLayout({ children }: { children: React.ReactNo
     { href: '/matches', label: '🏏 Matches' },
     { href: '/practice', label: '🎯 Practice' },
     { href: '/standings', label: '🏆 Standings' },
-    { href: '/fantasy', label: '⭐ Fantasy' },
     { href: '/stats', label: '📊 Stats' },
   ]
 
