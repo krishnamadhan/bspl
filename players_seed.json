@@ -56,7 +56,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.35,
     "price_cr": 13,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -116,7 +116,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.852,
     "price_cr": 11,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -206,7 +206,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -266,7 +266,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -296,7 +296,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -326,7 +326,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -416,7 +416,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 12,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -446,7 +446,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -506,7 +506,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -566,7 +566,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -626,7 +626,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 12,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -656,7 +656,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -686,7 +686,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.962,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -716,7 +716,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 11,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -746,7 +746,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 13,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -776,7 +776,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -806,7 +806,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -836,7 +836,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -866,7 +866,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -926,7 +926,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -956,7 +956,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -986,7 +986,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1016,7 +1016,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1046,7 +1046,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1076,7 +1076,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1106,7 +1106,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.35,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1136,7 +1136,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1166,7 +1166,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1196,7 +1196,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1226,7 +1226,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1256,7 +1256,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1286,7 +1286,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.35,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1316,7 +1316,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1346,7 +1346,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1376,7 +1376,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.794,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1406,7 +1406,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 12,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1436,7 +1436,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1466,7 +1466,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1496,7 +1496,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1526,7 +1526,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 10,
-    "price_tier": "elite",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -1556,7 +1556,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1,
     "price_cr": 5,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -1586,7 +1586,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.844,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -1616,7 +1616,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.862,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -1646,7 +1646,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -1676,7 +1676,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.831,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -1706,7 +1706,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.843,
     "price_cr": 14,
-    "price_tier": "premium",
+    "price_tier": "elite",
     "fielding_rating": 7
   },
   {
@@ -1736,7 +1736,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -1766,7 +1766,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.812,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -1796,7 +1796,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.92,
     "price_cr": 15,
-    "price_tier": "premium",
+    "price_tier": "elite",
     "fielding_rating": 7
   },
   {
@@ -1826,7 +1826,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.178,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -1856,7 +1856,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 3,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -1886,7 +1886,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.74,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -1946,7 +1946,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.818,
     "price_cr": 3,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -1976,7 +1976,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.77,
     "price_cr": 15,
-    "price_tier": "premium",
+    "price_tier": "elite",
     "fielding_rating": 7
   },
   {
@@ -2006,7 +2006,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 3,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2036,7 +2036,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2066,7 +2066,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 5,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2096,7 +2096,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.802,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2126,7 +2126,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.919,
     "price_cr": 4,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2156,7 +2156,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.833,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2186,7 +2186,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.35,
     "price_cr": 2,
-    "price_tier": "premium",
+    "price_tier": "budget",
     "fielding_rating": 7
   },
   {
@@ -2216,7 +2216,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2246,7 +2246,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.816,
     "price_cr": 4,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2276,7 +2276,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.787,
     "price_cr": 5,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2306,7 +2306,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.847,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2336,7 +2336,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 4,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2366,7 +2366,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 4,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2396,7 +2396,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.944,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2456,7 +2456,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.929,
     "price_cr": 5,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2516,7 +2516,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.81,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2546,7 +2546,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 5,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2576,7 +2576,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 4,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2606,7 +2606,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 2,
-    "price_tier": "premium",
+    "price_tier": "budget",
     "fielding_rating": 7
   },
   {
@@ -2636,7 +2636,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 4,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2666,7 +2666,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.859,
     "price_cr": 2,
-    "price_tier": "premium",
+    "price_tier": "budget",
     "fielding_rating": 7
   },
   {
@@ -2696,7 +2696,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 5,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -2726,7 +2726,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.013,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2756,7 +2756,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.895,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2786,7 +2786,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.918,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2816,7 +2816,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.859,
     "price_cr": 18,
-    "price_tier": "premium",
+    "price_tier": "elite",
     "fielding_rating": 7
   },
   {
@@ -2846,7 +2846,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 2,
-    "price_tier": "premium",
+    "price_tier": "budget",
     "fielding_rating": 7
   },
   {
@@ -2876,7 +2876,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 9,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2906,7 +2906,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.839,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -2966,7 +2966,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.78,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3026,7 +3026,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.101,
     "price_cr": 8,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3056,7 +3056,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 5,
-    "price_tier": "premium",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -3086,7 +3086,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.903,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3116,7 +3116,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3146,7 +3146,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.902,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3236,7 +3236,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.915,
     "price_cr": 15,
-    "price_tier": "premium",
+    "price_tier": "elite",
     "fielding_rating": 7
   },
   {
@@ -3266,7 +3266,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3296,7 +3296,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.236,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3326,7 +3326,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3356,7 +3356,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3386,7 +3386,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.885,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3416,7 +3416,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.007,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3446,7 +3446,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.919,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3476,7 +3476,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3506,7 +3506,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.35,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3536,7 +3536,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.765,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3566,7 +3566,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3596,7 +3596,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3656,7 +3656,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.763,
     "price_cr": 9,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3686,7 +3686,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 6,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3716,7 +3716,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.997,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3746,7 +3746,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.121,
     "price_cr": 9,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3776,7 +3776,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.35,
     "price_cr": 9,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3806,7 +3806,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3836,7 +3836,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3866,7 +3866,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.223,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3896,7 +3896,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3926,7 +3926,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 9,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3956,7 +3956,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.847,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -3986,7 +3986,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.943,
     "price_cr": 8,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -4016,7 +4016,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -4076,7 +4076,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -4106,7 +4106,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.935,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -4136,7 +4136,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -4166,7 +4166,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.992,
     "price_cr": 8,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -4226,7 +4226,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 9,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -4256,7 +4256,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.868,
     "price_cr": 7,
-    "price_tier": "premium",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -4286,7 +4286,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.838,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4346,7 +4346,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.868,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4436,7 +4436,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.781,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4466,7 +4466,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.789,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4496,7 +4496,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.804,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4526,7 +4526,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.823,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4556,7 +4556,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.797,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4616,7 +4616,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.874,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4646,7 +4646,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.81,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4676,7 +4676,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.82,
     "price_cr": 10,
-    "price_tier": "good",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -4706,7 +4706,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.989,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4796,7 +4796,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.85,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4826,7 +4826,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.903,
     "price_cr": 3,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4886,7 +4886,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.77,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4916,7 +4916,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.806,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -4976,7 +4976,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.918,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5006,7 +5006,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.844,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5036,7 +5036,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.823,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5096,7 +5096,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.932,
     "price_cr": 10,
-    "price_tier": "good",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -5216,7 +5216,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.853,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5246,7 +5246,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5276,7 +5276,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.148,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5306,7 +5306,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.863,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5336,7 +5336,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.83,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5366,7 +5366,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.915,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5396,7 +5396,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.819,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5426,7 +5426,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5456,7 +5456,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5486,7 +5486,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.832,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5516,7 +5516,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5546,7 +5546,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.903,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5576,7 +5576,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.887,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5606,7 +5606,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.888,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5636,7 +5636,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.005,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5666,7 +5666,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.864,
     "price_cr": 4,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5696,7 +5696,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.965,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5726,7 +5726,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.91,
     "price_cr": 5,
-    "price_tier": "good",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -5786,7 +5786,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.898,
     "price_cr": 2,
-    "price_tier": "value",
+    "price_tier": "budget",
     "fielding_rating": 7
   },
   {
@@ -5816,7 +5816,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.891,
     "price_cr": 12,
-    "price_tier": "value",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -5846,7 +5846,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.843,
     "price_cr": 2,
-    "price_tier": "value",
+    "price_tier": "budget",
     "fielding_rating": 7
   },
   {
@@ -5906,7 +5906,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
     "price_cr": 10,
-    "price_tier": "value",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -5966,7 +5966,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
     "price_cr": 8,
-    "price_tier": "value",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -5996,7 +5996,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.35,
     "price_cr": 10,
-    "price_tier": "value",
+    "price_tier": "premium",
     "fielding_rating": 7
   },
   {
@@ -6056,7 +6056,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.774,
     "price_cr": 8,
-    "price_tier": "value",
+    "price_tier": "good",
     "fielding_rating": 7
   },
   {
@@ -6176,7 +6176,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6326,7 +6326,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.83,
     "price_cr": 4,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6386,7 +6386,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.732,
     "price_cr": 4,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6416,7 +6416,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
     "price_cr": 5,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6506,7 +6506,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.977,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6536,7 +6536,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 1.009,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6746,7 +6746,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6776,7 +6776,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.7,
     "price_cr": 4,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6836,7 +6836,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.723,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6866,7 +6866,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.794,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6896,7 +6896,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.872,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6926,7 +6926,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.789,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -6986,7 +6986,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.797,
     "price_cr": 4,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -7016,7 +7016,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.882,
     "price_cr": 4,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -7256,7 +7256,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.722,
     "price_cr": 4,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -7286,7 +7286,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.955,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -7316,7 +7316,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.704,
     "price_cr": 5,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -7346,7 +7346,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.902,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -7376,7 +7376,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.769,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -7406,7 +7406,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.879,
     "price_cr": 3,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -7436,7 +7436,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.835,
     "price_cr": 4,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -7466,7 +7466,7 @@
     "bowl_phase_middle": 1,
     "bowl_phase_death": 0.962,
     "price_cr": 5,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {
@@ -7496,7 +7496,7 @@
     "bowl_phase_middle": null,
     "bowl_phase_death": null,
     "price_cr": 4,
-    "price_tier": "budget",
+    "price_tier": "value",
     "fielding_rating": 7
   },
   {

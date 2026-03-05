@@ -46,13 +46,21 @@ MIN_INNINGS_TO_QUALIFY = 10   # player must have faced 10+ innings to get battin
 MIN_ACTIVE_SEASON = "2021"    # player must have appeared in at least one match from this year onward
 
 # ─── Price tier thresholds (composite rating 0–100) ──────────────────────────
-# Prices are FLAT per tier — no within-tier variation.
+# Tiers aligned with formulas.ts experienceModifier() breakpoints:
+#   elite   >= 14 Cr  → +9%  output (Star caliber)
+#   premium >= 10 Cr  → +4%  output (A-tier regulars)
+#   good    >=  6 Cr  → neutral      (B-tier average IPL)
+#   value   >=  3 Cr  → -3%  output (C-tier fringe)
+#   budget  <   3 Cr  → -7%  output (rookies / uncapped)
+#
+# Famous players (Kohli, Bumrah, etc.) should be manually overridden in
+# players_seed.json to 14–21 Cr to match real IPL auction calibration.
 # Budget math: Rs100 Cr / ~20 players → avg Rs5 Cr/player
-#   A balanced squad: 2×elite(10) + 4×premium(7) + 7×good(5) + 4×value(3) + 3×budget(1.5) = ~99.5 Cr
+#   A balanced squad: 2×elite(14) + 4×premium(10) + 7×good(6) + 4×value(3) + 3×budget(1.5) = ~103 Cr
 PRICE_TIERS = [
-    (80, "elite",   10.0),
-    (65, "premium",  7.0),
-    (50, "good",     5.0),
+    (80, "elite",   14.0),
+    (65, "premium", 10.0),
+    (50, "good",     6.0),
     (35, "value",    3.0),
     (0,  "budget",   1.5),
 ]
