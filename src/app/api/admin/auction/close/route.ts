@@ -42,6 +42,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Winning team not found' }, { status: 404 })
     }
 
+    // Global uniqueness check — player must not already be in another team's roster this season
+    const { data: seasonTeams } = await db
+      .from('bspl_teams')
+      .select('id')
+      .eq('season_id', auction.season_id)
+
+    const seasonTeamIds = (seasonTeams ?? []).map((t: { id: string }) => t.id)
+    const { data: alreadyOwned } = await db
+      .from('bspl_rosters')
+      .select('team_id')
+      .eq('player_id', auction.player_id)
+      .in('team_id', seasonTeamIds)
+      .neq('team_id', auction.current_bidder_team_id)
+      .maybeSingle()
+
+    if (alreadyOwned) {
+      return NextResponse.json(
+        { error: 'Player is already owned by another team in this season' },
+        { status: 409 },
+      )
+    }
+
     // Close the auction first
     const { error: updateErr } = await db
       .from('bspl_auction')
