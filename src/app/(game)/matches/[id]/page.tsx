@@ -119,15 +119,15 @@ function buildOvers(balls: BallRow[], names: Record<string, string>) {
 // ─── Ball outcome coloring ────────────────────────────────────────────────────
 
 const BALL_STYLE: Record<string, string> = {
-  '.':  'bg-gray-700 text-gray-400',
-  '1':  'bg-gray-600 text-gray-200',
-  '2':  'bg-gray-600 text-gray-200',
-  '3':  'bg-indigo-700 text-indigo-200',
-  '4':  'bg-blue-600 text-white font-bold',
-  '6':  'bg-green-600 text-white font-bold',
-  'W':  'bg-red-600 text-white font-bold',
-  'Wd': 'bg-yellow-700 text-yellow-100',
-  'Nb': 'bg-orange-700 text-orange-100',
+  '.':  'bg-gray-800 text-gray-500 border border-gray-700/50',
+  '1':  'bg-gray-700 text-gray-200 border border-gray-600/50',
+  '2':  'bg-gray-700 text-gray-200 border border-gray-600/50',
+  '3':  'bg-indigo-900/70 text-indigo-300 border border-indigo-700/50',
+  '4':  'bg-blue-700/80 text-white font-black border border-blue-500/50',
+  '6':  'bg-green-700/80 text-white font-black border border-green-500/50',
+  'W':  'bg-red-700/80 text-white font-black border border-red-500/50',
+  'Wd': 'bg-yellow-800/60 text-yellow-300 border border-yellow-700/50',
+  'Nb': 'bg-orange-800/60 text-orange-300 border border-orange-700/50',
 }
 
 // ─── Sub-components (server) ─────────────────────────────────────────────────
@@ -158,42 +158,60 @@ function InningsCard({
   const oversStr  = balls === 0 ? `${fullOvers}` : `${fullOvers}.${balls}`
 
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
       {/* Innings header */}
-      <div className="px-5 py-3 border-b border-gray-800 flex items-center gap-3">
-        {teamColor && <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: teamColor }} />}
-        <span className="font-semibold">{title}</span>
-        <span className="ml-auto font-bold text-lg">
-          {total_runs}/{total_wickets}
-        </span>
-        <span className="text-gray-400 text-sm">({oversStr} ov)</span>
-        {extras > 0 && <span className="text-gray-500 text-xs">+{extras} extras</span>}
+      <div
+        className="px-5 py-4 flex items-center gap-3"
+        style={{
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          background: teamColor ? `linear-gradient(135deg, ${teamColor}12 0%, transparent 60%)` : undefined,
+        }}
+      >
+        {teamColor && (
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0"
+            style={{ background: `${teamColor}25`, border: `1.5px solid ${teamColor}60` }}
+          >
+            {title[0]}
+          </div>
+        )}
+        <span className="font-bold text-gray-100">{title}</span>
+        <div className="ml-auto flex items-baseline gap-1.5">
+          <span className="font-black text-2xl tabular-nums text-white">{total_runs}/{total_wickets}</span>
+          <span className="text-gray-500 text-sm">({oversStr} ov)</span>
+          {extras > 0 && <span className="text-gray-600 text-xs">+{extras}e</span>}
+        </div>
       </div>
 
       {/* Over-by-over timeline */}
       {overs.length > 0 && (
-        <div className="px-5 py-3 border-b border-gray-800">
-          <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Over timeline</p>
-          <div className="space-y-2">
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <p className="text-[10px] text-gray-600 mb-3 uppercase tracking-widest font-bold">Over Timeline</p>
+          <div className="space-y-2.5">
             {overs.map(ov => (
-              <div key={ov.over} className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 w-12 flex-shrink-0 font-mono">Ov {ov.over}</span>
-                <div className="flex gap-1 flex-wrap">
+              <div key={ov.over} className="flex items-center gap-2.5">
+                <span className="text-[10px] text-gray-600 w-8 flex-shrink-0 font-mono font-bold">{ov.over}</span>
+                <div className="flex gap-1 flex-wrap flex-1">
                   {ov.balls.map((b, i) => (
                     <span
                       key={i}
-                      className={`text-xs w-6 h-6 flex items-center justify-center rounded ${BALL_STYLE[b] ?? 'bg-gray-700 text-gray-400'}`}
+                      className={`text-[10px] w-6 h-6 flex items-center justify-center rounded-md font-bold ${BALL_STYLE[b] ?? 'bg-gray-800 text-gray-500'}`}
                     >
                       {b === 'Wd' ? 'W̃' : b}
                     </span>
                   ))}
                 </div>
-                <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {ov.wickets > 0 && (
-                    <span className="text-xs text-red-400">{ov.wickets}w</span>
+                    <span className="text-[10px] font-black text-red-400">{ov.wickets}w</span>
                   )}
-                  <span className="text-xs text-gray-400">{ov.runs} runs</span>
-                  <span className="text-xs text-gray-600 truncate max-w-[100px]">{ov.bowler}</span>
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                    style={{ background: 'rgba(255,255,255,0.05)', color: '#9ca3af' }}
+                  >
+                    {ov.runs}r
+                  </span>
+                  <span className="text-[9px] text-gray-700 truncate max-w-[80px] hidden sm:block">{ov.bowler}</span>
                 </div>
               </div>
             ))}
@@ -203,37 +221,39 @@ function InningsCard({
 
       {/* Batting scorecard */}
       {batting.length > 0 && (
-        <div className="px-5 py-3 border-b border-gray-800">
-          <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Batting</p>
-          <div className="overflow-x-auto -mx-1">
-            <table className="w-full text-sm min-w-[320px]">
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <p className="text-[10px] text-gray-600 mb-3 uppercase tracking-widest font-bold">Batting</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[300px]">
               <thead>
-                <tr className="text-xs text-gray-500">
-                  <th className="text-left pb-1 pl-1">Batter</th>
-                  <th className="text-center pb-1 w-10">R</th>
-                  <th className="text-center pb-1 w-10">B</th>
-                  <th className="text-center pb-1 w-8 hidden xs:table-cell">4s</th>
-                  <th className="text-center pb-1 w-8 hidden xs:table-cell">6s</th>
-                  <th className="text-center pb-1 w-14">SR</th>
+                <tr className="text-[10px] text-gray-600 uppercase tracking-wide">
+                  <th className="text-left pb-2 font-bold">Batter</th>
+                  <th className="text-center pb-2 w-10 font-bold">R</th>
+                  <th className="text-center pb-2 w-10 font-bold">B</th>
+                  <th className="text-center pb-2 w-8 hidden sm:table-cell font-bold">4s</th>
+                  <th className="text-center pb-2 w-8 hidden sm:table-cell font-bold">6s</th>
+                  <th className="text-center pb-2 w-14 font-bold">SR</th>
                 </tr>
               </thead>
               <tbody>
                 {batting.map((b, i) => (
-                  <tr key={i} className="border-t border-gray-800/50">
-                    <td className="py-1.5 pr-2 pl-1">
-                      <span className="font-medium text-white">{b.name}</span>
+                  <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td className="py-2 pr-2">
+                      <span className="font-bold text-gray-100">{b.name}</span>
                       {!b.dismissed && b.balls > 0 && (
-                        <span className="text-green-400 text-xs ml-1">*</span>
+                        <span className="text-green-400 text-xs ml-1 font-black">*</span>
                       )}
                       {b.dismissed && b.wicketType && (
-                        <span className="text-gray-500 text-xs ml-1 hidden sm:inline">{b.wicketType}</span>
+                        <span className="text-gray-600 text-xs ml-1.5 hidden sm:inline">{b.wicketType}</span>
                       )}
                     </td>
-                    <td className="text-center py-1.5 font-semibold">{b.runs}</td>
-                    <td className="text-center py-1.5 text-gray-400">{b.balls}</td>
-                    <td className="text-center py-1.5 text-gray-400 hidden xs:table-cell">{b.fours}</td>
-                    <td className="text-center py-1.5 text-gray-400 hidden xs:table-cell">{b.sixes}</td>
-                    <td className="text-center py-1.5 text-gray-400">{b.sr}</td>
+                    <td className="text-center py-2 font-black text-white tabular-nums">{b.runs}</td>
+                    <td className="text-center py-2 text-gray-500 tabular-nums text-xs">{b.balls}</td>
+                    <td className="text-center py-2 text-gray-600 text-xs hidden sm:table-cell tabular-nums">{b.fours}</td>
+                    <td className="text-center py-2 text-gray-600 text-xs hidden sm:table-cell tabular-nums">{b.sixes}</td>
+                    <td className="text-center py-2 text-xs tabular-nums" style={{ color: b.sr >= 200 ? '#4ade80' : b.sr >= 130 ? '#facc15' : '#9ca3af' }}>
+                      {b.sr}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -244,29 +264,35 @@ function InningsCard({
 
       {/* Bowling scorecard */}
       {bowling.length > 0 && (
-        <div className="px-5 py-3">
-          <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Bowling</p>
-          <div className="overflow-x-auto -mx-1">
-            <table className="w-full text-sm min-w-[280px]">
+        <div className="px-5 py-4">
+          <p className="text-[10px] text-gray-600 mb-3 uppercase tracking-widest font-bold">Bowling</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[260px]">
               <thead>
-                <tr className="text-xs text-gray-500">
-                  <th className="text-left pb-1 pl-1">Bowler</th>
-                  <th className="text-center pb-1 w-10">Ov</th>
-                  <th className="text-center pb-1 w-10">R</th>
-                  <th className="text-center pb-1 w-10">W</th>
-                  <th className="text-center pb-1 w-14">Econ</th>
-                  <th className="text-center pb-1 w-8 hidden sm:table-cell">Wd</th>
+                <tr className="text-[10px] text-gray-600 uppercase tracking-wide">
+                  <th className="text-left pb-2 font-bold">Bowler</th>
+                  <th className="text-center pb-2 w-10 font-bold">Ov</th>
+                  <th className="text-center pb-2 w-10 font-bold">R</th>
+                  <th className="text-center pb-2 w-10 font-bold">W</th>
+                  <th className="text-center pb-2 w-16 font-bold">Econ</th>
+                  <th className="text-center pb-2 w-8 hidden sm:table-cell font-bold">Wd</th>
                 </tr>
               </thead>
               <tbody>
                 {bowling.map((b, i) => (
-                  <tr key={i} className="border-t border-gray-800/50">
-                    <td className="py-1.5 pr-2 pl-1 font-medium text-white">{b.name}</td>
-                    <td className="text-center py-1.5 text-gray-400">{b.overs}</td>
-                    <td className="text-center py-1.5">{b.runs}</td>
-                    <td className="text-center py-1.5 font-semibold text-yellow-400">{b.wickets}</td>
-                    <td className="text-center py-1.5 text-gray-400">{b.econ.toFixed(1)}</td>
-                    <td className="text-center py-1.5 text-gray-500 text-xs hidden sm:table-cell">{b.wides || '—'}</td>
+                  <tr key={i} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                    <td className="py-2 pr-2 font-bold text-gray-100">{b.name}</td>
+                    <td className="text-center py-2 text-gray-500 text-xs tabular-nums">{b.overs}</td>
+                    <td className="text-center py-2 text-gray-400 tabular-nums">{b.runs}</td>
+                    <td className="text-center py-2 tabular-nums">
+                      <span className={`font-black text-sm ${b.wickets > 0 ? 'text-yellow-400' : 'text-gray-600'}`}>
+                        {b.wickets}
+                      </span>
+                    </td>
+                    <td className="text-center py-2 text-xs tabular-nums" style={{ color: b.econ <= 8 ? '#4ade80' : b.econ <= 12 ? '#facc15' : '#f87171' }}>
+                      {b.econ.toFixed(1)}
+                    </td>
+                    <td className="text-center py-2 text-gray-600 text-xs hidden sm:table-cell tabular-nums">{b.wides || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -292,8 +318,12 @@ function FormDots({ form }: { form: ('W' | 'L')[] }) {
         <span
           key={i}
           title={r === 'W' ? 'Win' : 'Loss'}
-          className={`inline-block w-4 h-4 rounded-full ${r === 'W' ? 'bg-green-500' : 'bg-gray-600'}`}
-        />
+          className={`inline-flex w-5 h-5 items-center justify-center rounded text-[9px] font-black ${
+            r === 'W' ? 'form-w' : 'form-l'
+          }`}
+        >
+          {r}
+        </span>
       ))}
     </div>
   )
@@ -458,50 +488,91 @@ export default async function MatchDetailPage({
     const scorecard = (
       <div className="space-y-5">
         {/* Match header */}
-        <div className="bg-gray-900 rounded-xl border border-gray-800 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xs text-gray-500 font-mono">Match {rawMatch.match_number}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${badge.cls}`}>{badge.label}</span>
-          </div>
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: 'linear-gradient(160deg, #0d1524 0%, #0a1220 60%, #050e1a 100%)',
+            border: '1px solid rgba(255,255,255,0.07)',
+          }}
+        >
+          {/* Color bar */}
+          <div
+            className="h-0.5"
+            style={{
+              background: `linear-gradient(90deg, ${batFirst?.color ?? '#374151'} 0%, ${batSecond?.color ?? '#374151'} 100%)`,
+            }}
+          />
 
-          <div className="flex items-center justify-around gap-4 mb-4">
-            <div className="text-center">
-              <Link href={`/teams/${batFirst?.id}`} className="flex items-center gap-2 justify-center mb-1 hover:text-yellow-400 transition group">
-                <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: batFirst?.color ?? '#888' }} />
-                <span className="font-bold text-white group-hover:underline">{batFirst?.name}</span>
-              </Link>
-              <p className="text-3xl font-bold tabular-nums">
-                {inn1?.total_runs ?? '—'}
-                <span className="text-gray-400 text-xl">/{inn1?.total_wickets ?? '—'}</span>
-              </p>
-              <p className="text-sm text-gray-400">
-                ({inn1 ? `${Math.floor(inn1.overs_completed)}.${Math.round((inn1.overs_completed % 1) * 10)}` : '—'} ov)
-              </p>
-              <p className="text-xs text-gray-600 mt-0.5">BAT FIRST</p>
+          <div className="p-5">
+            <div className="flex items-center gap-2 mb-5">
+              <span className="text-[10px] text-gray-600 font-mono font-bold">M{rawMatch.match_number}</span>
+              <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold ${badge.cls}`}>{badge.label}</span>
             </div>
 
-            <span className="text-gray-700 text-2xl font-bold">vs</span>
+            {/* Score display */}
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 mb-5">
+              <div className="text-center">
+                <Link href={`/teams/${batFirst?.id}`} className="group">
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black mx-auto mb-2 group-hover:scale-105 transition-transform"
+                    style={{
+                      background: batFirst ? `${batFirst.color}22` : '#1f2937',
+                      border: `2px solid ${batFirst?.color ?? '#374151'}`,
+                      boxShadow: batFirst ? `0 0 12px ${batFirst.color}30` : 'none',
+                    }}
+                  >
+                    {batFirst?.name?.[0] ?? '?'}
+                  </div>
+                  <p className="font-bold text-gray-200 text-sm group-hover:text-yellow-400 transition-colors">{batFirst?.name}</p>
+                </Link>
+                <p className="font-black text-3xl tabular-nums text-white mt-2">
+                  {inn1?.total_runs ?? '—'}<span className="text-gray-500 text-xl font-bold">/{inn1?.total_wickets ?? '—'}</span>
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  ({inn1 ? `${Math.floor(inn1.overs_completed)}.${Math.round((inn1.overs_completed % 1) * 10)}` : '—'} ov)
+                </p>
+                <span className="text-[9px] text-gray-700 uppercase tracking-widest font-bold">1st Inn</span>
+              </div>
 
-            <div className="text-center">
-              <Link href={`/teams/${batSecond?.id}`} className="flex items-center gap-2 justify-center mb-1 hover:text-yellow-400 transition group">
-                <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: batSecond?.color ?? '#888' }} />
-                <span className="font-bold text-white group-hover:underline">{batSecond?.name}</span>
-              </Link>
-              <p className="text-3xl font-bold tabular-nums">
-                {inn2?.total_runs ?? '—'}
-                <span className="text-gray-400 text-xl">/{inn2?.total_wickets ?? '—'}</span>
-              </p>
-              <p className="text-sm text-gray-400">
-                ({inn2 ? `${Math.floor(inn2.overs_completed)}.${Math.round((inn2.overs_completed % 1) * 10)}` : '—'} ov)
-              </p>
-              <p className="text-xs text-gray-600 mt-0.5">CHASED</p>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-gray-700 text-sm font-black uppercase tracking-widest">vs</span>
+              </div>
+
+              <div className="text-center">
+                <Link href={`/teams/${batSecond?.id}`} className="group">
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black mx-auto mb-2 group-hover:scale-105 transition-transform"
+                    style={{
+                      background: batSecond ? `${batSecond.color}22` : '#1f2937',
+                      border: `2px solid ${batSecond?.color ?? '#374151'}`,
+                      boxShadow: batSecond ? `0 0 12px ${batSecond.color}30` : 'none',
+                    }}
+                  >
+                    {batSecond?.name?.[0] ?? '?'}
+                  </div>
+                  <p className="font-bold text-gray-200 text-sm group-hover:text-yellow-400 transition-colors">{batSecond?.name}</p>
+                </Link>
+                <p className="font-black text-3xl tabular-nums text-white mt-2">
+                  {inn2?.total_runs ?? '—'}<span className="text-gray-500 text-xl font-bold">/{inn2?.total_wickets ?? '—'}</span>
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  ({inn2 ? `${Math.floor(inn2.overs_completed)}.${Math.round((inn2.overs_completed % 1) * 10)}` : '—'} ov)
+                </p>
+                <span className="text-[9px] text-gray-700 uppercase tracking-widest font-bold">2nd Inn</span>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center justify-between text-xs text-gray-500 flex-wrap gap-2">
-            <span>{venue?.name}, {venue?.city} · {venue?.pitch_type} track</span>
-            <span className={cond.color}>{cond.label}</span>
-            <span>{matchDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+            {/* Venue + meta */}
+            <div
+              className="flex items-center justify-between text-[10px] px-3 py-2 rounded-xl"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+            >
+              <span className="text-gray-600 truncate">{venue?.name}, {venue?.city}</span>
+              <span className={`${cond.color} flex-shrink-0 ml-2 font-medium`}>{cond.label}</span>
+              <span className="text-gray-700 flex-shrink-0 ml-2">
+                {matchDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -603,55 +674,66 @@ export default async function MatchDetailPage({
       <div className="space-y-5 max-w-3xl mx-auto">
         <MatchStatusPoller matchId={id} currentStatus={rawMatch.status} />
         {/* Match info card */}
-        <div className="bg-gray-900 rounded-xl border border-yellow-400/25 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-xs text-gray-500 font-mono">Match {rawMatch.match_number}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${badge.cls}`}>{badge.label}</span>
-          </div>
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: 'linear-gradient(160deg, #0d1524 0%, #0a1220 60%, #050e1a 100%)',
+            border: '1px solid rgba(250,204,21,0.15)',
+          }}
+        >
+          <div className="pitch-accent" />
+          <div className="p-5">
+            <div className="flex items-center gap-2 mb-5">
+              <span className="text-[10px] text-gray-600 font-mono font-bold">M{rawMatch.match_number}</span>
+              <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold ${badge.cls}`}>{badge.label}</span>
+            </div>
 
-          <div className="flex items-center justify-around gap-4 mb-4">
-            {[teamA, teamB].map((team, ti) => (
-              <div key={team?.id} className="text-center">
-                <div className="w-8 h-8 rounded-full mx-auto mb-1.5" style={{ backgroundColor: team?.color ?? '#888' }} />
-                {team?.id === myTeam.id ? (
-                  <p className="font-bold text-white">{team?.name}</p>
-                ) : (
-                  <Link href={`/teams/${team?.id}`} className="font-bold text-white hover:text-yellow-400 hover:underline transition">
-                    {team?.name}
-                  </Link>
-                )}
-                {team?.id === myTeam.id
-                  ? <p className="text-xs text-yellow-400">← You</p>
-                  : <p className="text-xs text-gray-500">View Squad →</p>
-                }
-                {(ti === 0 ? teamForm.a : teamForm.b).length > 0 && (
-                  <div className="flex justify-center mt-1">
-                    <FormDots form={ti === 0 ? teamForm.a : teamForm.b} />
+            <div className="flex items-center gap-4 mb-5">
+              {[teamA, teamB].map((team, ti) => (
+                <div key={team?.id} className="flex-1 text-center">
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black mx-auto mb-2"
+                    style={{
+                      background: team ? `${team.color}22` : '#1f2937',
+                      border: `2px solid ${team?.color ?? '#374151'}`,
+                      boxShadow: team ? `0 0 16px ${team.color}30` : 'none',
+                    }}
+                  >
+                    {team?.name?.[0] ?? '?'}
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  {team?.id === myTeam.id ? (
+                    <p className="font-black text-yellow-400">{team?.name}</p>
+                  ) : (
+                    <Link href={`/teams/${team?.id}`} className="font-bold text-white hover:text-yellow-400 transition-colors">
+                      {team?.name}
+                    </Link>
+                  )}
+                  <p className="text-[10px] text-gray-600 mt-0.5">{team?.id === myTeam.id ? '← You' : 'View Squad'}</p>
+                  {(ti === 0 ? teamForm.a : teamForm.b).length > 0 && (
+                    <div className="flex justify-center mt-2">
+                      <FormDots form={ti === 0 ? teamForm.a : teamForm.b} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
 
-          <div className="grid grid-cols-3 gap-3 text-center text-xs mt-4">
-            <div>
-              <p className="text-gray-500 mb-0.5">Venue</p>
-              <p className="text-gray-300">{venue?.name}</p>
-              <p className="text-gray-500">{venue?.city}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 mb-0.5">Condition</p>
-              <p className={cond.color}>{cond.label}</p>
-              <p className="text-gray-500">{cond.desc}</p>
-            </div>
-            <div>
-              <p className="text-gray-500 mb-0.5">Date</p>
-              <p className="text-gray-300">
-                {matchDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-              </p>
-              <p className="text-gray-500">
-                {matchDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-              </p>
+            <div className="grid grid-cols-3 gap-2 text-center text-[11px]">
+              {[
+                { label: 'Venue', value: venue?.name ?? '—', sub: venue?.city },
+                { label: 'Condition', value: cond.label, sub: cond.desc, color: cond.color },
+                { label: 'Date', value: matchDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }), sub: matchDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) },
+              ].map(item => (
+                <div
+                  key={item.label}
+                  className="rounded-xl p-2.5"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+                >
+                  <p className="text-gray-600 text-[9px] uppercase tracking-wide font-bold mb-1">{item.label}</p>
+                  <p className={`font-bold ${item.color ?? 'text-gray-200'}`}>{item.value}</p>
+                  {item.sub && <p className="text-gray-600 text-[9px] mt-0.5 truncate">{item.sub}</p>}
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -681,84 +763,93 @@ export default async function MatchDetailPage({
   return (
     <div className="max-w-2xl mx-auto">
       <MatchStatusPoller matchId={id} currentStatus={rawMatch.status} />
-      <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-6">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500 font-mono">Match {rawMatch.match_number}</span>
-          <span className={`text-xs px-2 py-0.5 rounded-full ${badge.cls}`}>{badge.label}</span>
-        </div>
+      <div
+        className="rounded-2xl overflow-hidden space-y-0"
+        style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+      >
+        {/* Color bar */}
+        <div
+          className="h-0.5"
+          style={{
+            background: `linear-gradient(90deg, ${teamA?.color ?? '#374151'} 0%, ${teamB?.color ?? '#374151'} 100%)`,
+          }}
+        />
 
-        {/* Teams */}
-        <div className="flex items-center gap-4">
-          <div className="flex-1 text-center">
-            <div className="w-12 h-12 rounded-full mx-auto mb-2" style={{ backgroundColor: teamA?.color ?? '#888' }} />
-            <Link href={`/teams/${teamA?.id}`} className="font-bold text-xl text-white hover:text-yellow-400 hover:underline transition block">
-              {teamA?.name ?? '—'}
-            </Link>
-            {teamA?.id === myTeam?.id
-              ? <p className="text-xs text-yellow-400 mt-1">Your team</p>
-              : <p className="text-xs text-gray-500 mt-1">View Squad</p>
-            }
-            {teamForm.a.length > 0 && (
-              <div className="flex justify-center mt-2"><FormDots form={teamForm.a} /></div>
-            )}
+        <div className="p-5 space-y-5">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-600 font-mono font-bold">M{rawMatch.match_number}</span>
+            <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold ${badge.cls}`}>{badge.label}</span>
           </div>
-          <span className="text-gray-700 text-3xl font-bold flex-shrink-0">vs</span>
-          <div className="flex-1 text-center">
-            <div className="w-12 h-12 rounded-full mx-auto mb-2" style={{ backgroundColor: teamB?.color ?? '#888' }} />
-            <Link href={`/teams/${teamB?.id}`} className="font-bold text-xl text-white hover:text-yellow-400 hover:underline transition block">
-              {teamB?.name ?? '—'}
-            </Link>
-            {teamB?.id === myTeam?.id
-              ? <p className="text-xs text-yellow-400 mt-1">Your team</p>
-              : <p className="text-xs text-gray-500 mt-1">View Squad</p>
-            }
-            {teamForm.b.length > 0 && (
-              <div className="flex justify-center mt-2"><FormDots form={teamForm.b} /></div>
-            )}
-          </div>
-        </div>
 
-        {/* Details grid */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="bg-gray-800 rounded-lg p-3">
-            <p className="text-gray-500 text-xs mb-1">Venue</p>
-            <p className="font-medium text-white">{venue?.name}</p>
-            <p className="text-gray-400 text-xs">{venue?.city} · {venue?.pitch_type} track</p>
+          {/* Teams */}
+          <div className="flex items-center gap-4">
+            {[{ team: teamA, form: teamForm.a }, { team: teamB, form: teamForm.b }].map(({ team, form }, ti) => (
+              <div key={team?.id ?? ti} className="flex-1 text-center">
+                <Link href={`/teams/${team?.id}`} className="group">
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black mx-auto mb-2 group-hover:scale-105 transition-transform"
+                    style={{
+                      background: team ? `${team.color}22` : '#1f2937',
+                      border: `2px solid ${team?.color ?? '#374151'}`,
+                      boxShadow: team ? `0 0 16px ${team.color}30` : 'none',
+                    }}
+                  >
+                    {team?.name?.[0] ?? '?'}
+                  </div>
+                  <p className={`font-bold text-sm group-hover:text-yellow-400 transition-colors ${team?.id === myTeam?.id ? 'text-yellow-400' : 'text-white'}`}>
+                    {team?.name ?? '—'}
+                  </p>
+                </Link>
+                <p className="text-[10px] text-gray-600 mt-0.5">{team?.id === myTeam?.id ? 'Your team' : 'View Squad'}</p>
+                {form.length > 0 && (
+                  <div className="flex justify-center mt-2"><FormDots form={form} /></div>
+                )}
+              </div>
+            ))}
           </div>
-          <div className="bg-gray-800 rounded-lg p-3">
-            <p className="text-gray-500 text-xs mb-1">Condition</p>
-            <p className={`font-medium ${cond.color}`}>{cond.label}</p>
-            <p className="text-gray-400 text-xs">{cond.desc}</p>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-3">
-            <p className="text-gray-500 text-xs mb-1">Date</p>
-            <p className="font-medium">
-              {matchDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-3">
-            <p className="text-gray-500 text-xs mb-1">Time</p>
-            <p className="font-medium">
-              {matchDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-            </p>
-          </div>
-        </div>
 
-        {rawMatch.status === 'lineup_open' && !amPlaying && (
-          <div className="bg-yellow-500/8 border border-yellow-500/20 rounded-lg p-3 text-sm text-yellow-300/80">
-            Lineup submission is open for the two teams. Check back soon for the live match.
+          {/* Details grid */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {[
+              { label: 'Venue', value: venue?.name ?? '—', sub: `${venue?.city ?? ''} · ${venue?.pitch_type ?? ''} track` },
+              { label: 'Condition', value: cond.label, sub: cond.desc, color: cond.color },
+              { label: 'Date', value: matchDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }) },
+              { label: 'Time', value: matchDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) },
+            ].map(item => (
+              <div key={item.label} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <p className="text-gray-600 text-[9px] uppercase tracking-wide font-bold mb-1">{item.label}</p>
+                <p className={`font-bold ${item.color ?? 'text-gray-200'}`}>{item.value}</p>
+                {item.sub && <p className="text-gray-600 text-[9px] mt-0.5">{item.sub}</p>}
+              </div>
+            ))}
+          </div>
+
+          {rawMatch.status === 'lineup_open' && !amPlaying && (
+            <div
+              className="rounded-xl px-4 py-3 text-sm text-yellow-300/80"
+              style={{ background: 'rgba(250,204,21,0.06)', border: '1px solid rgba(250,204,21,0.15)' }}
+            >
+              Lineup submission open. Check back soon for the live match.
+            </div>
+          )}
+          {rawMatch.status === 'live' && (
+            <div
+              className="rounded-xl px-4 py-3 text-sm text-blue-300/80 flex items-center gap-2"
+              style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}
+            >
+              <span className="animate-live-blip inline-block w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
+              ⚡ Simulation in progress — the result will appear here shortly.
           </div>
         )}
-        {rawMatch.status === 'live' && (
-          <div className="bg-blue-500/8 border border-blue-500/20 rounded-lg p-3 text-sm text-blue-300/80">
-            ⚡ Simulation in progress — the result will appear here shortly.
-          </div>
-        )}
-        {rawMatch.status === 'scheduled' && (
-          <div className="bg-gray-800/50 rounded-lg p-3 text-sm text-gray-500">
-            Match not yet started. Lineup submission opens closer to match day.
-          </div>
-        )}
+          {rawMatch.status === 'scheduled' && (
+            <div
+              className="rounded-xl px-4 py-3 text-sm text-gray-500"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              Match not yet started. Lineup submission opens closer to match day.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

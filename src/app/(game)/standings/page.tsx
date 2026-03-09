@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export const metadata = { title: 'Standings · BSPL' }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+type TeamSnap = { id: string; name: string; color: string }
 
 function unpack<T>(v: T | T[] | null | undefined): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : (v ?? null)
@@ -14,32 +14,14 @@ function nrrStr(nrr: number): string {
   return nrr >= 0 ? `+${nrr.toFixed(3)}` : nrr.toFixed(3)
 }
 
-// ── Form dot component ────────────────────────────────────────────────────────
-
-function FormDot({ result }: { result: 'W' | 'L' }) {
-  return (
-    <span
-      title={result === 'W' ? 'Win' : 'Loss'}
-      className={`inline-block w-4 h-4 rounded-full flex-shrink-0 ${
-        result === 'W' ? 'bg-green-500' : 'bg-gray-600'
-      }`}
-    />
-  )
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 export default async function StandingsPage() {
   const supabase = await createClient()
-
-  // Current user's team (for "(you)" badge)
   const { data: { user } } = await supabase.auth.getUser()
   const { data: myTeamRow } = user
     ? await supabase.from('bspl_teams').select('id').eq('owner_id', user.id).maybeSingle()
     : { data: null }
   const myTeamId = myTeamRow?.id ?? null
 
-  // Active season
   const { data: season } = await supabase
     .from('bspl_seasons')
     .select('id, name, status')
@@ -49,20 +31,23 @@ export default async function StandingsPage() {
 
   if (!season) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Standings</h1>
-        <div className="text-center py-20 text-gray-500">No active season.</div>
+      <div className="space-y-6 animate-fade-in-up">
+        <h1 className="text-2xl font-black">Standings</h1>
+        <div
+          className="rounded-2xl py-20 text-center text-gray-500"
+          style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+        >
+          No active season.
+        </div>
       </div>
     )
   }
 
-  // All teams in this season
   const { data: allTeams } = await supabase
     .from('bspl_teams')
     .select('id, name, color')
     .eq('season_id', season.id)
 
-  // Points rows (only teams that have played)
   const { data: pointsRows } = await supabase
     .from('bspl_points')
     .select('team_id, played, won, lost, no_result, points, runs_for, runs_against, nrr')
@@ -70,7 +55,6 @@ export default async function StandingsPage() {
 
   const pointsMap = new Map((pointsRows ?? []).map(p => [p.team_id, p]))
 
-  // Merge — every team shows up, unplayed teams get 0s
   const standings = (allTeams ?? [])
     .map(t => {
       const p = pointsMap.get(t.id)
@@ -89,16 +73,14 @@ export default async function StandingsPage() {
     })
     .sort((a, b) => b.points - a.points || b.nrr - a.nrr)
 
-  // ── Form guide: last-5 league results per team ──────────────────────────────
   const { data: completedMatches } = await supabase
     .from('bspl_matches')
     .select('id, team_a_id, team_b_id, winner_team_id')
     .eq('season_id', season.id)
     .eq('status', 'completed')
-    .order('match_number', { ascending: false })   // newest first
+    .order('match_number', { ascending: false })
 
   const formGuide: Record<string, ('W' | 'L')[]> = {}
-
   for (const m of completedMatches ?? []) {
     if (!m.winner_team_id) continue
     for (const teamId of [m.team_a_id, m.team_b_id]) {
@@ -112,7 +94,6 @@ export default async function StandingsPage() {
   const matchesPlayed = completedMatches?.length ?? 0
   const isPlayoffs = season.status === 'playoffs' || season.status === 'completed'
 
-  // Playoff match results (shown separately)
   const { data: playoffMatches } = isPlayoffs
     ? await supabase
         .from('bspl_matches')
@@ -127,225 +108,269 @@ export default async function StandingsPage() {
         .order('match_type', { ascending: true })
     : { data: null }
 
+  const BRACKET_LABEL: Record<string, string> = {
+    qualifier1: 'Qualifier 1', eliminator: 'Eliminator',
+    qualifier2: 'Qualifier 2', final: '🏆 FINAL',
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Standings</h1>
-        <div className="flex items-center gap-3 text-sm text-gray-400">
-          <span>{season.name}</span>
-          <span className="text-gray-600">·</span>
-          <span>{matchesPlayed} match{matchesPlayed !== 1 ? 'es' : ''} played</span>
-          {isPlayoffs && (
-            <span className="px-2 py-0.5 rounded-full bg-yellow-400/15 text-yellow-400 text-xs font-semibold border border-yellow-400/25">
-              PLAYOFFS
-            </span>
-          )}
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Standings</h1>
+          <p className="text-sm text-gray-500 mt-0.5">{season.name} · {matchesPlayed} match{matchesPlayed !== 1 ? 'es' : ''} played</p>
         </div>
-      </div>
-
-      {/* Frozen standings notice */}
-      {isPlayoffs && (
-        <div className="flex items-center gap-2 px-4 py-3 bg-yellow-400/8 border border-yellow-400/20 rounded-lg text-sm text-yellow-300">
-          <span>🔒</span>
-          <span>League phase complete. Standings are final — top 4 qualified for playoffs.</span>
-        </div>
-      )}
-
-      {/* Legend */}
-      {standings.length > 0 && !isPlayoffs && (
-        <div className="flex items-center gap-4 text-xs text-gray-500">
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block w-3 h-3 rounded-full bg-green-500" /> Win
+        {isPlayoffs && (
+          <span
+            className="text-xs font-black px-3 py-1.5 rounded-full"
+            style={{ background: 'rgba(250,204,21,0.15)', color: '#facc15', border: '1px solid rgba(250,204,21,0.3)' }}
+          >
+            🏆 PLAYOFFS
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block w-3 h-3 rounded-full bg-gray-600" /> Loss
-          </span>
-          <span className="ml-2 text-yellow-400/70">🟡 Top 4 qualify for playoffs</span>
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-        {standings.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            No teams registered yet.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr className="border-b border-gray-800 text-gray-400 text-xs">
-                  <th className="text-left px-4 py-3 w-8">#</th>
-                  <th className="text-left px-4 py-3">Team</th>
-                  <th className="text-center px-3 py-3 w-10">P</th>
-                  <th className="text-center px-3 py-3 w-10">W</th>
-                  <th className="text-center px-3 py-3 w-10">L</th>
-                  <th className="text-center px-3 py-3 w-12">Pts</th>
-                  <th className="text-center px-3 py-3 w-16">NRR</th>
-                  <th className="text-center px-3 py-3 w-12 hidden sm:table-cell">RF</th>
-                  <th className="text-center px-3 py-3 w-12 hidden sm:table-cell">RA</th>
-                  <th className="text-center px-3 py-3 w-28">Form</th>
-                </tr>
-              </thead>
-              <tbody>
-                {standings.map((row, i) => {
-                  const isQualifier  = i < 4
-                  const isFirstElim  = i === 4
-                  const isMyTeam     = row.team_id === myTeamId
-                  const nrr          = Number(row.nrr ?? 0)
-                  const form         = [...(formGuide[row.team_id] ?? [])].reverse() // oldest→newest
-
-                  return (
-                    <React.Fragment key={row.team_id}>
-                      {/* Divider after position 4 */}
-                      {isFirstElim && standings.length > 4 && (
-                        <tr className="border-t-2 border-yellow-400/20">
-                          <td colSpan={10} className="px-4 py-1">
-                            <span className="text-xs text-yellow-400/50 font-medium">
-                              ── Elimination zone ──
-                            </span>
-                          </td>
-                        </tr>
-                      )}
-
-                      <tr
-                        className={`border-b border-gray-800/50 transition-colors hover:bg-gray-800/30 ${
-                          isMyTeam ? 'bg-blue-400/5' : isQualifier ? 'bg-yellow-400/3' : ''
-                        }`}
-                      >
-                        {/* Rank */}
-                        <td className="px-4 py-3">
-                          <span className={`text-sm font-bold ${isQualifier ? 'text-yellow-400' : 'text-gray-500'}`}>
-                            {i + 1}
-                          </span>
-                        </td>
-
-                        {/* Team */}
-                        <td className="px-4 py-3">
-                          <Link href={`/teams/${row.team_id}`} className="flex items-center gap-2 hover:text-yellow-400 transition-colors group">
-                            <div
-                              className="w-3 h-3 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: row.team?.color ?? '#6b7280' }}
-                            />
-                            <span className={`font-semibold group-hover:underline ${isMyTeam ? 'text-blue-300' : ''}`}>{row.team?.name ?? '—'}</span>
-                            {isMyTeam && (
-                              <span className="text-blue-400 text-xs font-bold">you</span>
-                            )}
-                            {isQualifier && (
-                              <span className="text-yellow-400/60 text-xs hidden sm:inline">Q</span>
-                            )}
-                          </Link>
-                        </td>
-
-                        {/* P W L */}
-                        <td className="text-center px-3 py-3 text-gray-400">{row.played}</td>
-                        <td className="text-center px-3 py-3 font-medium text-green-400">{row.won}</td>
-                        <td className="text-center px-3 py-3 text-gray-500">{row.lost}</td>
-
-                        {/* Pts */}
-                        <td className="text-center px-3 py-3">
-                          <span className="font-bold text-yellow-400 text-base">{row.points}</span>
-                        </td>
-
-                        {/* NRR */}
-                        <td className="text-center px-3 py-3">
-                          <span className={`text-xs font-mono font-semibold ${
-                            nrr > 0 ? 'text-green-400' : nrr < 0 ? 'text-red-400' : 'text-gray-400'
-                          }`}>
-                            {nrrStr(nrr)}
-                          </span>
-                        </td>
-
-                        {/* RF / RA (hidden on mobile) */}
-                        <td className="text-center px-3 py-3 text-gray-500 text-xs hidden sm:table-cell">
-                          {row.runs_for ?? 0}
-                        </td>
-                        <td className="text-center px-3 py-3 text-gray-500 text-xs hidden sm:table-cell">
-                          {row.runs_against ?? 0}
-                        </td>
-
-                        {/* Form guide */}
-                        <td className="text-center px-3 py-3">
-                          <div className="flex items-center justify-center gap-1">
-                            {form.length === 0 ? (
-                              <span className="text-gray-700 text-xs">—</span>
-                            ) : (
-                              form.map((r, idx) => <FormDot key={idx} result={r} />)
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    </React.Fragment>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
         )}
       </div>
 
-      {/* Column legend */}
+      {/* Frozen notice */}
+      {isPlayoffs && (
+        <div
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-yellow-300"
+          style={{ background: 'rgba(250,204,21,0.06)', border: '1px solid rgba(250,204,21,0.15)' }}
+        >
+          <span className="text-base">🔒</span>
+          <span>League phase complete. Top 4 qualified for playoffs.</span>
+        </div>
+      )}
+
+      {/* Main table */}
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+      >
+        {standings.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">No teams registered yet.</div>
+        ) : (
+          <>
+            {/* Table header */}
+            <div
+              className="grid px-4 py-3 text-[10px] font-black text-gray-600 uppercase tracking-widest"
+              style={{
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                gridTemplateColumns: '32px 1fr 40px 40px 40px 48px 64px 100px',
+              }}
+            >
+              <span>#</span>
+              <span>Team</span>
+              <span className="text-center">P</span>
+              <span className="text-center">W</span>
+              <span className="text-center">L</span>
+              <span className="text-center">Pts</span>
+              <span className="text-center">NRR</span>
+              <span className="text-center">Form</span>
+            </div>
+
+            {standings.map((row, i) => {
+              const isQualifier = i < 4
+              const isFirstElim = i === 4
+              const isMyTeam    = row.team_id === myTeamId
+              const nrr         = Number(row.nrr ?? 0)
+              const form        = [...(formGuide[row.team_id] ?? [])].reverse()
+              const medals      = ['🥇', '🥈', '🥉']
+
+              return (
+                <React.Fragment key={row.team_id}>
+                  {isFirstElim && standings.length > 4 && (
+                    <div
+                      className="flex items-center gap-3 px-4 py-2"
+                      style={{ borderTop: '1px solid rgba(250,204,21,0.1)' }}
+                    >
+                      <div className="flex-1 h-px" style={{ background: 'rgba(250,204,21,0.1)' }} />
+                      <span className="text-[10px] text-yellow-400/30 font-black uppercase tracking-widest whitespace-nowrap">
+                        Elimination zone
+                      </span>
+                      <div className="flex-1 h-px" style={{ background: 'rgba(250,204,21,0.1)' }} />
+                    </div>
+                  )}
+
+                  <Link
+                    href={`/teams/${row.team_id}`}
+                    className="grid px-4 py-3.5 transition-colors hover:bg-white/[0.025] active:bg-white/[0.04] group"
+                    style={{
+                      borderBottom: '1px solid rgba(255,255,255,0.04)',
+                      gridTemplateColumns: '32px 1fr 40px 40px 40px 48px 64px 100px',
+                      background: isMyTeam
+                        ? 'rgba(250,204,21,0.04)'
+                        : isQualifier
+                        ? 'rgba(250,204,21,0.012)'
+                        : undefined,
+                    }}
+                  >
+                    {/* Rank */}
+                    <div className="flex items-center">
+                      {i < 3 ? (
+                        <span className="text-base leading-none">{medals[i]}</span>
+                      ) : (
+                        <span className={`text-sm font-black ${isQualifier ? 'text-yellow-400' : 'text-gray-600'}`}>
+                          {i + 1}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Team */}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0 transition-transform group-hover:scale-110"
+                        style={{
+                          background: `${row.team?.color ?? '#6b7280'}25`,
+                          border: `1.5px solid ${row.team?.color ?? '#6b7280'}60`,
+                        }}
+                      >
+                        {row.team?.name?.[0] ?? '?'}
+                      </div>
+                      <div className="min-w-0">
+                        <span className={`text-sm font-bold truncate block group-hover:text-yellow-400 transition-colors ${isMyTeam ? 'text-yellow-400' : 'text-gray-100'}`}>
+                          {row.team?.name ?? '—'}
+                        </span>
+                        {isMyTeam && (
+                          <span className="text-[9px] text-yellow-400/50 font-bold">YOU</span>
+                        )}
+                      </div>
+                      {isQualifier && (
+                        <span className="text-[9px] font-black text-yellow-400/40 hidden sm:block ml-1">Q</span>
+                      )}
+                    </div>
+
+                    {/* P W L */}
+                    <div className="flex items-center justify-center text-sm text-gray-500">{row.played}</div>
+                    <div className="flex items-center justify-center text-sm font-bold text-green-400">{row.won}</div>
+                    <div className="flex items-center justify-center text-sm text-gray-600">{row.lost}</div>
+
+                    {/* Points */}
+                    <div className="flex items-center justify-center">
+                      <span
+                        className="font-black text-base tabular-nums"
+                        style={{ color: isQualifier ? '#facc15' : '#6b7280' }}
+                      >
+                        {row.points}
+                      </span>
+                    </div>
+
+                    {/* NRR */}
+                    <div className="flex items-center justify-center">
+                      <span className={`text-xs font-mono font-bold tabular-nums ${
+                        nrr > 0 ? 'text-green-400' : nrr < 0 ? 'text-red-400' : 'text-gray-600'
+                      }`}>
+                        {nrrStr(nrr)}
+                      </span>
+                    </div>
+
+                    {/* Form guide */}
+                    <div className="flex items-center justify-center gap-1">
+                      {form.length === 0 ? (
+                        <span className="text-gray-700 text-xs">—</span>
+                      ) : (
+                        form.map((r, idx) => (
+                          <span
+                            key={idx}
+                            className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-black ${
+                              r === 'W' ? 'form-w' : 'form-l'
+                            }`}
+                          >
+                            {r}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </Link>
+                </React.Fragment>
+              )
+            })}
+          </>
+        )}
+      </div>
+
+      {/* Column key */}
       {standings.length > 0 && (
-        <p className="text-xs text-gray-600 text-right">
-          P=Played · W=Won · L=Lost · Pts=Points · NRR=Net Run Rate · RF=Runs For · RA=Runs Against · Form=Last {Math.min(5, matchesPlayed)} results
+        <p className="text-[10px] text-gray-700 text-right">
+          P=Played · W=Won · L=Lost · Pts=Points · NRR=Net Run Rate · Form=Last {Math.min(5, matchesPlayed)} results
         </p>
       )}
 
       {/* Playoff bracket */}
       {isPlayoffs && playoffMatches && playoffMatches.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Playoff Results</h2>
-          <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-4 animate-fade-in-up">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">🏆</span>
+            <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">Playoff Bracket</h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
             {playoffMatches.map(m => {
-              const teamA = unpack(m.team_a as TeamSnap | TeamSnap[] | null)
-              const teamB = unpack(m.team_b as TeamSnap | TeamSnap[] | null)
-              const BRACKET_LABEL: Record<string, string> = {
-                qualifier1: 'Qualifier 1', eliminator: 'Eliminator',
-                qualifier2: 'Qualifier 2', final: 'FINAL',
-              }
+              const teamA  = unpack(m.team_a as TeamSnap | TeamSnap[] | null)
+              const teamB  = unpack(m.team_b as TeamSnap | TeamSnap[] | null)
               const isFinal = m.match_type === 'final'
+
               return (
                 <Link
                   key={m.id}
                   href={`/matches/${m.id}`}
-                  className={`block rounded-xl border px-4 py-3 transition hover:border-yellow-400/40 hover:bg-gray-800/40 ${
-                    isFinal ? 'border-yellow-400/30 bg-yellow-400/5' : 'border-gray-800 bg-gray-900'
-                  }`}
+                  className="block rounded-2xl px-4 py-4 transition-all hover:scale-[1.015] hover:-translate-y-0.5"
+                  style={{
+                    background: isFinal
+                      ? 'linear-gradient(135deg, rgba(250,204,21,0.07) 0%, rgba(251,146,60,0.05) 100%)'
+                      : 'var(--card-bg)',
+                    border: isFinal
+                      ? '1px solid rgba(250,204,21,0.25)'
+                      : '1px solid var(--card-border)',
+                    boxShadow: isFinal ? '0 0 20px rgba(250,204,21,0.07)' : 'none',
+                  }}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
-                      isFinal
-                        ? 'bg-yellow-400/20 text-yellow-300 border border-yellow-400/30'
-                        : 'bg-gray-700 text-gray-300'
-                    }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span
+                      className="text-[10px] font-black px-2 py-1 rounded-lg"
+                      style={isFinal
+                        ? { background: 'rgba(250,204,21,0.15)', color: '#facc15', border: '1px solid rgba(250,204,21,0.3)' }
+                        : { background: 'rgba(255,255,255,0.05)', color: '#9ca3af' }
+                      }
+                    >
                       {BRACKET_LABEL[m.match_type] ?? m.match_type}
                     </span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      m.status === 'completed' ? 'bg-green-500/20 text-green-300' : 'bg-yellow-500/20 text-yellow-300'
-                    }`}>
-                      {m.status === 'completed' ? 'Result' : m.status}
+                    <span
+                      className="text-[10px] font-bold px-2 py-1 rounded-full"
+                      style={m.status === 'completed'
+                        ? { background: 'rgba(74,222,128,0.1)', color: '#4ade80' }
+                        : { background: 'rgba(250,204,21,0.1)', color: '#facc15' }
+                      }
+                    >
+                      {m.status === 'completed' ? 'Full Time' : m.status}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                      {teamA?.color && <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: teamA.color }} />}
-                      <span className={`font-medium truncate ${m.winner_team_id === teamA?.id ? 'text-white' : 'text-gray-400'}`}>
-                        {teamA?.name ?? '—'}
-                        {m.winner_team_id === teamA?.id && <span className="ml-1 text-yellow-400 text-xs">✓</span>}
-                      </span>
-                    </div>
-                    <span className="text-gray-600 text-xs flex-shrink-0">vs</span>
-                    <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                      <span className={`font-medium truncate ${m.winner_team_id === teamB?.id ? 'text-white' : 'text-gray-400'}`}>
-                        {m.winner_team_id === teamB?.id && <span className="mr-1 text-yellow-400 text-xs">✓</span>}
-                        {teamB?.name ?? '—'}
-                      </span>
-                      {teamB?.color && <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: teamB.color }} />}
-                    </div>
+
+                  <div className="space-y-2">
+                    {[teamA, teamB].map((team, idx) => (
+                      <div key={idx} className="flex items-center gap-2.5">
+                        <div
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0"
+                          style={{
+                            background: team ? `${team.color}20` : '#1f2937',
+                            border: `1.5px solid ${team?.color ?? '#374151'}50`,
+                          }}
+                        >
+                          {team?.name?.[0] ?? '?'}
+                        </div>
+                        <span className={`text-sm font-bold flex-1 truncate ${
+                          m.winner_team_id === team?.id ? 'text-white' : 'text-gray-500'
+                        }`}>
+                          {team?.name ?? '—'}
+                        </span>
+                        {m.winner_team_id === team?.id && (
+                          <span className="text-yellow-400 text-sm">✓</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
+
                   {m.result_summary && (
-                    <p className="text-xs text-gray-500 mt-1.5 text-center">{m.result_summary}</p>
+                    <p className="text-[10px] text-gray-600 mt-3 text-center">{m.result_summary}</p>
                   )}
                 </Link>
               )
@@ -356,6 +381,3 @@ export default async function StandingsPage() {
     </div>
   )
 }
-
-// local type for the joined team shape
-type TeamSnap = { id: string; name: string; color: string }
