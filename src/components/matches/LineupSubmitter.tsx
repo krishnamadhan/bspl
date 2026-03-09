@@ -141,8 +141,8 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
       setNotice({ type: 'error', msg: `Select exactly 11 players (${selectedXI.length}/11 chosen).` })
       return
     }
-    if (wkCount !== 1) {
-      setNotice({ type: 'error', msg: `Select exactly 1 wicket-keeper (${wkCount} in XI).` })
+    if (wkCount < 1) {
+      setNotice({ type: 'error', msg: `Select at least 1 wicket-keeper (${wkCount} in XI).` })
       return
     }
     if (bowlerCount < 3) {
@@ -229,7 +229,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
   const xiComplete       = selectedXI.length === 11
   const bowlComplete     = bowlingOrder.length === totalOvers
-  const constraintsMet   = wkCount === 1 && bowlerCount >= 3
+  const constraintsMet   = wkCount >= 1 && bowlerCount >= 3
   const readyToSubmit    = xiComplete && bowlComplete && tossChoice !== null && constraintsMet
 
   return (
@@ -257,8 +257,8 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
       {/* XI constraints */}
       {selectedXI.length > 0 && (
         <div className="flex gap-4 text-xs">
-          <span className={wkCount === 1 ? 'text-green-400' : 'text-amber-400'}>
-            {wkCount === 1 ? '✓' : '!'} {wkCount}/1 wicket-keeper
+          <span className={wkCount >= 1 ? 'text-green-400' : 'text-amber-400'}>
+            {wkCount >= 1 ? '✓' : '!'} {wkCount} WK{wkCount !== 1 ? 's' : ''}
           </span>
           <span className={bowlerCount >= 3 ? 'text-green-400' : 'text-amber-400'}>
             {bowlerCount >= 3 ? '✓' : '!'} {bowlerCount}/3+ bowlers/AR
@@ -516,7 +516,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
           {!readyToSubmit && !loading && (
             <p className="text-xs text-gray-600 text-center">
-              11 players (1 WK · 3+ bowlers/AR) · {totalOvers} overs (max {totalOvers <= 10 ? 2 : 4}/bowler · no back-to-back · min {totalOvers <= 10 ? 3 : 5} bowlers) · Toss preference
+              11 players (1+ WK · 3+ bowlers/AR) · {totalOvers} overs (max {totalOvers <= 10 ? 2 : 4}/bowler · no back-to-back · min {totalOvers <= 10 ? 3 : 5} bowlers) · Toss preference
             </p>
           )}
         </div>

@@ -292,7 +292,7 @@ export async function simulateOne(
     const { error: staminaErr } = await db.from('bspl_stamina').upsert(staminaUpserts, {
       onConflict: 'season_id,team_id,player_id',
     })
-    if (staminaErr) console.error(`[simulate] stamina upsert failed for match ${matchId}: ${staminaErr.message}`)
+    if (staminaErr) throw new Error(`Stamina upsert failed: ${staminaErr.message}`)
   }
 
   // ── 9e. Upsert player stats ────────────────────────────────────────────────
@@ -442,7 +442,7 @@ export async function simulateOne(
     const { error: statsErr } = await db.from('bspl_player_stats').upsert(statsUpserts, {
       onConflict: 'season_id,team_id,player_id',
     })
-    if (statsErr) console.error(`[simulate] player stats upsert failed for match ${matchId}: ${statsErr.message}`)
+    if (statsErr) throw new Error(`Player stats upsert failed: ${statsErr.message}`)
   }
 
   // ── 9g. Insert fantasy scores ──────────────────────────────────────────────
@@ -493,7 +493,7 @@ export async function simulateOne(
       const { error: fantasyErr } = await db.from('bspl_fantasy_scores').upsert(fantasyUpserts, {
         onConflict: 'season_id,match_id,team_id,player_id',
       })
-      if (fantasyErr) console.error(`[simulate] fantasy scores upsert failed for match ${matchId}: ${fantasyErr.message}`)
+      if (fantasyErr) throw new Error(`Fantasy scores upsert failed: ${fantasyErr.message}`)
     }
   }
 
@@ -563,7 +563,7 @@ export async function simulateOne(
     const { error: pointsErr } = await db.from('bspl_points').upsert(pointsUpserts, {
       onConflict: 'season_id,team_id',
     })
-    if (pointsErr) console.error(`[simulate] points upsert failed for match ${matchId}: ${pointsErr.message}`)
+    if (pointsErr) throw new Error(`Points upsert failed: ${pointsErr.message}`)
   }
 
   return resultSummary

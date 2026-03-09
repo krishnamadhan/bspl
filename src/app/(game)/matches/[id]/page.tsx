@@ -749,9 +749,9 @@ export default async function MatchDetailPage({
             Lineup submission is open for the two teams. Check back soon for the live match.
           </div>
         )}
-        {rawMatch.status === 'locked' && (
+        {rawMatch.status === 'live' && (
           <div className="bg-blue-500/8 border border-blue-500/20 rounded-lg p-3 text-sm text-blue-300/80">
-            🔒 Lineups are locked. Simulation in progress — the result will appear here shortly.
+            ⚡ Simulation in progress — the result will appear here shortly.
           </div>
         )}
         {rawMatch.status === 'scheduled' && (

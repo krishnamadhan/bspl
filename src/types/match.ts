@@ -1,6 +1,6 @@
 import type { ConditionType } from './venue'
 
-export type MatchStatus = 'scheduled' | 'lineup_open' | 'locked' | 'completed'
+export type MatchStatus = 'scheduled' | 'lineup_open' | 'live' | 'completed'
 export type InningsNumber = 1 | 2
 export type BallOutcome = '.' | '1' | '2' | '3' | '4' | '6' | 'W' | 'Wd' | 'Nb'
 
@@ -40,8 +40,8 @@ export interface BallLog {
   innings_id: string
   over_number: number           // 1–5
   ball_number: number           // 1–6 (can be more with extras)
-  batsman_player_id: string
-  bowler_player_id: string
+  batsman_id: string
+  bowler_id: string
   outcome: BallOutcome
   runs_scored: number           // 0 for W, Wd counts as 1 extra
   is_wicket: boolean

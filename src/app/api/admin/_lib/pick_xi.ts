@@ -17,12 +17,11 @@ export function pickXI(roster: PickRosterPlayer[], totalOvers: number = 5): { xi
   const sorted = [...roster].sort((a, b) => b.price_cr - a.price_cr)
 
   const xi: typeof sorted = []
-  let wk = 0
 
-  // Pass 1: ensure 1 WK from best WKs
+  // Pass 1: add all WKs (at least 1 required, no upper limit)
   for (const p of sorted) {
     if (xi.length >= 11) break
-    if (p.role === 'wicket-keeper' && wk === 0) { xi.push(p); wk++ }
+    if (p.role === 'wicket-keeper') xi.push(p)
   }
 
   // Pass 2: add batsmen/all-rounders, preserving ≥4 bowling slots.

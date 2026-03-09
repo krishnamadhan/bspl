@@ -40,7 +40,6 @@ const COND: Record<string, { label: string; color: string }> = {
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   scheduled:   { label: 'Scheduled',   cls: 'bg-gray-700 text-gray-300' },
   lineup_open: { label: 'Lineup Open', cls: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' },
-  locked:      { label: 'Locked',      cls: 'bg-orange-500/20 text-orange-300' },
   live:        { label: '● LIVE',      cls: 'bg-red-500/20 text-red-400 border border-red-500/30' },
   completed:   { label: 'Completed',   cls: 'bg-green-500/20 text-green-300' },
 }
@@ -162,8 +161,8 @@ function MatchCard({
           )
         ) : match.status === 'lineup_open' && isMyMatch ? (
           <p className="text-xs text-yellow-400 font-semibold mt-2 text-center">📋 Submit your lineup →</p>
-        ) : match.status === 'locked' ? (
-          <p className="text-xs text-blue-400/70 mt-2 text-center">🔒 Lineups locked · simulation pending</p>
+        ) : match.status === 'live' ? (
+          <p className="text-xs text-blue-400/70 mt-2 text-center">⚡ Simulation in progress…</p>
         ) : (
           <p className="text-xs text-gray-500 mt-2 text-center">
             {new Date(match.scheduled_date).toLocaleDateString('en-IN', {
@@ -240,7 +239,7 @@ export default async function MatchesPage() {
     inningsMap[inn.match_id].push(inn)
   }
 
-  const active   = matches.filter(m => ['lineup_open', 'locked', 'live'].includes(m.status))
+  const active   = matches.filter(m => ['lineup_open', 'live'].includes(m.status))
   const upcoming = matches.filter(m => m.status === 'scheduled')
   const done     = [...matches.filter(m => m.status === 'completed')].reverse()
 

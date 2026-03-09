@@ -292,28 +292,43 @@ export function applyStaminaRecovery(current: number): number {
 
 // ─── Confidence calculation ───────────────────────────────────────────────────
 
-// Batting thresholds for a 5-over game
-export function calculateBattingConfidenceDelta(runs: number, sr: number): number {
+// Batting thresholds, scaled by format (T5 has fewer balls so smaller scores are exceptional)
+export function calculateBattingConfidenceDelta(runs: number, sr: number, formatOvers: number = 5): number {
   if (runs === 0) return -0.10        // Duck
-  if (runs >= 20 || sr >= 200) return 0.10   // Outstanding
-  if (runs >= 12 || sr >= 150) return 0.05   // Good
-  if (sr < 100) return -0.05          // Poor SR
-  if (runs < 6) return -0.05          // Poor score
-  return 0                            // Average
+  const [outstanding, good, poor, outstandingSR, goodSR, poorSR] =
+    formatOvers <= 5
+      ? [20, 12, 6,   200, 150, 100]   // T5: 20+ = outstanding
+      : formatOvers <= 10
+        ? [30, 18, 10, 180, 140,  90]   // T10
+        : [40, 25, 15, 160, 130,  80]   // T20
+  if (runs >= outstanding || sr >= outstandingSR) return 0.10
+  if (runs >= good        || sr >= goodSR)        return 0.05
+  if (sr < poorSR)  return -0.05       // Poor SR
+  if (runs < poor)  return -0.05       // Poor score
+  return 0
 }
 
-// Bowling thresholds (per over bowled, averaged)
-// totalOvers is in cricket notation (e.g. 1.3 = 1 over + 3 balls = 1.5 actual overs)
-export function calculateBowlingConfidenceDelta(totalRuns: number, totalOvers: number, wickets: number): number {
+// Bowling thresholds, scaled by format.
+// totalOvers is in cricket notation (e.g. 1.3 = 1 over + 3 balls = 1.5 actual overs).
+// formatOvers is the match's total overs (5, 10, 20, …) used to pick economy benchmarks.
+// T5 has higher expected economies (everyone attacks from ball 1) so "outstanding" is looser.
+export function calculateBowlingConfidenceDelta(totalRuns: number, totalOvers: number, wickets: number, formatOvers: number = 5): number {
   if (totalOvers === 0) return 0
   // Convert cricket notation to decimal overs before computing economy
   const decimalOvers = Math.floor(totalOvers) + (totalOvers % 1) * 10 / 6
   const economy = totalRuns / decimalOvers
-  if (economy < 8 || wickets >= 2) return 0.10   // Outstanding
-  if (economy < 10 || wickets >= 1) return 0.05  // Good
-  if (economy < 12) return 0                     // Average
-  if (economy < 15) return -0.05                 // Poor
-  return -0.10                                   // Disaster
+  // [outstanding, good, average, poor] economy thresholds
+  const [outstanding, good, avg, poor] =
+    formatOvers <= 5
+      ? [10, 12, 15, 18]   // T5: economy 10 = outstanding (tight is rare in attack-fest)
+      : formatOvers <= 10
+        ? [9, 11, 14, 17]   // T10
+        : [8, 10, 12, 15]   // T20
+  if (economy < outstanding || wickets >= 2) return 0.10
+  if (economy < good         || wickets >= 1) return 0.05
+  if (economy < avg) return 0
+  if (economy < poor) return -0.05
+  return -0.10
 }
 
 export function clampConfidence(value: number): number {

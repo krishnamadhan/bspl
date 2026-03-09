@@ -48,7 +48,10 @@ function simulateBall(
   const r2 = rand()
   // Wicket
   if (r2 < wicketProb) {
-    const wicketTypes = ['bowled', 'caught', 'lbw', 'caught', 'caught']
+    // Distribution: caught ~45%, bowled ~25%, lbw ~15%, run_out ~15%
+    // Run-outs only realistic on scoring balls; if this came from a wicket on
+    // a dot the engine will still record it — fine as a simplification.
+    const wicketTypes = ['caught', 'caught', 'caught', 'bowled', 'bowled', 'lbw', 'run_out', 'run_out']
     const wType = wicketTypes[Math.floor(rand() * wicketTypes.length)]
 
     // Catch conversion: better fielding teams hold more catches.
@@ -56,8 +59,12 @@ function simulateBall(
     if (wType === 'caught') {
       const catchProb = 0.50 + (avgFieldingRating / 20.0)
       if (rand() > catchProb) {
-        // Dropped — becomes a boundary off the edge instead
-        return { outcome: '4', runs: 4, isWicket: false, wicketType: null }
+        // Dropped — edge that wasn't held.
+        // Slip/gully edges: 30% to boundary; outfield drops: 1–2 runs.
+        const edgeRoll = rand()
+        if (edgeRoll < 0.30) return { outcome: '4', runs: 4, isWicket: false, wicketType: null }
+        if (edgeRoll < 0.65) return { outcome: '2', runs: 2, isWicket: false, wicketType: null }
+        return { outcome: '1', runs: 1, isWicket: false, wicketType: null }
       }
     }
 
@@ -130,7 +137,7 @@ function simulateInnings(
   // Batting state
   let battingOrderIndex = 0
   let striker = battingTeam.batting_order[battingOrderIndex++]
-  let nonStriker = battingTeam.batting_order[battingOrderIndex++]
+  let nonStriker = battingTeam.batting_order[battingOrderIndex++] ?? battingTeam.batting_order[0]
 
   // Per-player tracking
   const batterStats: Record<string, { runs: number; balls: number; fours: number; sixes: number; dismissed: boolean; dismissal: string | null; position: number }> = {}
@@ -283,6 +290,7 @@ function computePostMatchUpdates(
   team: SimTeam,
   battingInnings: InningsResult,  // innings where this team batted
   bowlingInnings: InningsResult,  // innings where this team bowled
+  totalOvers: number = 5,
 ): { stamina: StaminaUpdate[]; confidence: ConfidenceUpdate[] } {
   const staminaUpdates: StaminaUpdate[] = []
   const confidenceUpdates: ConfidenceUpdate[] = []
@@ -319,11 +327,11 @@ function computePostMatchUpdates(
     const reasons: string[] = []
 
     if (battingEntry && ballsFaced > 0) {
-      confDelta += calculateBattingConfidenceDelta(battingEntry.runs, battingEntry.strike_rate)
+      confDelta += calculateBattingConfidenceDelta(battingEntry.runs, battingEntry.strike_rate, totalOvers)
       reasons.push(`${battingEntry.runs} runs off ${ballsFaced}b`)
     }
     if (bowlingEntry && oversCN > 0) {
-      const bowlDelta = calculateBowlingConfidenceDelta(bowlingEntry.runs, oversCN, bowlingEntry.wickets)
+      const bowlDelta = calculateBowlingConfidenceDelta(bowlingEntry.runs, oversCN, bowlingEntry.wickets, totalOvers)
       confDelta += bowlDelta
       reasons.push(`${bowlingEntry.wickets}w @ ${bowlingEntry.economy} econ`)
     }
@@ -345,6 +353,7 @@ function simulateSuperOverInnings(
   venue: SimVenue,
   seed: number,
   totalOvers: number,
+  target: number = -1,  // -1 = batting first (no target); ≥0 = must exceed this to win
 ): { runs: number; wickets: number } {
   const rand = seededRandom(seed)
 
@@ -369,6 +378,9 @@ function simulateSuperOverInnings(
   let nonStriker = battingTeam.batting_order[batterIndex++] ?? battingTeam.batting_order[0]
 
   while (legalBalls < 6 && wickets < 2) {
+    // Stop if chasing team has already exceeded the target
+    if (target >= 0 && totalRuns > target) break
+
     const batterSim = battingTeam.players.find(p => p.player.id === striker)
       ?? battingTeam.players[0]
     if (!batterSim || !bowlerSim) break
@@ -415,9 +427,9 @@ export function simulateMatch(
   let resultSummary: string
 
   if (mainTied) {
-    // Super over: chasing team (teamB) bats first
+    // Super over: chasing team (teamB) bats first (no target); teamA then chases soTeamB's score
     const soTeamB = simulateSuperOverInnings(teamB, teamA, venue, matchSeed + 100, totalOvers)
-    const soTeamA = simulateSuperOverInnings(teamA, teamB, venue, matchSeed + 200, totalOvers)
+    const soTeamA = simulateSuperOverInnings(teamA, teamB, venue, matchSeed + 200, totalOvers, soTeamB.runs)
 
     if (soTeamB.runs > soTeamA.runs) {
       winnerTeamId = teamB.team_id
@@ -441,8 +453,8 @@ export function simulateMatch(
   }
 
   // TeamA batted in innings1, bowled in innings2; TeamB is the reverse
-  const teamAUpdates = computePostMatchUpdates(teamA, innings1, innings2)
-  const teamBUpdates = computePostMatchUpdates(teamB, innings2, innings1)
+  const teamAUpdates = computePostMatchUpdates(teamA, innings1, innings2, totalOvers)
+  const teamBUpdates = computePostMatchUpdates(teamB, innings2, innings1, totalOvers)
 
   return {
     innings1,

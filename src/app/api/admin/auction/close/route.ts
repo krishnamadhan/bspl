@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
       .eq('player_id', auction.player_id)
       .in('team_id', seasonTeamIds)
       .neq('team_id', auction.current_bidder_team_id)
+      .limit(1)
       .maybeSingle()
 
     if (alreadyOwned) {
@@ -98,10 +99,12 @@ export async function POST(req: NextRequest) {
 
     // Deduct winning bid — floor at 0 (team may have spent budget on draft picks)
     const newBudget = Math.max(0, Number(winnerTeam.budget_remaining) - Number(auction.current_bid))
-    await db
+    const { error: budgetErr } = await db
       .from('bspl_teams')
       .update({ budget_remaining: newBudget })
       .eq('id', auction.current_bidder_team_id)
+
+    if (budgetErr) return NextResponse.json({ error: `Player added but budget deduction failed: ${budgetErr.message}` }, { status: 500 })
 
     return NextResponse.json({
       ok: true,
