@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Capacitor } from '@capacitor/core'
 
 interface NavLink {
   href: string
@@ -28,12 +29,14 @@ function parseLabel(label: string) {
 
 export default function NavLinks({ links }: { links: NavLink[] }) {
   const pathname = usePathname()
+  const isNative = Capacitor.isNativePlatform()
+  const visibleLinks = isNative ? links.filter(l => l.href !== '/admin') : links
 
   return (
     <>
       {/* ── Desktop: horizontal top nav ── */}
       <div className="hidden sm:flex items-center gap-0.5 overflow-x-auto">
-        {links.map(link => {
+        {visibleLinks.map(link => {
           const isActive = pathname === link.href
           const { text } = parseLabel(link.label)
 
@@ -67,7 +70,7 @@ export default function NavLinks({ links }: { links: NavLink[] }) {
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        {links.map(link => {
+        {visibleLinks.map(link => {
           const isActive = pathname === link.href
           const meta = NAV_ICONS[link.href]
           const { emoji } = parseLabel(link.label)
