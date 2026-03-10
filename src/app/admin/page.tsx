@@ -869,6 +869,7 @@ export default function AdminPage() {
             <div className="flex flex-wrap gap-2">
               {activeSeason.status === 'draft_open' && (
                 <>
+                  <Btn label="📅 Generate Schedule" onClick={handleGenSchedule} disabled={isPending} variant="yellow" />
                   <Btn label="🔒 Lock Draft" onClick={handleLockDraft} disabled={isPending} variant="gray" />
                   <Btn label="💪 Reset Stamina" onClick={handleResetStamina} disabled={isPending} variant="blue" />
                 </>

@@ -26,16 +26,24 @@ export async function POST(_req: NextRequest) {
   const db = adminClient()
 
   // ── Find the season ready for scheduling ───────────────────────────────────
+  // Accept both draft_locked AND draft_open (auto-locks if open, so bot-only seasons
+  // don't need a manual lock-draft step before generating the schedule).
   const { data: season } = await db
     .from('bspl_seasons')
     .select('id, status, total_teams')
-    .eq('status', 'draft_locked')
+    .in('status', ['draft_locked', 'draft_open'])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
   if (!season) {
-    return NextResponse.json({ error: 'No draft_locked season found' }, { status: 404 })
+    return NextResponse.json({ error: 'No draft_locked or draft_open season found' }, { status: 404 })
+  }
+
+  // Auto-lock if still open (locks teams too)
+  if (season.status === 'draft_open') {
+    await db.from('bspl_seasons').update({ status: 'draft_locked' }).eq('id', season.id)
+    await db.from('bspl_teams').update({ is_locked: true }).eq('season_id', season.id)
   }
 
   // ── Load teams ─────────────────────────────────────────────────────────────
