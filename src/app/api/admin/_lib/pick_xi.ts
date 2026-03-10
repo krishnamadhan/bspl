@@ -80,12 +80,20 @@ export function pickXI(roster: PickRosterPlayer[], totalOvers: number = 5): { xi
   // Minimum: 3 distinct for T5/T10, 5 distinct for T20.
   const minDistinctBowlers = totalOvers <= 10 ? 3 : 5
   if (canBowl.length < minDistinctBowlers) {
+    // Prefer WKs > batsmen as part-timers: WKs more commonly bowl in real cricket.
+    // Only use players with a wicket_prob value (at least some bowling ability modelled).
     const partTimers = xi
       .filter(p =>
         p.wicket_prob !== null &&
         !canBowl.find(c => c.player_id === p.player_id)
       )
-      .sort((a, b) => (a.bowling_economy ?? 99) - (b.bowling_economy ?? 99))
+      .sort((a, b) => {
+        // WKs first, then everyone else, then sort by economy within each tier
+        const roleRank = (r: string) => r === 'wicket-keeper' ? 0 : 1
+        const rDiff = roleRank(a.role) - roleRank(b.role)
+        if (rDiff !== 0) return rDiff
+        return (a.bowling_economy ?? 99) - (b.bowling_economy ?? 99)
+      })
     canBowl = [...canBowl, ...partTimers.slice(0, minDistinctBowlers - canBowl.length)]
   }
 

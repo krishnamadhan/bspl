@@ -170,6 +170,7 @@ function simulateInnings(
     let overRuns = 0
     let overWickets = 0
     let legalBalls = 0
+    let wideCount = 0  // resets each over; used to give wides unique ball_numbers > 6
 
     while (legalBalls < 6) {
       if (totalWickets >= TOTAL_WICKETS) break
@@ -188,10 +189,13 @@ function simulateInnings(
       overRuns += ball.runs
 
       if (ball.outcome === 'Wd') {
+        wideCount++
         extras += 1
         bowlerStats[effectiveBowlerId].wides++
         bowlerStats[effectiveBowlerId].runs += 1
-        // Wide doesn't count as legal ball — batter stays
+        // Log wide so SUM(ball_log.runs_scored) matches innings.total_runs.
+        // ball_number 10+ distinguishes wides from legal balls (1–6).
+        ballLogs.push({ over, ball: 10 + wideCount, batsman_id: striker, bowler_id: effectiveBowlerId, outcome: 'Wd', runs: 1, is_wicket: false, wicket_type: null })
         continue
       }
 
