@@ -360,7 +360,7 @@ function AllRoundView({ rows }: { rows: StatRow[] }) {
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-600 w-4 font-mono text-center">{i + 1}</span>
                     <div>
-                      <p className="font-medium leading-tight">{r.player_name}</p>
+                      <p className="font-medium leading-tight text-white">{r.player_name}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <RoleBadge role={r.player_role} />
                         <span className="text-xs text-gray-600">{r.player_ipl_team}</span>

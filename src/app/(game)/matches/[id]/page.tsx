@@ -618,6 +618,7 @@ export default async function MatchDetailPage({
           playerNames={names}
           resultSummary={rawMatch.result_summary ?? 'Match completed'}
           completeUrl={rawMatch.status === 'live' ? `/api/match/${id}/complete` : undefined}
+          totalOvers={totalOvers}
         >
           {scorecard}
         </MatchReplay>

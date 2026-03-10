@@ -114,26 +114,35 @@ export default async function DashboardPage() {
   ] = parallelResults
 
   const nextMatch = rawNextMatch as any
-  const { data: myLineup } = nextMatch && myTeam
-    ? await supabase.from('bspl_lineups')
+
+  // Sequential lookups — wrapped in try/catch so a DB hiccup doesn't crash the page
+  let myLineup: { is_submitted: boolean } | null = null
+  let recentInnings: any[] = []
+  try {
+    if (nextMatch && myTeam) {
+      const { data } = await supabase.from('bspl_lineups')
         .select('is_submitted')
         .eq('match_id', nextMatch.id)
         .eq('team_id', myTeam.id)
         .maybeSingle()
-    : { data: null }
-
-  const recentIds = (rawRecent ?? []).map((m: any) => m.id)
-  const { data: recentInnings } = recentIds.length
-    ? await supabase.from('bspl_innings')
+      myLineup = data
+    }
+    const recentIds = (rawRecent ?? []).map((m: any) => m.id)
+    if (recentIds.length) {
+      const { data } = await supabase.from('bspl_innings')
         .select('match_id, innings_number, batting_team_id, total_runs, total_wickets, overs_completed')
         .in('match_id', recentIds)
-    : { data: [] }
+      recentInnings = data ?? []
+    }
+  } catch {
+    // Non-fatal: render with whatever data is available
+  }
 
   const standings = (rawStandings ?? []) as any[]
   const recent    = (rawRecent ?? []) as any[]
 
   const inningsMap: Record<string, any[]> = {}
-  for (const inn of (recentInnings ?? [])) {
+  for (const inn of recentInnings) {
     if (!inningsMap[inn.match_id]) inningsMap[inn.match_id] = []
     inningsMap[inn.match_id].push(inn)
   }

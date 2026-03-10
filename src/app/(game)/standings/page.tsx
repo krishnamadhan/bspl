@@ -153,20 +153,17 @@ export default async function StandingsPage() {
           <>
             {/* Table header */}
             <div
-              className="grid px-4 py-3 text-[10px] font-black text-gray-600 uppercase tracking-widest"
-              style={{
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                gridTemplateColumns: '32px 1fr 40px 40px 40px 48px 64px 100px',
-              }}
+              className="grid px-4 py-3 text-[10px] font-black text-gray-600 uppercase tracking-widest grid-cols-[32px_1fr_40px_40px_48px_60px] sm:grid-cols-[32px_1fr_40px_40px_40px_48px_60px_100px]"
+              style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
             >
               <span>#</span>
               <span>Team</span>
-              <span className="text-center">P</span>
+              <span className="hidden sm:block text-center">P</span>
               <span className="text-center">W</span>
               <span className="text-center">L</span>
               <span className="text-center">Pts</span>
               <span className="text-center">NRR</span>
-              <span className="text-center">Form</span>
+              <span className="hidden sm:block text-center">Form</span>
             </div>
 
             {standings.map((row, i) => {
@@ -194,10 +191,9 @@ export default async function StandingsPage() {
 
                   <Link
                     href={`/teams/${row.team_id}`}
-                    className="grid px-4 py-3.5 transition-colors hover:bg-white/[0.025] active:bg-white/[0.04] group"
+                    className="grid px-4 py-3.5 transition-colors hover:bg-white/[0.025] active:bg-white/[0.04] group grid-cols-[32px_1fr_40px_40px_48px_60px] sm:grid-cols-[32px_1fr_40px_40px_40px_48px_60px_100px]"
                     style={{
                       borderBottom: '1px solid rgba(255,255,255,0.04)',
-                      gridTemplateColumns: '32px 1fr 40px 40px 40px 48px 64px 100px',
                       background: isMyTeam
                         ? 'rgba(250,204,21,0.04)'
                         : isQualifier
@@ -240,8 +236,8 @@ export default async function StandingsPage() {
                       )}
                     </div>
 
-                    {/* P W L */}
-                    <div className="flex items-center justify-center text-sm text-gray-500">{row.played}</div>
+                    {/* P (hidden on mobile) W L */}
+                    <div className="hidden sm:flex items-center justify-center text-sm text-gray-500">{row.played}</div>
                     <div className="flex items-center justify-center text-sm font-bold text-green-400">{row.won}</div>
                     <div className="flex items-center justify-center text-sm text-gray-600">{row.lost}</div>
 
@@ -264,8 +260,8 @@ export default async function StandingsPage() {
                       </span>
                     </div>
 
-                    {/* Form guide */}
-                    <div className="flex items-center justify-center gap-1">
+                    {/* Form guide (hidden on mobile) */}
+                    <div className="hidden sm:flex items-center justify-center gap-1">
                       {form.length === 0 ? (
                         <span className="text-gray-700 text-xs">—</span>
                       ) : (

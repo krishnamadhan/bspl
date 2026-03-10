@@ -371,6 +371,7 @@ export default async function PracticeDetailPage({
           innings1={inn1Replay}
           innings2={inn2Replay}
           playerNames={names}
+          totalOvers={totalOvers}
           resultSummary={rawMatch.result_summary ?? 'Match completed'}
           completeUrl={rawMatch.status === 'live' ? `/api/match/${id}/complete` : undefined}
         >

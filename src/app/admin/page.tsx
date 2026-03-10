@@ -662,6 +662,7 @@ export default function AdminPage() {
   }
   const handleAutoLineups  = () => handle(async () => { const j = await post('/api/admin/auto-lineups'); showToast(j.message ?? 'Bot lineups submitted', true); await loadMatches() })
   const handleFinalize     = (id: string) => handle(async () => { await post(`/api/match/${id}/complete`); showToast('Match finalized', true); await loadMatches(); await loadPlayoffBracket() })
+  const handleFinalizeAll  = () => handle(async () => { await Promise.all(liveMatches.map(m => post(`/api/match/${m.id}/complete`))); showToast(`Finalized ${liveMatches.length} stuck matches`, true); await loadMatches(); await loadPlayoffBracket() })
   const handleUndoSimulate = (m: CompletedMatch) => setConfirm({
     title: 'Undo Simulation?',
     body: `Reset M${m.match_number} (${m.team_a} vs ${m.team_b}) back to lineup_open. Stats and points will be reversed. Stamina is not reversed.`,
@@ -1089,7 +1090,13 @@ export default function AdminPage() {
         >
           <div className="divide-y divide-gray-800/60">
 
-            {/* Live matches */}
+            {/* Live matches — shown when matches are stuck mid-simulation */}
+            {liveMatches.length > 1 && (
+              <div className="flex items-center justify-between px-4 py-2 bg-red-500/10 border-b border-red-500/20">
+                <p className="text-xs text-red-400">{liveMatches.length} matches stuck in LIVE state</p>
+                <Btn label={isPending ? '…' : 'Finalize All'} onClick={handleFinalizeAll} disabled={isPending} variant="gray" size="sm" />
+              </div>
+            )}
             {liveMatches.map(m => (
               <div key={m.id} className="flex items-center gap-3 px-4 py-4 bg-red-500/5">
                 <span className="text-xs font-mono text-gray-500 w-8 shrink-0">M{m.match_number}</span>

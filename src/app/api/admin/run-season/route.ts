@@ -45,10 +45,15 @@ export async function POST() {
     .order('match_number')
 
   const opened: number[] = []
+  const openErrors: string[] = []
 
   for (const match of scheduledMatches ?? []) {
-    // Mark as lineup_open
-    await db.from('bspl_matches').update({ status: 'lineup_open' }).eq('id', match.id)
+    // Mark as lineup_open — skip this match entirely if the status update fails
+    const { error: openErr } = await db.from('bspl_matches').update({ status: 'lineup_open' }).eq('id', match.id)
+    if (openErr) {
+      openErrors.push(`M${match.match_number}: ${openErr.message}`)
+      continue
+    }
 
     // Auto-fill bot teams
     const { data: teams } = await db
@@ -207,16 +212,20 @@ export async function POST() {
   const wins   = results.filter(r => r.result)
 
   return NextResponse.json({
-    ok:            errors.length === 0,
+    ok:            errors.length === 0 && openErrors.length === 0,
     season:        season.name,
     opened:        opened.length,
     simulated:     wins.length,
-    errors:        errors.length,
+    errors:        errors.length + openErrors.length,
     results,
-    summary: results.map(r =>
-      r.result
-        ? `M${r.matchNumber}: ${r.result}`
-        : `M${r.matchNumber}: ERROR — ${r.error}`
-    ),
+    openErrors,
+    summary: [
+      ...openErrors.map(e => `OPEN ERROR — ${e}`),
+      ...results.map(r =>
+        r.result
+          ? `M${r.matchNumber}: ${r.result}`
+          : `M${r.matchNumber}: ERROR — ${r.error}`
+      ),
+    ],
   })
 }

@@ -69,7 +69,9 @@ export default async function StatsPage() {
     : { count: 0 }
 
   const topRuns   = [...rows].sort((a, b) => b.total_runs - a.total_runs)[0]
-  const topWkts   = [...rows].sort((a, b) => b.wickets - a.wickets || a.bowling_economy - b.bowling_economy)[0]
+  const topWkts   = [...rows]
+    .filter(r => r.wickets > 0)
+    .sort((a, b) => b.wickets - a.wickets || (a.overs_bowled > 0 ? a.bowling_economy : 99) - (b.overs_bowled > 0 ? b.bowling_economy : 99))[0]
   const topSixes  = [...rows].sort((a, b) => b.sixes - a.sixes)[0]
 
   return (

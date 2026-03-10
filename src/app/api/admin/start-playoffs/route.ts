@@ -150,7 +150,8 @@ export async function POST() {
   await autoFillBotLineups(db, season.id, created ?? [], totalOvers)
 
   // ── 6. Season → playoffs ────────────────────────────────────────────────────
-  await db.from('bspl_seasons').update({ status: 'playoffs' }).eq('id', season.id)
+  const { error: seasonStatusErr } = await db.from('bspl_seasons').update({ status: 'playoffs' }).eq('id', season.id)
+  if (seasonStatusErr) return NextResponse.json({ error: `Playoffs created but season status update failed: ${seasonStatusErr.message}` }, { status: 500 })
 
   return NextResponse.json({ ok: true, message })
 }
@@ -164,7 +165,8 @@ export async function autoFillBotLineups(
   totalOvers: number = 5,
 ) {
   for (const match of matches) {
-    await db.from('bspl_matches').update({ status: 'lineup_open' }).eq('id', match.id)
+    const { error: openErr } = await db.from('bspl_matches').update({ status: 'lineup_open' }).eq('id', match.id)
+    if (openErr) { console.error(`[autoFillBotLineups] failed to open match ${match.id}:`, openErr.message); continue }
 
     for (const teamId of [match.team_a_id, match.team_b_id]) {
       const { data: teamRow } = await db

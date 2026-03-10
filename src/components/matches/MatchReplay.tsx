@@ -31,6 +31,8 @@ interface Props {
   children:      React.ReactNode
   /** If provided, POSTed when replay finishes (transitions live → completed) */
   completeUrl?:  string
+  /** Overs per innings for this format (T5=5, T10=10, T20=20). Defaults to 5. */
+  totalOvers?:   number
 }
 
 type FlashEvent = { type: 'four' | 'six' | 'wicket' | 'milestone' | 'hattrick'; subtitle?: string }
@@ -347,10 +349,11 @@ function Scoreboard({
 // ── Phase: intermission between innings ───────────────────────────────────────
 
 function Intermission({
-  inn1, onSkip,
+  inn1, onSkip, totalOvers,
 }: {
   inn1: ReplayInnings
   onSkip: () => void
+  totalOvers: number
 }) {
   const [dots, setDots] = useState('.')
   useEffect(() => {
@@ -362,9 +365,7 @@ function Intermission({
   // Compute actual overs completed from the ball log
   const legalBalls1 = inn1.balls.filter(b => b.outcome !== 'Wd' && b.outcome !== 'Nb').length
   const inn1OvStr   = `${Math.floor(legalBalls1 / 6)}.${legalBalls1 % 6}`
-  // Total overs in this format — max over seen; minimum 5 (T5 default)
-  const totalOvs  = Math.max(5, ...inn1.balls.map(b => b.over))
-  const totalBalls = totalOvs * 6
+  const totalBalls  = totalOvers * 6
   const rrr         = (target / totalBalls) * 6
 
   return (
@@ -416,7 +417,7 @@ function Intermission({
 type Phase = 'inn1' | 'intermission' | 'inn2' | 'done'
 
 export default function MatchReplay({
-  innings1, innings2, playerNames, resultSummary, children, completeUrl,
+  innings1, innings2, playerNames, resultSummary, children, completeUrl, totalOvers = 5,
 }: Props) {
   // If no ball data, skip straight to scorecard
   const hasBalls = innings1.balls.length > 0
@@ -630,7 +631,7 @@ export default function MatchReplay({
 
   // ── Intermission ────────────────────────────────────────────────────────────
   if (phase === 'intermission') {
-    return <Intermission inn1={innings1} onSkip={skip} />
+    return <Intermission inn1={innings1} onSkip={skip} totalOvers={totalOvers} />
   }
 
   // ── Live innings replay ─────────────────────────────────────────────────────
@@ -645,10 +646,7 @@ export default function MatchReplay({
   // The very last revealed ball — we pulse it briefly
   const lastRevealed = visibleBalls[visibleBalls.length - 1]
 
-  // Derive format from ball log: max over seen in both innings → total balls
-  const allBalls = [...innings1.balls, ...innings2.balls]
-  const matchTotalOvers = Math.max(5, ...allBalls.map(b => b.over))
-  const matchTotalBalls = matchTotalOvers * 6
+  const matchTotalBalls = totalOvers * 6
 
   // Nail-biter indicator: last 2 overs and within 12 runs
   const runsLeft = target ? target - runs : 0
