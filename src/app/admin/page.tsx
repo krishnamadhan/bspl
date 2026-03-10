@@ -734,7 +734,7 @@ export default function AdminPage() {
 
   const handleStartPlayoffs = () => setConfirm({
     title: 'Start Playoffs?',
-    body: 'Takes the top 4 teams from the league standings and creates two semi-final matches. Season moves to playoffs phase.',
+    body: 'Creates playoff matches from the league standings: Direct Final for ≤3 teams, IPL format (Q1 + Eliminator → Q2 → Final) for 4+ teams. Season moves to playoffs phase.',
     label: 'Start Playoffs',
     variant: 'yellow',
     fn: () => handle(async () => {

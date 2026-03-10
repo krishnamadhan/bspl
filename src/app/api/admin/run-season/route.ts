@@ -124,7 +124,7 @@ export async function POST() {
         },
         { onConflict: 'match_id,team_id' },
       )
-      if (upsertErr) console.error(`[run-season] lineup upsert failed for team ${teamId} match ${match.id}:`, upsertErr.message)
+      if (upsertErr) openErrors.push(`M${match.match_number} bot lineup (team ${teamId}): ${upsertErr.message}`)
     }
 
     opened.push(match.match_number)
@@ -178,7 +178,7 @@ export async function POST() {
         },
         { onConflict: 'match_id,team_id' },
       )
-      if (upsertErr2) console.error(`[run-season] lineup upsert failed for team ${team.id} match ${match.id}:`, upsertErr2.message)
+      if (upsertErr2) openErrors.push(`M${match.match_number} bot lineup (team ${team.id}): ${upsertErr2.message}`)
     }
   }
 

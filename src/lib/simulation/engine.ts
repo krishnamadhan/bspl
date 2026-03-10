@@ -48,10 +48,10 @@ function simulateBall(
   const r2 = rand()
   // Wicket
   if (r2 < wicketProb) {
-    // Distribution: caught ~45%, bowled ~25%, lbw ~15%, run_out ~15%
+    // Distribution: caught ~43%, bowled ~29%, lbw ~14%, run_out ~14%  (7-element array)
     // Run-outs only realistic on scoring balls; if this came from a wicket on
     // a dot the engine will still record it — fine as a simplification.
-    const wicketTypes = ['caught', 'caught', 'caught', 'bowled', 'bowled', 'lbw', 'run_out', 'run_out']
+    const wicketTypes = ['caught', 'caught', 'caught', 'bowled', 'bowled', 'lbw', 'run_out']
     const wType = wicketTypes[Math.floor(rand() * wicketTypes.length)]
 
     // Catch conversion: better fielding teams hold more catches.
@@ -328,7 +328,8 @@ function computePostMatchUpdates(
     const reasons: string[] = []
 
     if (battingEntry && ballsFaced > 0) {
-      confDelta += calculateBattingConfidenceDelta(battingEntry.runs, battingEntry.strike_rate, totalOvers)
+      const dismissed = battingEntry.dismissal !== null
+      confDelta += calculateBattingConfidenceDelta(battingEntry.runs, battingEntry.strike_rate, totalOvers, dismissed)
       reasons.push(`${battingEntry.runs} runs off ${ballsFaced}b`)
     }
     if (bowlingEntry && oversCN > 0) {

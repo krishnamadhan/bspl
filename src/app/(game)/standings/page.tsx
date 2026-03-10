@@ -138,7 +138,7 @@ export default async function StandingsPage() {
           style={{ background: 'rgba(250,204,21,0.06)', border: '1px solid rgba(250,204,21,0.15)' }}
         >
           <span className="text-base">🔒</span>
-          <span>League phase complete. Top 4 qualified for playoffs.</span>
+          <span>League phase complete. Top teams qualified for playoffs.</span>
         </div>
       )}
 

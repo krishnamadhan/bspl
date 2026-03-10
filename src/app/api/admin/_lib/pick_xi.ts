@@ -39,7 +39,9 @@ export function pickXI(roster: PickRosterPlayer[], totalOvers: number = 5): { xi
       // Live count — includes ARs added in earlier iterations of this pass
       const bowlingInXI = xi.filter(x => x.role === 'bowler' || x.role === 'all-rounder').length
       const bowlingNeeded = Math.max(0, 4 - bowlingInXI)
-      if (bowlersLeft < bowlingNeeded && slotsLeft <= bowlersLeft) continue
+      // Skip this batsman if there aren't enough bowlers available OR enough slots
+      // left to satisfy the bowling quota (whichever constraint binds first).
+      if (bowlersLeft < bowlingNeeded || slotsLeft < bowlingNeeded) continue
       xi.push(p)
     } else if (p.role === 'all-rounder') {
       xi.push(p)

@@ -46,6 +46,7 @@ export async function POST(
 
   const botTeamIds = (teams ?? []).filter(t => t.is_bot).map(t => t.id)
 
+  const lineupErrors: string[] = []
   if (botTeamIds.length > 0) {
     for (const teamId of botTeamIds) {
       // Always fetch current roster first — needed for validation and auto-pick fallback
@@ -109,9 +110,14 @@ export async function POST(
         },
         { onConflict: 'match_id,team_id' },
       )
-      if (lineupErr) console.error(`[open-lineups] lineup upsert failed for team ${teamId}: ${lineupErr.message}`)
+      if (lineupErr) lineupErrors.push(`team ${teamId}: ${lineupErr.message}`)
     }
   }
 
-  return NextResponse.json({ ok: true, match_id: matchId, bot_lineups_filled: botTeamIds.length })
+  return NextResponse.json({
+    ok: lineupErrors.length === 0,
+    match_id: matchId,
+    bot_lineups_filled: botTeamIds.length,
+    ...(lineupErrors.length > 0 && { lineup_errors: lineupErrors }),
+  })
 }

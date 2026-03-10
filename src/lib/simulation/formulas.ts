@@ -293,8 +293,8 @@ export function applyStaminaRecovery(current: number): number {
 // ─── Confidence calculation ───────────────────────────────────────────────────
 
 // Batting thresholds, scaled by format (T5 has fewer balls so smaller scores are exceptional)
-export function calculateBattingConfidenceDelta(runs: number, sr: number, formatOvers: number = 5): number {
-  if (runs === 0) return -0.10        // Duck
+export function calculateBattingConfidenceDelta(runs: number, sr: number, formatOvers: number = 5, dismissed: boolean = true): number {
+  if (runs === 0 && dismissed) return -0.10  // Duck (not-out 0 falls through to SR check below)
   const [outstanding, good, poor, outstandingSR, goodSR, poorSR] =
     formatOvers <= 5
       ? [20, 12, 6,   200, 150, 100]   // T5: 20+ = outstanding
