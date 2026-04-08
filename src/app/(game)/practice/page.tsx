@@ -14,7 +14,7 @@ const COND: Record<string, { label: string; color: string }> = {
 }
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  lineup_open: { label: 'Lineups Open', cls: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' },
+  lineup_open: { label: 'Lineups Open', cls: 'bg-[rgba(247,163,37,0.15)] text-[#F7A325] border border-[rgba(247,163,37,0.3)]' },
   live:        { label: '● LIVE',       cls: 'bg-red-500/20 text-red-400 border border-red-500/30' },
   completed:   { label: 'Completed',    cls: 'bg-green-500/20 text-green-300' },
 }
@@ -116,8 +116,8 @@ export default async function PracticePage() {
     return (
       <Link
         href={`/practice/${m.id}`}
-        className={`block rounded-xl border transition hover:border-yellow-400/40 hover:bg-gray-800/40 ${
-          isMyMatch ? 'border-yellow-400/25 bg-yellow-400/5' : 'border-gray-800 bg-gray-900'
+        className={`block rounded-xl border transition hover:border-[rgba(63,239,180,0.35)] hover:bg-white/[0.025] ${
+          isMyMatch ? 'border-[rgba(63,239,180,0.2)] bg-[rgba(63,239,180,0.03)]' : 'border-gray-800 bg-gray-900'
         }`}
       >
         <div className="px-4 pt-3 pb-2">
@@ -127,7 +127,7 @@ export default async function PracticePage() {
                 PRACTICE
               </span>
               {isMyMatch && (
-                <span className="text-xs text-yellow-400 bg-yellow-400/10 px-1.5 py-0.5 rounded">My Match</span>
+                <span className="text-xs px-1.5 py-0.5 rounded" style={{ color: '#3FEFB4', background: 'rgba(63,239,180,0.1)' }}>My Match</span>
               )}
             </div>
             <span className={`text-xs px-2 py-0.5 rounded-full ${badge.cls}`}>{badge.label}</span>

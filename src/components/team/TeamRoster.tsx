@@ -347,7 +347,7 @@ export default function TeamRoster({ myTeam, players, nextMatch, seasonName, myR
                 className="w-6 h-6 rounded-full border shrink-0"
                 style={{ borderColor: nextMatch.team_a.color, backgroundColor: nextMatch.team_a.color + '30' }}
               />
-              <span className={`font-semibold text-sm truncate ${nextMatch.team_a.id === myTeam.id ? 'text-yellow-400' : 'text-gray-300'}`}>
+              <span className={`font-semibold text-sm truncate ${nextMatch.team_a.id === myTeam.id ? 'text-[#3FEFB4]' : 'text-gray-300'}`}>
                 {nextMatch.team_a.name}
               </span>
             </div>
@@ -356,7 +356,7 @@ export default function TeamRoster({ myTeam, players, nextMatch, seasonName, myR
 
             {/* Team B */}
             <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-              <span className={`font-semibold text-sm truncate text-right ${nextMatch.team_b.id === myTeam.id ? 'text-yellow-400' : 'text-gray-300'}`}>
+              <span className={`font-semibold text-sm truncate text-right ${nextMatch.team_b.id === myTeam.id ? 'text-[#3FEFB4]' : 'text-gray-300'}`}>
                 {nextMatch.team_b.name}
               </span>
               <div
@@ -374,7 +374,7 @@ export default function TeamRoster({ myTeam, players, nextMatch, seasonName, myR
               nextMatch.condition === 'neutral' ? 'text-gray-400' :
               nextMatch.condition === 'dew_evening' ? 'text-blue-400' :
               nextMatch.condition === 'crumbling_spin' ? 'text-orange-400' :
-              nextMatch.condition === 'overcast' ? 'text-purple-400' : 'text-yellow-400'
+              nextMatch.condition === 'overcast' ? 'text-purple-400' : 'text-[#F7A325]'
             }`}>
               {CONDITION_LABEL[nextMatch.condition] ?? nextMatch.condition}
             </span>
@@ -394,7 +394,7 @@ export default function TeamRoster({ myTeam, players, nextMatch, seasonName, myR
                 key={v}
                 onClick={() => setView(v)}
                 className={`text-xs px-3 py-1 rounded-md transition font-medium capitalize ${
-                  view === v ? 'bg-yellow-400 text-gray-950' : 'text-gray-400 hover:text-white'
+                  view === v ? 'bg-[#3FEFB4] text-[#0B0E14]' : 'text-gray-400 hover:text-white'
                 }`}
               >
                 {v === 'role' ? 'By Role' : 'By Stamina'}
@@ -446,7 +446,7 @@ export default function TeamRoster({ myTeam, players, nextMatch, seasonName, myR
             )}
             {byStatus.some(p => p.current_stamina >= STAMINA_WARNING && p.current_stamina < STAMINA_CAUTION) && (
               <div className="mb-3">
-                <p className="text-xs text-yellow-400 uppercase tracking-wider font-medium mb-2 mt-4">
+                <p className="text-xs text-[#F7A325] uppercase tracking-wider font-medium mb-2 mt-4">
                   ⚠️ Caution — {STAMINA_WARNING}–{STAMINA_CAUTION}%
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">

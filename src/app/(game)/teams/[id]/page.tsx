@@ -11,7 +11,7 @@ const ROLE_META: Record<string, { label: string; cls: string }> = {
 }
 
 const TIER_CLS: Record<string, string> = {
-  elite:   'text-yellow-400',
+  elite:   'text-[#3FEFB4]',
   premium: 'text-orange-400',
   good:    'text-green-400',
   value:   'text-blue-400',
@@ -200,7 +200,7 @@ export default async function TeamSquadPage({
           {myRank > 0 && (
             <div className="text-right flex-shrink-0">
               <p className="text-xs text-gray-500">Rank</p>
-              <p className={`text-2xl font-bold ${myRank === 1 ? 'text-yellow-400' : myRank <= 4 ? 'text-green-400' : 'text-gray-400'}`}>
+              <p className={`text-2xl font-bold ${myRank === 1 ? 'text-[#3FEFB4]' : myRank <= 4 ? 'text-green-400' : 'text-gray-400'}`}>
                 #{myRank}
               </p>
             </div>

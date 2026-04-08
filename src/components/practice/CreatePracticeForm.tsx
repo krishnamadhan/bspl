@@ -79,7 +79,7 @@ export default function CreatePracticeForm({
             <select
               value={opponentId}
               onChange={e => setOpponentId(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3FEFB4]"
             >
               <option value="">— Select opponent —</option>
               {opponents.map(t => (
@@ -96,7 +96,7 @@ export default function CreatePracticeForm({
             <select
               value={venueId}
               onChange={e => setVenueId(e.target.value)}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-yellow-400"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3FEFB4]"
             >
               {venues.map(v => (
                 <option key={v.id} value={v.id}>{v.name}, {v.city}</option>
@@ -113,7 +113,7 @@ export default function CreatePracticeForm({
                   key={c.value}
                   className={`flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition ${
                     condition === c.value
-                      ? 'border-yellow-400/60 bg-yellow-400/10'
+                      ? 'border-[rgba(63,239,180,0.5)] bg-[rgba(63,239,180,0.08)]'
                       : 'border-gray-700 hover:border-gray-600'
                   }`}
                 >
@@ -123,7 +123,7 @@ export default function CreatePracticeForm({
                     value={c.value}
                     checked={condition === c.value}
                     onChange={() => setCondition(c.value)}
-                    className="mt-0.5 accent-yellow-400"
+                    className="mt-0.5 accent-[#3FEFB4]"
                   />
                   <div>
                     <p className="text-sm font-medium text-white">{c.label}</p>
@@ -140,7 +140,7 @@ export default function CreatePracticeForm({
             <button
               onClick={handleCreate}
               disabled={busy || !opponentId}
-              className="flex-1 py-2.5 rounded-xl font-bold text-sm text-gray-950 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="flex-1 py-2.5 rounded-xl font-bold text-sm text-[#0B0E14] bg-[#3FEFB4] hover:bg-[#5FFFCA] disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {busy ? 'Creating…' : 'Create Match'}
             </button>

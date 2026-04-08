@@ -155,7 +155,7 @@ const BALL_CLS: Record<string, string> = {
   '4':  'bg-blue-600 text-white font-bold',
   '6':  'bg-green-600 text-white font-bold',
   'W':  'bg-red-600 text-white font-bold',
-  'Wd': 'bg-yellow-700/70 text-yellow-200',
+  'Wd': 'bg-[rgba(247,163,37,0.25)] text-[#F7A325]',
   'Nb': 'bg-orange-700/70 text-orange-200',
 }
 
@@ -164,7 +164,7 @@ function BallDot({ outcome, pulse }: { outcome: string; pulse?: boolean }) {
     <span
       className={`inline-flex w-7 h-7 flex-shrink-0 items-center justify-center rounded-full text-xs transition-all
         ${BALL_CLS[outcome] ?? BALL_CLS['.']}
-        ${pulse ? 'scale-125 ring-2 ring-yellow-400/60' : ''}
+        ${pulse ? 'scale-125 ring-2 ring-[rgba(63,239,180,0.5)]' : ''}
       `}
     >
       {outcome === 'Wd' ? 'wd' : outcome === 'Nb' ? 'nb' : outcome}
@@ -181,7 +181,7 @@ function FlashOverlay({ event }: { event: FlashEvent }) {
       : event.type === 'six'
       ? { bg: 'bg-emerald-950/98', border: 'border-emerald-400', text: 'text-emerald-300', emoji: '🚀', label: 'SIX!' }
       : event.type === 'milestone'
-      ? { bg: 'bg-yellow-950/98', border: 'border-yellow-400', text: 'text-yellow-300', emoji: '🏏', label: event.subtitle ?? 'MILESTONE!' }
+      ? { bg: 'bg-[rgba(0,10,8,0.98)]', border: 'border-[#3FEFB4]', text: 'text-[#3FEFB4]', emoji: '🏏', label: event.subtitle ?? 'MILESTONE!' }
       : event.type === 'hattrick'
       ? { bg: 'bg-purple-950/98', border: 'border-purple-400', text: 'text-purple-300', emoji: '🎩', label: 'HAT-TRICK ALERT!' }
       : { bg: 'bg-blue-950/98', border: 'border-blue-500', text: 'text-blue-300', emoji: '🎯', label: 'FOUR!' }
@@ -217,7 +217,7 @@ function PlayerIntroCard({ card }: { card: PlayerCard }) {
         <div className="text-2xl">{card.type === 'bowler' ? '🎯' : '🏏'}</div>
         <div>
           <p className={`text-xs uppercase tracking-widest font-semibold mb-0.5 ${
-            card.type === 'bowler' ? 'text-yellow-400' : 'text-blue-400'
+            card.type === 'bowler' ? 'text-[#3FEFB4]' : 'text-blue-400'
           }`}>
             {card.type === 'bowler' ? 'Now Bowling' : 'New Batsman'}
           </p>
@@ -306,18 +306,18 @@ function Scoreboard({
       {target && (
         <div className="bg-gray-800 rounded-lg px-4 py-2 mb-3 text-sm space-y-0.5">
           <div className="text-gray-400">
-            Target <span className="text-yellow-400 font-bold">{target}</span>
+            Target <span className="text-[#3FEFB4] font-bold">{target}</span>
             {' · '}Need{' '}
-            <span className="text-yellow-400 font-bold">{runsNeeded}</span>
+            <span className="text-[#3FEFB4] font-bold">{runsNeeded}</span>
             {' '}from{' '}
-            <span className="text-yellow-400 font-bold">{ballsLeft}</span> balls
+            <span className="text-[#3FEFB4] font-bold">{ballsLeft}</span> balls
           </div>
           {rrr !== null && (
             <div className="text-xs text-gray-500">
               RRR{' '}
               <span className={
                 rrr > 15 ? 'text-red-400 font-semibold' :
-                rrr > 9  ? 'text-yellow-400 font-semibold' :
+                rrr > 9  ? 'text-[#F7A325] font-semibold' :
                            'text-green-400 font-semibold'
               }>
                 {rrr.toFixed(1)}
@@ -379,21 +379,21 @@ function Intermission({
           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: inn1.team_color }} />
           <span className="font-semibold">{inn1.team_name}</span>
         </div>
-        <div className="text-4xl font-bold tabular-nums text-yellow-400">
+        <div className="text-4xl font-bold tabular-nums text-[#3FEFB4]">
           {inn1.total_runs}/{inn1.total_wickets}
         </div>
         <div className="text-gray-400 text-sm mt-1">({inn1OvStr} ov)</div>
       </div>
 
       {/* Target callout — adds suspense before inn2 */}
-      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 space-y-1">
-        <p className="text-yellow-400 text-xs uppercase tracking-widest font-semibold">Target</p>
-        <p className="text-5xl font-black text-yellow-300 tabular-nums">{target}</p>
+      <div className="bg-[rgba(63,239,180,0.06)] border border-[rgba(63,239,180,0.2)] rounded-xl p-4 space-y-1">
+        <p className="text-[#3FEFB4] text-xs uppercase tracking-widest font-semibold">Target</p>
+        <p className="text-5xl font-black text-[#3FEFB4] tabular-nums">{target}</p>
         <p className="text-gray-400 text-xs">
           off {totalBalls} balls · RRR{' '}
           <span className={
             rrr > 12 ? 'text-red-400 font-semibold' :
-            rrr > 8  ? 'text-yellow-400 font-semibold' :
+            rrr > 8  ? 'text-[#F7A325] font-semibold' :
                        'text-green-400 font-semibold'
           }>
             {rrr.toFixed(1)}
@@ -598,7 +598,7 @@ export default function MatchReplay({
           {/* Result banner */}
           <div className={`border-2 rounded-2xl p-6 text-center space-y-2 ${winnerColor}`}>
             <div className="text-5xl mb-2">{isTied ? '⚡' : '🏆'}</div>
-            <p className={`font-black text-xl leading-snug ${isTied ? 'text-yellow-300' : 'text-green-300'}`}>
+            <p className={`font-black text-xl leading-snug ${isTied ? 'text-[#3FEFB4]' : 'text-green-300'}`}>
               {resultSummary}
             </p>
             {/* Innings summary pills */}
@@ -692,9 +692,9 @@ export default function MatchReplay({
 
         {/* Nail-biter banner */}
         {isNailbiter && !isLastBall && (
-          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-2.5 flex items-center gap-2 animate-pulse">
-            <span className="text-yellow-400 text-lg">⚡</span>
-            <span className="text-yellow-300 font-semibold text-sm">
+          <div className="bg-[rgba(255,59,59,0.08)] border border-[rgba(255,59,59,0.25)] rounded-xl px-4 py-2.5 flex items-center gap-2 animate-pulse">
+            <span className="text-[#FF3B3B] text-lg">⚡</span>
+            <span className="text-[#FF3B3B] font-semibold text-sm">
               NAIL-BITER! Need {runsLeft} off {ballsRemaining} ball{ballsRemaining !== 1 ? 's' : ''}!
             </span>
           </div>
@@ -772,7 +772,7 @@ export default function MatchReplay({
 
               return (
                 <div key={ov} className="flex items-center gap-2.5">
-                  <span className={`text-xs w-8 flex-shrink-0 font-mono ${isCurrent ? 'text-yellow-400 font-semibold' : 'text-gray-600'}`}>
+                  <span className={`text-xs w-8 flex-shrink-0 font-mono ${isCurrent ? 'text-[#3FEFB4] font-semibold' : 'text-gray-600'}`}>
                     {ov}
                   </span>
 

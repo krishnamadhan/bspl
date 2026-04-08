@@ -2,6 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Countdown from '@/components/dashboard/Countdown'
+import HeroMatchCard from '@/components/dashboard/HeroMatchCard'
+import YourMatchesScroll from '@/components/dashboard/YourMatchesScroll'
+import LeagueActivity from '@/components/dashboard/LeagueActivity'
 
 export const metadata = { title: 'Dashboard · BSPL' }
 
@@ -9,7 +12,7 @@ const SEASON_STATUS: Record<string, { label: string; cls: string }> = {
   draft_open:    { label: 'Draft Open',  cls: 'bg-blue-500/20 text-blue-300 border border-blue-500/30' },
   draft_locked:  { label: 'Draft Locked', cls: 'bg-orange-500/20 text-orange-300 border border-orange-500/30' },
   in_progress:   { label: 'In Progress', cls: 'bg-green-500/20 text-green-300 border border-green-500/30' },
-  playoffs:      { label: '🏆 Playoffs!', cls: 'bg-yellow-400/20 text-yellow-300 border border-yellow-400/30' },
+  playoffs:      { label: '🏆 Playoffs!', cls: 'bg-[rgba(63,239,180,0.12)] text-[#3FEFB4] border border-[rgba(63,239,180,0.25)]' },
   completed:     { label: 'Completed',   cls: 'bg-gray-700/50 text-gray-400 border border-gray-600/30' },
 }
 
@@ -167,13 +170,18 @@ export default async function DashboardPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-sm text-gray-500 font-medium mb-1">Banter Squad Premier League</p>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Hey, <span style={{
-                background: 'linear-gradient(135deg, #facc15 0%, #fb923c 100%)',
+            <h1
+              className="font-black tracking-tight"
+              style={{ fontFamily: 'var(--font-rajdhani)', fontSize: '28px', color: '#F0F4FF' }}
+            >
+              Hey,{' '}
+              <span style={{
+                background: 'linear-gradient(135deg, #3FEFB4 0%, #00C48C 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
-              }}>@{profile?.nickname}</span> 👋
+              }}>@{profile?.nickname}</span>{' '}
+              👋
             </h1>
           </div>
           {season && (
@@ -205,27 +213,27 @@ export default async function DashboardPage() {
                 href={`/matches/${nextMatch.id}`}
                 className="flex items-center justify-between gap-4 rounded-xl px-5 py-4 transition-all hover:scale-[1.01] active:scale-[0.99]"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(250,204,21,0.12) 0%, rgba(251,146,60,0.08) 100%)',
-                  border: '1px solid rgba(250,204,21,0.3)',
-                  boxShadow: '0 0 20px rgba(250,204,21,0.07)',
+                  background: 'linear-gradient(135deg, rgba(247,163,37,0.1) 0%, rgba(247,163,37,0.05) 100%)',
+                  border: '1px solid rgba(247,163,37,0.3)',
+                  boxShadow: '0 0 20px rgba(247,163,37,0.07)',
                 }}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-                    style={{ background: 'rgba(250,204,21,0.15)' }}
+                    style={{ background: 'rgba(247,163,37,0.15)' }}
                   >
                     ⚠️
                   </div>
                   <div>
-                    <p className="font-bold text-yellow-300">Lineup required — Match {nextMatch.match_number}</p>
-                    <p className="text-xs text-yellow-400/70 mt-0.5">
+                    <p className="font-bold" style={{ color: '#F7A325' }}>Lineup required — Match {nextMatch.match_number}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(247,163,37,0.7)' }}>
                       Due {new Date(nextMatch.scheduled_date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
                     </p>
                   </div>
                 </div>
-                <span className="text-yellow-400 font-black text-sm flex-shrink-0 flex items-center gap-1">
-                  Submit <span className="text-base">→</span>
+                <span className="font-black text-sm flex-shrink-0" style={{ color: '#F7A325' }}>
+                  Submit →
                 </span>
               </Link>
             )}
@@ -277,147 +285,45 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          {/* ── Next match card ─────────────────────────────────────────────── */}
-          {nextMatch ? (() => {
-            const teamA  = unpack(nextMatch.team_a) as any
-            const teamB  = unpack(nextMatch.team_b) as any
-            const venue  = unpack(nextMatch.venue) as any
-            const cond   = COND[nextMatch.condition] ?? COND.neutral
-            const isMyA  = teamA?.id === myTeam?.id
-            const isMyB  = teamB?.id === myTeam?.id
-            const submitted = myLineup?.is_submitted
-
-            return (
-              <div
-                className="rounded-2xl overflow-hidden animate-fade-in-up"
-                style={{
-                  background: 'linear-gradient(160deg, #0d1524 0%, #0a1220 60%, #050e1a 100%)',
-                  border: '1px solid rgba(255,255,255,0.07)',
-                  boxShadow: '0 4px 32px rgba(0,0,0,0.4)',
-                }}
-              >
-                {/* Top accent bar */}
-                <div className="pitch-accent" />
-
-                <div className="px-5 pt-4 pb-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                      {(isMyA || isMyB) ? 'Your Next Match' : 'Next Match'}
-                    </span>
-                    <span className="text-xs text-gray-700">·</span>
-                    <span className="text-xs text-gray-600 font-mono">M{nextMatch.match_number}</span>
-                  </div>
-                  {nextMatch.status === 'lineup_open' && !submitted && (
-                    <span
-                      className="text-xs font-bold px-2.5 py-1 rounded-full"
-                      style={{ background: 'rgba(250,204,21,0.15)', color: '#facc15', border: '1px solid rgba(250,204,21,0.3)' }}
-                    >
-                      Lineup Open
-                    </span>
-                  )}
-                  {submitted && (
-                    <span
-                      className="text-xs font-bold px-2.5 py-1 rounded-full"
-                      style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}
-                    >
-                      ✓ Lineup Set
-                    </span>
-                  )}
-                </div>
-
-                {/* Teams VS layout */}
-                <div className="px-5 py-5">
-                  <div className="flex items-center gap-4">
-                    {/* Team A */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col items-center gap-2">
-                        <div
-                          className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black"
-                          style={{
-                            background: teamA ? `${teamA.color}22` : '#1f2937',
-                            border: `2px solid ${teamA?.color ?? '#374151'}`,
-                            boxShadow: teamA ? `0 0 16px ${teamA.color}30` : 'none',
-                          }}
-                        >
-                          {teamA?.name?.[0] ?? '?'}
-                        </div>
-                        <p className={`font-black text-center text-sm leading-tight ${isMyA ? 'text-yellow-400' : 'text-white'}`}>
-                          {teamA?.name}
-                        </p>
-                        {isMyA && <span className="text-xs text-yellow-400/60 font-medium">You</span>}
-                      </div>
-                    </div>
-
-                    {/* VS + countdown */}
-                    <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                      <span className="text-gray-700 text-xs font-bold uppercase tracking-widest">vs</span>
-                      <Countdown targetDate={nextMatch.scheduled_date} />
-                    </div>
-
-                    {/* Team B */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col items-center gap-2">
-                        <div
-                          className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black"
-                          style={{
-                            background: teamB ? `${teamB.color}22` : '#1f2937',
-                            border: `2px solid ${teamB?.color ?? '#374151'}`,
-                            boxShadow: teamB ? `0 0 16px ${teamB.color}30` : 'none',
-                          }}
-                        >
-                          {teamB?.name?.[0] ?? '?'}
-                        </div>
-                        <p className={`font-black text-center text-sm leading-tight ${isMyB ? 'text-yellow-400' : 'text-white'}`}>
-                          {teamB?.name}
-                        </p>
-                        {isMyB && <span className="text-xs text-yellow-400/60 font-medium">You</span>}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Venue + condition row */}
-                  <div
-                    className="mt-4 flex items-center justify-between text-xs rounded-xl px-3 py-2.5"
-                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
-                  >
-                    <span className="text-gray-500 truncate">{venue?.name}, {venue?.city}</span>
-                    <span className={`flex-shrink-0 ml-2 font-medium flex items-center gap-1 ${cond.color}`}>
-                      {cond.icon} {cond.label}
-                    </span>
-                  </div>
-
-                  {/* CTA */}
-                  {(isMyA || isMyB) && (
-                    <Link
-                      href={`/matches/${nextMatch.id}`}
-                      className="mt-3 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
-                      style={nextMatch.status === 'lineup_open' && !submitted ? {
-                        background: 'linear-gradient(135deg, #facc15 0%, #fb923c 100%)',
-                        color: '#030712',
-                        boxShadow: '0 4px 16px rgba(250,204,21,0.25)',
-                      } : {
-                        background: 'rgba(255,255,255,0.05)',
-                        color: '#d1d5db',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                      }}
-                    >
-                      {nextMatch.status === 'lineup_open'
-                        ? submitted ? '✏️ Edit Lineup' : '🏏 Submit Lineup'
-                        : '📋 View Match'}
-                    </Link>
-                  )}
-                </div>
-              </div>
-            )
-          })() : myTeam ? (
+          {/* ── Hero match card ─────────────────────────────────────────────── */}
+          {nextMatch ? (
+            <HeroMatchCard
+              match={nextMatch}
+              myTeam={myTeam}
+              submitted={!!myLineup?.is_submitted}
+              seasonName={season?.name}
+            />
+          ) : myTeam ? (
             <div
               className="rounded-2xl p-8 text-center animate-fade-in-up"
-              style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+              style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}
             >
               <div className="text-3xl mb-2">✅</div>
-              <p className="text-gray-400 text-sm font-medium">No upcoming matches scheduled.</p>
+              <p className="text-sm font-medium" style={{ color: '#8A95A8' }}>No upcoming matches scheduled.</p>
             </div>
           ) : null}
+
+          {/* ── Your Season scroll ──────────────────────────────────────────── */}
+          {myTeam && (
+            <YourMatchesScroll
+              myTeam={myTeam}
+              myPoints={myPoints}
+              myRank={myRank}
+              totalTeams={standings.length}
+              recentMatches={recent}
+              inningsMap={inningsMap}
+              seasonName={season?.name ?? 'BSPL'}
+            />
+          )}
+
+          {/* ── League activity ─────────────────────────────────────────────── */}
+          {recent.length > 0 && (
+            <LeagueActivity
+              recentMatches={recent}
+              standings={standings}
+              myTeamId={myTeam?.id}
+            />
+          )}
 
           {/* ── Two-column grid ─────────────────────────────────────────────── */}
           <div className="grid gap-4 lg:grid-cols-2 animate-fade-in-up">
@@ -433,7 +339,10 @@ export default async function DashboardPage() {
                   style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
                 >
                   <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">My Team</span>
-                  <Link href="/team" className="text-xs text-yellow-400/70 hover:text-yellow-400 font-medium transition-colors">
+                  <Link href="/team" className="text-xs font-medium transition-colors" style={{ color: 'rgba(63,239,180,0.7)' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#3FEFB4')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(63,239,180,0.7)')}
+                  >
                     View roster →
                   </Link>
                 </div>
@@ -455,7 +364,7 @@ export default async function DashboardPage() {
                       <p className="font-black text-lg truncate">{myTeam.name}</p>
                       {myRank > 0 ? (
                         <p className="text-sm text-gray-400">
-                          <span className="font-bold" style={{ color: myRank <= 3 ? '#facc15' : undefined }}>
+                          <span className="font-bold" style={{ color: myRank <= 3 ? '#3FEFB4' : '#F0F4FF' }}>
                             #{myRank}
                           </span>
                           {' in standings'}
@@ -501,7 +410,7 @@ export default async function DashboardPage() {
                           background: Number(myTeam.budget_remaining) > 30
                             ? 'linear-gradient(90deg, #4ade80, #22c55e)'
                             : Number(myTeam.budget_remaining) > 15
-                            ? 'linear-gradient(90deg, #facc15, #fb923c)'
+                            ? 'linear-gradient(90deg, #F7A325, #fb923c)'
                             : 'linear-gradient(90deg, #f87171, #ef4444)',
                         }}
                       />
@@ -553,9 +462,9 @@ export default async function DashboardPage() {
                       href="/draft"
                       className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02]"
                       style={{
-                        background: 'rgba(250,204,21,0.08)',
-                        color: '#facc15',
-                        border: '1px solid rgba(250,204,21,0.2)',
+                        background: 'rgba(63,239,180,0.08)',
+                        color: '#3FEFB4',
+                        border: '1px solid rgba(63,239,180,0.2)',
                       }}
                     >
                       📋 Manage Draft
@@ -565,70 +474,147 @@ export default async function DashboardPage() {
               </div>
             )}
 
-            {/* Standings mini-table */}
+            {/* ── Leaderboard preview ───────────────────────────────────────── */}
             <div
               className="rounded-2xl overflow-hidden"
-              style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+              style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}
             >
-              <div
-                className="px-5 py-3 flex items-center justify-between"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-              >
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Standings</span>
-                <Link href="/standings" className="text-xs text-yellow-400/70 hover:text-yellow-400 font-medium transition-colors">
-                  Full table →
+              {/* Header */}
+              <div className="px-4 pt-4 pb-3 flex items-start justify-between">
+                <div>
+                  <h2
+                    className="font-bold leading-tight"
+                    style={{ fontFamily: 'var(--font-rajdhani)', fontSize: '18px', color: '#F0F4FF' }}
+                  >
+                    Season Standings
+                  </h2>
+                  <p className="text-[11px] mt-0.5" style={{ color: '#8A95A8' }}>
+                    {season?.name ?? 'BSPL'} · {standings.length} teams
+                  </p>
+                </div>
+                <Link
+                  href="/standings"
+                  className="text-xs font-bold mt-0.5 flex-shrink-0"
+                  style={{ color: '#3FEFB4' }}
+                >
+                  View All →
                 </Link>
               </div>
 
               {standings.length === 0 ? (
-                <div className="p-8 text-center text-gray-600 text-sm">
-                  No matches played yet.
+                <div className="px-4 pb-8 text-center">
+                  <p className="text-sm" style={{ color: '#4A5568' }}>No matches played yet.</p>
                 </div>
               ) : (
                 <div>
-                  {standings.map((row: any, i: number) => {
-                    const team    = unpack(row.bspl_teams) as any
-                    const isMe    = row.team_id === myTeam?.id
-                    const qualify = i < 4
-                    const medals  = ['🥇', '🥈', '🥉']
+                  {standings.slice(0, 5).map((row: any, i: number) => {
+                    const team  = unpack(row.bspl_teams) as any
+                    const isMe  = row.team_id === myTeam?.id
+                    const medal = ['🥇', '🥈', '🥉'][i]
+                    const inPlayoffs = i < 4  // top 4 qualify
 
                     return (
                       <div
                         key={row.team_id}
-                        className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.02]"
+                        className="flex items-center gap-3 px-4 py-2.5"
                         style={{
-                          borderBottom: '1px solid rgba(255,255,255,0.04)',
-                          background: isMe ? 'rgba(250,204,21,0.04)' : qualify ? 'rgba(250,204,21,0.015)' : undefined,
+                          borderBottom: i < 4 ? '1px solid #252D3D' : 'none',
+                          background:   isMe ? '#1C2333' : undefined,
+                          borderLeft:   isMe ? '3px solid #3FEFB4' : '3px solid transparent',
                         }}
                       >
-                        <span className="w-6 text-center text-sm flex-shrink-0">
-                          {i < 3 ? medals[i] : <span className="text-gray-600 font-mono">{i+1}</span>}
+                        {/* Rank */}
+                        <span
+                          className="flex-shrink-0 text-center"
+                          style={{ width: '22px', fontFamily: 'var(--font-rajdhani)', fontSize: medal ? '16px' : '13px', color: '#4A5568', fontWeight: 700 }}
+                        >
+                          {medal ?? i + 1}
                         </span>
+
+                        {/* Avatar circle */}
                         <div
-                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: team?.color ?? '#6b7280' }}
-                        />
-                        <span className={`flex-1 text-sm font-bold truncate ${isMe ? 'text-yellow-400' : 'text-gray-200'}`}>
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0"
+                          style={{
+                            background: team?.color ? `${team.color}20` : '#1C2333',
+                            border: isMe
+                              ? '2px solid #3FEFB4'
+                              : `1.5px solid ${team?.color ?? '#252D3D'}60`,
+                            color: isMe ? '#3FEFB4' : (team?.color ?? '#8A95A8'),
+                            boxShadow: isMe ? '0 0 0 3px rgba(63,239,180,0.12)' : 'none',
+                            fontFamily: 'var(--font-rajdhani)',
+                          }}
+                        >
+                          {team?.name?.[0]?.toUpperCase() ?? '?'}
+                        </div>
+
+                        {/* Name */}
+                        <span
+                          className="flex-1 font-bold truncate text-sm"
+                          style={{
+                            color: isMe ? '#3FEFB4' : '#F0F4FF',
+                            fontFamily: 'var(--font-rajdhani)',
+                            fontSize: '14px',
+                          }}
+                        >
                           {team?.name ?? '—'}
-                          {isMe && <span className="text-[10px] text-yellow-400/50 ml-1.5 font-normal">(you)</span>}
+                          {isMe && (
+                            <span className="text-[10px] font-normal ml-1.5" style={{ color: 'rgba(63,239,180,0.5)' }}>
+                              you
+                            </span>
+                          )}
                         </span>
-                        <span className="font-black text-sm tabular-nums" style={{ color: qualify ? '#facc15' : '#6b7280' }}>
+
+                        {/* Points */}
+                        <span
+                          className="font-black tabular-nums flex-shrink-0"
+                          style={{
+                            fontFamily: 'var(--font-rajdhani)',
+                            fontSize: '16px',
+                            color: inPlayoffs ? '#F0F4FF' : '#4A5568',
+                          }}
+                        >
                           {row.points}
+                          <span className="text-[10px] font-normal ml-0.5" style={{ color: '#4A5568' }}>
+                            pts
+                          </span>
                         </span>
-                        <span className="text-xs text-gray-600 w-12 text-right tabular-nums">
+
+                        {/* W/L */}
+                        <span
+                          className="text-[10px] tabular-nums flex-shrink-0 text-right"
+                          style={{ color: '#4A5568', width: '36px' }}
+                        >
                           {row.won}W {row.lost}L
                         </span>
                       </div>
                     )
                   })}
-                  {standings.length >= 4 && (
-                    <div className="px-4 py-2.5 flex items-center gap-2">
-                      <div className="flex-1 h-px" style={{ background: 'rgba(250,204,21,0.15)' }} />
-                      <span className="text-[10px] text-yellow-400/40 font-bold uppercase tracking-widest whitespace-nowrap">
-                        Elimination zone
+
+                  {/* Elimination zone divider */}
+                  {standings.length >= 5 && (
+                    <div
+                      className="mx-4 my-2 flex items-center gap-2"
+                    >
+                      <div className="flex-1 h-px" style={{ background: 'rgba(63,239,180,0.12)' }} />
+                      <span
+                        className="text-[9px] font-bold uppercase tracking-widest whitespace-nowrap"
+                        style={{ color: 'rgba(63,239,180,0.35)', fontFamily: 'var(--font-rajdhani)' }}
+                      >
+                        Playoff cutoff
                       </span>
-                      <div className="flex-1 h-px" style={{ background: 'rgba(250,204,21,0.15)' }} />
+                      <div className="flex-1 h-px" style={{ background: 'rgba(63,239,180,0.12)' }} />
                     </div>
+                  )}
+
+                  {/* Rest of table teaser (if more than 5 teams) */}
+                  {standings.length > 5 && (
+                    <Link
+                      href="/standings"
+                      className="flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold"
+                      style={{ color: 'rgba(63,239,180,0.6)' }}
+                    >
+                      +{standings.length - 5} more teams · View full table →
+                    </Link>
                   )}
                 </div>
               )}
@@ -639,74 +625,97 @@ export default async function DashboardPage() {
           {recent.length > 0 && (
             <div
               className="rounded-2xl overflow-hidden animate-fade-in-up"
-              style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
+              style={{ background: 'var(--surface)', border: '1px solid var(--border-subtle)' }}
             >
-              <div
-                className="px-5 py-3 flex items-center justify-between"
-                style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-              >
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Recent Results</span>
-                <Link href="/matches" className="text-xs text-yellow-400/70 hover:text-yellow-400 font-medium transition-colors">
-                  All matches →
+              {/* Header */}
+              <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+                <div>
+                  <h2
+                    className="font-bold"
+                    style={{ fontFamily: 'var(--font-rajdhani)', fontSize: '18px', color: '#F0F4FF' }}
+                  >
+                    Recent Results
+                  </h2>
+                  <p className="text-[11px] mt-0.5" style={{ color: '#8A95A8' }}>Last {recent.length} completed</p>
+                </div>
+                <Link href="/matches?tab=results" className="text-xs font-bold flex-shrink-0" style={{ color: '#3FEFB4' }}>
+                  All →
                 </Link>
               </div>
 
               <div>
-                {recent.map((match: any) => {
-                  const teamA   = unpack(match.team_a) as any
-                  const teamB   = unpack(match.team_b) as any
-                  const innings = inningsMap[match.id] ?? []
-                  const inn1    = innings.find((i: any) => i.innings_number === 1)
-                  const inn2    = innings.find((i: any) => i.innings_number === 2)
-                  const aFirst  = match.batting_first_team_id
+                {recent.map((match: any, idx: number) => {
+                  const teamA     = unpack(match.team_a) as any
+                  const teamB     = unpack(match.team_b) as any
+                  const innings   = inningsMap[match.id] ?? []
+                  const inn1      = innings.find((i: any) => i.innings_number === 1)
+                  const inn2      = innings.find((i: any) => i.innings_number === 2)
+                  const aFirst    = match.batting_first_team_id
                     ? match.batting_first_team_id === teamA?.id
                     : inn1?.batting_team_id === teamA?.id
-                  const scoreA = aFirst
-                    ? (inn1 ? `${inn1.total_runs}/${inn1.total_wickets}` : null)
-                    : (inn2 ? `${inn2.total_runs}/${inn2.total_wickets}` : null)
-                  const scoreB = !aFirst
-                    ? (inn1 ? `${inn1.total_runs}/${inn1.total_wickets}` : null)
-                    : (inn2 ? `${inn2.total_runs}/${inn2.total_wickets}` : null)
+                  const scoreA    = aFirst ? inn1 : inn2
+                  const scoreB    = !aFirst ? inn1 : inn2
                   const involveMe = teamA?.id === myTeam?.id || teamB?.id === myTeam?.id
+                  const isLast    = idx === recent.length - 1
 
                   return (
                     <Link
                       key={match.id}
                       href={`/matches/${match.id}`}
-                      className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-white/[0.025] active:bg-white/[0.04]"
+                      className="flex items-center gap-3 px-4 py-3 card-press"
                       style={{
-                        borderBottom: '1px solid rgba(255,255,255,0.04)',
-                        background: involveMe ? 'rgba(250,204,21,0.025)' : undefined,
+                        borderBottom: isLast ? 'none' : '1px solid #252D3D',
+                        background: involveMe ? 'rgba(63,239,180,0.03)' : undefined,
+                        borderLeft: involveMe ? '3px solid rgba(63,239,180,0.3)' : '3px solid transparent',
                       }}
                     >
-                      <span className="text-[10px] text-gray-700 font-mono w-5 flex-shrink-0">
+                      {/* Match number */}
+                      <span
+                        className="text-[10px] font-bold flex-shrink-0"
+                        style={{ color: '#4A5568', fontFamily: 'var(--font-rajdhani)', width: '20px' }}
+                      >
                         M{match.match_number}
                       </span>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3">
-                          {/* Team A score */}
-                          <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: teamA?.color ?? '#555' }} />
-                            <span className="text-xs font-bold text-gray-200 truncate">{teamA?.name}</span>
-                            {scoreA && <span className="text-xs text-gray-500 font-mono ml-auto flex-shrink-0">{scoreA}</span>}
+                      {/* Teams + scores */}
+                      <div className="flex-1 min-w-0 space-y-1">
+                        {[
+                          { team: teamA, score: scoreA },
+                          { team: teamB, score: scoreB },
+                        ].map(({ team, score }, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span
+                              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                              style={{ background: team?.color ?? '#4A5568' }}
+                            />
+                            <span
+                              className="flex-1 text-xs font-bold truncate"
+                              style={{
+                                color: team?.id === myTeam?.id ? '#3FEFB4' : '#F0F4FF',
+                                fontFamily: 'var(--font-rajdhani)',
+                                fontSize: '13px',
+                              }}
+                            >
+                              {team?.name ?? '—'}
+                            </span>
+                            {score && (
+                              <span
+                                className="text-xs font-black tabular-nums flex-shrink-0"
+                                style={{ color: '#8A95A8', fontFamily: 'var(--font-rajdhani)', fontSize: '13px' }}
+                              >
+                                {score.total_runs}/{score.total_wickets}
+                              </span>
+                            )}
                           </div>
-
-                          <span className="text-gray-700 text-[10px] font-bold flex-shrink-0">vs</span>
-
-                          {/* Team B score */}
-                          <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                            {scoreB && <span className="text-xs text-gray-500 font-mono mr-auto flex-shrink-0">{scoreB}</span>}
-                            <span className="text-xs font-bold text-gray-200 truncate">{teamB?.name}</span>
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: teamB?.color ?? '#555' }} />
-                          </div>
-                        </div>
+                        ))}
                         {match.result_summary && (
-                          <p className="text-[10px] text-green-400/70 mt-0.5 truncate">{match.result_summary}</p>
+                          <p className="text-[10px] truncate mt-0.5" style={{ color: '#21C55D' }}>
+                            {match.result_summary}
+                          </p>
                         )}
                       </div>
 
-                      <span className="text-gray-700 text-xs flex-shrink-0">›</span>
+                      <span className="text-[10px] flex-shrink-0" style={{ color: '#4A5568' }}>›</span>
                     </Link>
                   )
                 })}

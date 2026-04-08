@@ -17,7 +17,7 @@ const COND: Record<string, { label: string; color: string; desc: string }> = {
 }
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  lineup_open: { label: 'Lineups Open', cls: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' },
+  lineup_open: { label: 'Lineups Open', cls: 'bg-[rgba(247,163,37,0.15)] text-[#F7A325] border border-[rgba(247,163,37,0.3)]' },
   live:        { label: 'LIVE',         cls: 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' },
   completed:   { label: 'Completed',    cls: 'bg-green-500/20 text-green-300' },
 }
@@ -79,7 +79,7 @@ const BALL_STYLE: Record<string, string> = {
   '.':  'bg-gray-700 text-gray-400', '1': 'bg-gray-600 text-gray-200',
   '2':  'bg-gray-600 text-gray-200', '3': 'bg-indigo-700 text-indigo-200',
   '4':  'bg-blue-600 text-white font-bold', '6': 'bg-green-600 text-white font-bold',
-  'W':  'bg-red-600 text-white font-bold',  'Wd': 'bg-yellow-700 text-yellow-100',
+  'W':  'bg-red-600 text-white font-bold',  'Wd': 'bg-[rgba(247,163,37,0.2)] text-[#F7A325]',
   'Nb': 'bg-orange-700 text-orange-100',
 }
 
@@ -186,7 +186,7 @@ function InningsCard({ title, teamColor, total_runs, total_wickets, overs_comple
                     <td className="py-1.5 pr-2 pl-1 font-medium text-white">{b.name}</td>
                     <td className="text-center py-1.5 text-gray-400">{b.overs}</td>
                     <td className="text-center py-1.5">{b.runs}</td>
-                    <td className="text-center py-1.5 font-semibold text-yellow-400">{b.wickets}</td>
+                    <td className="text-center py-1.5 font-semibold text-[#3FEFB4]">{b.wickets}</td>
                     <td className="text-center py-1.5 text-gray-400">{b.econ.toFixed(1)}</td>
                     <td className="text-center py-1.5 text-gray-500 text-xs hidden sm:table-cell">{b.wides || '—'}</td>
                   </tr>
@@ -327,7 +327,7 @@ export default async function PracticeDetailPage({
           </div>
           <div className="flex items-center justify-around gap-4 mb-4">
             <div className="text-center">
-              <Link href={`/teams/${batFirst?.id}`} className="flex items-center gap-2 justify-center mb-1 hover:text-yellow-400 transition group">
+              <Link href={`/teams/${batFirst?.id}`} className="flex items-center gap-2 justify-center mb-1 hover:text-[#3FEFB4] transition group">
                 <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: batFirst?.color ?? '#888' }} />
                 <span className="font-bold text-white group-hover:underline">{batFirst?.name}</span>
               </Link>
@@ -341,7 +341,7 @@ export default async function PracticeDetailPage({
             </div>
             <span className="text-gray-700 text-2xl font-bold">vs</span>
             <div className="text-center">
-              <Link href={`/teams/${batSecond?.id}`} className="flex items-center gap-2 justify-center mb-1 hover:text-yellow-400 transition group">
+              <Link href={`/teams/${batSecond?.id}`} className="flex items-center gap-2 justify-center mb-1 hover:text-[#3FEFB4] transition group">
                 <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: batSecond?.color ?? '#888' }} />
                 <span className="font-bold text-white group-hover:underline">{batSecond?.name}</span>
               </Link>
@@ -444,13 +444,13 @@ export default async function PracticeDetailPage({
                 {team?.id === myTeam.id ? (
                   <p className="font-bold text-white">{team?.name}</p>
                 ) : (
-                  <Link href={`/teams/${team?.id}`} className="font-bold text-white hover:text-yellow-400 hover:underline transition">
+                  <Link href={`/teams/${team?.id}`} className="font-bold text-white hover:text-[#3FEFB4] hover:underline transition">
                     {team?.name}
                   </Link>
                 )}
                 <div className="mt-1 flex flex-col items-center gap-0.5">
                   {team?.id === myTeam.id
-                    ? <p className="text-xs text-yellow-400">← You</p>
+                    ? <p className="text-xs text-[#3FEFB4]">← You</p>
                     : team?.is_bot
                       ? <p className="text-xs text-purple-400">🤖 Bot</p>
                       : <p className="text-xs text-gray-500">Real player</p>
@@ -534,7 +534,7 @@ export default async function PracticeDetailPage({
           {[teamA, teamB].map((team, idx) => (
             <div key={team?.id ?? idx} className={`flex-1 text-center ${idx === 1 ? '' : ''}`}>
               <div className="w-12 h-12 rounded-full mx-auto mb-2" style={{ backgroundColor: team?.color ?? '#888' }} />
-              <Link href={`/teams/${team?.id}`} className="font-bold text-xl text-white hover:text-yellow-400 hover:underline transition block">
+              <Link href={`/teams/${team?.id}`} className="font-bold text-xl text-white hover:text-[#3FEFB4] hover:underline transition block">
                 {team?.name ?? '—'}
               </Link>
               <p className="text-xs mt-1">

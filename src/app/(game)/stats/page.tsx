@@ -88,7 +88,7 @@ export default async function StatsPage() {
       {rows.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 text-center">
-            <p className="text-2xl font-bold text-yellow-400">{totalMatches.count ?? 0}</p>
+            <p className="text-2xl font-bold text-[#3FEFB4]">{totalMatches.count ?? 0}</p>
             <p className="text-xs text-gray-500 mt-0.5">Matches Played</p>
           </div>
           {topRuns && (

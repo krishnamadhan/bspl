@@ -58,7 +58,7 @@ interface AuctionRoomProps {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const PRICE_TIER_COLORS: Record<string, string> = {
-  elite:   'bg-yellow-400/20 text-yellow-300 border-yellow-400/30',
+  elite:   'bg-[rgba(63,239,180,0.12)] text-[#3FEFB4] border-[rgba(63,239,180,0.3)]',
   premium: 'bg-purple-400/20 text-purple-300 border-purple-400/30',
   good:    'bg-blue-400/20 text-blue-300 border-blue-400/30',
   value:   'bg-green-400/20 text-green-300 border-green-400/30',
@@ -250,7 +250,7 @@ export default function AuctionRoom({
         <h1 className="text-2xl font-bold">🔨 Live Auction</h1>
         {myTeam && (
           <span className="text-sm text-gray-400 ml-auto">
-            Budget: <span className="text-yellow-400 font-semibold">{formatCr(myBudget)}</span>
+            Budget: <span className="text-[#3FEFB4] font-semibold">{formatCr(myBudget)}</span>
           </span>
         )}
       </div>
@@ -270,7 +270,7 @@ export default function AuctionRoom({
           >
             {currentBidder?.name ?? 'Unknown Team'}
           </div>
-          <p className="text-yellow-400 text-3xl font-black">{formatCr(Number(auction.winning_bid ?? auction.current_bid))}</p>
+          <p className="text-[#3FEFB4] text-3xl font-black">{formatCr(Number(auction.winning_bid ?? auction.current_bid))}</p>
           <p className="text-gray-600 text-xs pt-1">Waiting for next player…</p>
         </div>
       )}
@@ -290,9 +290,9 @@ export default function AuctionRoom({
       {!auction && (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center space-y-4">
           <div className="flex gap-1 justify-center">
-            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+            <span className="w-2 h-2 rounded-full bg-[#3FEFB4] animate-bounce" style={{ animationDelay: '0ms' }} />
+            <span className="w-2 h-2 rounded-full bg-[#3FEFB4] animate-bounce" style={{ animationDelay: '150ms' }} />
+            <span className="w-2 h-2 rounded-full bg-[#3FEFB4] animate-bounce" style={{ animationDelay: '300ms' }} />
           </div>
           <p className="text-gray-400">Waiting for admin to open the next bid…</p>
         </div>
@@ -358,7 +358,7 @@ export default function AuctionRoom({
             <div className="text-center mb-4">
               <p className="text-gray-500 text-sm mb-1">Current Bid</p>
               <p
-                className={`text-4xl font-bold transition-all duration-300 ${bidFlash ? 'text-green-300 scale-110' : 'text-yellow-400 scale-100'}`}
+                className={`text-4xl font-bold transition-all duration-300 ${bidFlash ? 'text-green-300 scale-110' : 'text-[#3FEFB4] scale-100'}`}
                 style={{ display: 'block' }}
               >
                 {formatCr(Number(auction.current_bid))}
@@ -395,7 +395,7 @@ export default function AuctionRoom({
                       onClick={() => placeBid(inc)}
                       disabled={disabled}
                       className="py-3 rounded-xl font-bold text-sm transition
-                        bg-yellow-400 text-gray-950 hover:bg-yellow-300
+                        bg-[#3FEFB4] text-[#0B0E14] hover:bg-[#5FFFCA]
                         disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       +{inc} Cr
@@ -437,9 +437,9 @@ export default function AuctionRoom({
                   <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: team.color }} />
                   <span className="font-medium text-sm flex-1 truncate">
                     {team.name}
-                    {isMe && <span className="text-yellow-400 text-xs ml-2">(you)</span>}
+                    {isMe && <span className="text-[#3FEFB4] text-xs ml-2">(you)</span>}
                   </span>
-                  <span className="text-yellow-400 text-sm font-semibold whitespace-nowrap">{formatCr(team.budget_remaining)}</span>
+                  <span className="text-[#3FEFB4] text-sm font-semibold whitespace-nowrap">{formatCr(team.budget_remaining)}</span>
                   <span className="text-gray-500 text-xs whitespace-nowrap">{team.roster.length}pl</span>
                   <span className="text-gray-600 text-xs ml-1">{isExpanded ? '▲' : '▼'}</span>
                 </button>

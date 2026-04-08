@@ -48,7 +48,7 @@ export default function PracticeStarter({
       <button
         onClick={handleStart}
         disabled={busy}
-        className="w-full py-3 rounded-xl font-bold text-gray-950 bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed transition text-base"
+        className="w-full py-3 rounded-xl font-bold text-[#0B0E14] bg-[#3FEFB4] hover:bg-[#5FFFCA] disabled:opacity-50 disabled:cursor-not-allowed transition text-base"
       >
         {busy ? 'Starting match…' : '▶ Start Practice Match'}
       </button>

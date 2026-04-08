@@ -68,7 +68,7 @@ export default function CreateTeamForm({ seasonName }: { seasonName: string }) {
             placeholder="e.g. Thunder Kings"
             maxLength={30}
             required
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400 transition"
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-[#3FEFB4] transition"
           />
           <p className="text-xs text-gray-600 mt-1">{name.length}/30</p>
         </div>
@@ -105,7 +105,7 @@ export default function CreateTeamForm({ seasonName }: { seasonName: string }) {
         <button
           type="submit"
           disabled={loading || name.trim().length < 3}
-          className="w-full bg-yellow-400 text-gray-950 font-bold py-3 rounded-xl hover:bg-yellow-300 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full bg-[#3FEFB4] text-[#0B0E14] font-bold py-3 rounded-xl hover:bg-[#5FFFCA] transition disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {loading ? 'Creating…' : 'Create Team & Go to Draft →'}
         </button>

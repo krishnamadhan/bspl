@@ -34,7 +34,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-yellow-400">🏏 BSPL</h1>
+          <h1 className="text-4xl font-bold text-[#3FEFB4]">🏏 BSPL</h1>
           <p className="text-gray-400 mt-2">Banter Squad Premier League</p>
         </div>
 
@@ -48,7 +48,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#3FEFB4]"
                 required
               />
             </div>
@@ -58,7 +58,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#3FEFB4]"
                 required
                 minLength={6}
               />
@@ -69,7 +69,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-yellow-400 text-gray-950 font-bold py-2.5 rounded-lg hover:bg-yellow-300 transition disabled:opacity-50"
+              className="w-full bg-[#3FEFB4] text-[#0B0E14] font-bold py-2.5 rounded-lg hover:bg-[#5FFFCA] transition disabled:opacity-50"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
@@ -77,7 +77,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-400 mt-6">
             No account?{' '}
-            <Link href="/register" className="text-yellow-400 hover:underline">
+            <Link href="/register" className="text-[#3FEFB4] hover:underline">
               Register here
             </Link>
           </p>

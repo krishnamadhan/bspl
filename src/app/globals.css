@@ -3,33 +3,66 @@
 /* ── Design tokens ──────────────────────────────────────────────────────────── */
 
 :root {
-  --background: #030712;
-  --foreground: #f9fafb;
+  /* Backgrounds */
+  --background:        #0B0E14;
+  --surface:           #141920;
+  --surface-raised:    #1C2333;
+  --border-subtle:     #252D3D;
 
-  /* Brand */
-  --accent:        #facc15;   /* yellow-400 */
-  --accent-glow:   #facc1540;
+  /* Accents */
+  --accent:            #3FEFB4;   /* electric teal — CTAs, active tabs */
+  --accent-dark:       #00C48C;   /* pressed / darker teal */
+  --accent-glow:       rgba(63, 239, 180, 0.15);
+  --secondary:         #F7A325;   /* amber — warnings, deadline urgency */
 
-  /* Glass */
-  --glass-bg:      rgba(255,255,255,0.04);
-  --glass-border:  rgba(255,255,255,0.08);
-  --glass-hover:   rgba(255,255,255,0.07);
+  /* Status */
+  --live-red:          #FF3B3B;
+  --win-green:         #21C55D;
+  --danger-amber:      #F7A325;
+  --locked-gray:       #4A5568;
 
-  /* Cards */
-  --card-bg:       #0d1117;
-  --card-border:   #1f2937;
-  --card-hover:    #111827;
+  /* Text */
+  --text-primary:      #F0F4FF;
+  --text-secondary:    #8A95A8;
+  --text-muted:        #4A5568;
 
-  /* Nav */
-  --nav-bg:        #070d14;
-  --nav-border:    rgba(255,255,255,0.06);
+  /* Legacy aliases (keep for components still using old tokens) */
+  --foreground:        #F0F4FF;
+  --glass-bg:          rgba(255,255,255,0.04);
+  --glass-border:      rgba(255,255,255,0.08);
+  --glass-hover:       rgba(255,255,255,0.07);
+  --card-bg:           #141920;
+  --card-border:       #252D3D;
+  --card-hover:        #1C2333;
+  --nav-bg:            #0B0E14;
+  --nav-border:        #252D3D;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Map to Tailwind color utilities */
+  --color-background:       var(--background);
+  --color-foreground:       var(--foreground);
+  --color-surface:          var(--surface);
+  --color-surface-raised:   var(--surface-raised);
+  --color-border-subtle:    var(--border-subtle);
+
+  --color-accent:           var(--accent);
+  --color-accent-dark:      var(--accent-dark);
+  --color-secondary:        var(--secondary);
+
+  --color-live-red:         var(--live-red);
+  --color-win-green:        var(--win-green);
+  --color-danger-amber:     var(--danger-amber);
+  --color-locked-gray:      var(--locked-gray);
+
+  --color-text-primary:     var(--text-primary);
+  --color-text-secondary:   var(--text-secondary);
+  --color-text-muted:       var(--text-muted);
+
+  /* Fonts */
+  --font-sans:     var(--font-inter, 'Inter', ui-sans-serif, system-ui, sans-serif);
+  --font-display:  var(--font-rajdhani, 'Rajdhani', ui-sans-serif, system-ui, sans-serif);
+  --font-mono:     var(--font-geist-mono);
 }
 
 /* ── Base ───────────────────────────────────────────────────────────────────── */
@@ -41,25 +74,24 @@ html {
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans, 'Geist', ui-sans-serif, system-ui, sans-serif);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: none;
-  /* Subtle noise texture over the dark bg */
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(250,204,21,0.04) 0%, transparent 60%);
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(63,239,180,0.04) 0%, transparent 60%);
 }
 
 /* ── Scrollbar ──────────────────────────────────────────────────────────────── */
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1f2937 transparent;
+  scrollbar-color: #252D3D transparent;
 }
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: #252D3D; border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: #374151; }
 
 /* ── Keyframes ──────────────────────────────────────────────────────────────── */
@@ -80,13 +112,13 @@ body {
 }
 
 @keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(250,204,21,0); }
-  50%       { box-shadow: 0 0 12px 3px rgba(250,204,21,0.25); }
+@keyframes livePulse {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%       { transform: scale(1.3); opacity: 0.6; }
 }
 
 @keyframes liveBlip {
@@ -94,8 +126,13 @@ body {
   50%       { opacity: 0.4; transform: scale(0.85); }
 }
 
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(63,239,180,0); }
+  50%       { box-shadow: 0 0 12px 3px rgba(63,239,180,0.25); }
+}
+
 @keyframes scoreFlash {
-  0%   { background-color: rgba(250,204,21,0.25); }
+  0%   { background-color: rgba(63,239,180,0.25); }
   100% { background-color: transparent; }
 }
 
@@ -109,14 +146,24 @@ body {
   50%       { transform: translateY(-4px); }
 }
 
-/* ── Utility classes ────────────────────────────────────────────────────────── */
+@keyframes countdownShake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-3px); }
+  40%       { transform: translateX(3px); }
+  60%       { transform: translateX(-2px); }
+  80%       { transform: translateX(2px); }
+}
 
-.animate-fade-in-up { animation: fadeInUp 0.4s ease both; }
-.animate-fade-in    { animation: fadeIn 0.3s ease both; }
+/* ── Animation utilities ────────────────────────────────────────────────────── */
+
+.animate-fade-in-up  { animation: fadeInUp 0.4s ease both; }
+.animate-fade-in     { animation: fadeIn 0.3s ease both; }
 .animate-slide-right { animation: slideInRight 0.35s ease both; }
-.animate-float      { animation: float 3s ease-in-out infinite; }
-.animate-live-blip  { animation: liveBlip 1.2s ease-in-out infinite; }
-.animate-pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
+.animate-float       { animation: float 3s ease-in-out infinite; }
+.animate-live-blip   { animation: liveBlip 1.2s ease-in-out infinite; }
+.animate-live-pulse  { animation: livePulse 1.5s ease-in-out infinite; }
+.animate-pulse-glow  { animation: pulseGlow 2s ease-in-out infinite; }
+.animate-shake       { animation: countdownShake 0.4s ease; }
 
 /* Stagger children */
 .stagger > *:nth-child(1) { animation-delay: 0ms; }
@@ -126,12 +173,41 @@ body {
 .stagger > *:nth-child(5) { animation-delay: 240ms; }
 .stagger > *:nth-child(6) { animation-delay: 300ms; }
 
-/* Shimmer skeleton loader */
+/* ── Skeleton / shimmer loader ──────────────────────────────────────────────── */
+
 .skeleton {
   background: linear-gradient(90deg,
-    #1f2937 25%, #374151 37%, #1f2937 63%);
-  background-size: 400% 100%;
-  animation: shimmer 1.4s ease infinite;
+    #141920 25%, #1C2333 50%, #141920 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Card surfaces ──────────────────────────────────────────────────────────── */
+
+/* Primary card utility — use this everywhere */
+.card-surface {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+/* Raised card (modals, sheets, elevated) */
+.card-raised {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+/* Legacy alias — keeps existing .cricket-card classes working */
+.cricket-card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.cricket-card:hover {
+  border-color: rgba(63,239,180,0.3);
+  background: var(--surface-raised);
 }
 
 /* Glass card */
@@ -145,64 +221,71 @@ body {
   background: var(--glass-hover);
 }
 
-/* Cricket card - standard dark card */
-.cricket-card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 0.75rem;
-  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-}
-.cricket-card:hover {
-  border-color: rgba(250,204,21,0.3);
-  background: var(--card-hover);
-}
+/* ── Typography ─────────────────────────────────────────────────────────────── */
 
-/* Accent gradient text */
+/* Teal accent gradient text (headings, highlights) */
 .gradient-text {
-  background: linear-gradient(135deg, #facc15 0%, #fb923c 100%);
+  background: linear-gradient(135deg, #3FEFB4 0%, #00C48C 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* LIVE badge - red pulsing dot */
+/* Amber gradient text (secondary highlights) */
+.gradient-text-amber {
+  background: linear-gradient(135deg, #F7A325 0%, #fb923c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Status & badge utilities ───────────────────────────────────────────────── */
+
+/* LIVE badge — red pulsing dot */
 .live-badge::before {
   content: '';
   display: inline-block;
   width: 7px; height: 7px;
   border-radius: 50%;
-  background: #f87171;
+  background: var(--live-red);
   margin-right: 5px;
-  animation: liveBlip 1.2s ease-in-out infinite;
+  animation: livePulse 1.5s ease-in-out infinite;
 }
 
-/* Score flash (used in JS) */
+/* Live pulse dot — standalone */
+.live-pulse {
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+/* Score flash (triggered by JS) */
 .score-flash { animation: scoreFlash 0.5s ease; }
 
 /* Pitch gradient accent bar */
 .pitch-accent {
-  background: linear-gradient(90deg, #facc15, #fb923c, #f87171);
+  background: linear-gradient(90deg, #3FEFB4, #00C48C, #F7A325);
   height: 3px;
   border-radius: 2px;
 }
 
-/* Team color ring utility (set --team-color CSS var inline) */
+/* Team color ring */
 .team-ring {
   border: 2px solid var(--team-color, #6b7280);
   box-shadow: 0 0 10px color-mix(in srgb, var(--team-color, #6b7280) 30%, transparent);
 }
 
-/* Form badge: W/L */
+/* Form badges: W / L */
 .form-w {
-  background: rgba(74, 222, 128, 0.15);
-  color: #4ade80;
-  border: 1px solid rgba(74, 222, 128, 0.25);
+  background: rgba(33, 197, 93, 0.15);
+  color: #21C55D;
+  border: 1px solid rgba(33, 197, 93, 0.25);
 }
 .form-l {
-  background: rgba(107, 114, 128, 0.12);
-  color: #6b7280;
-  border: 1px solid rgba(107, 114, 128, 0.2);
+  background: rgba(74, 85, 104, 0.12);
+  color: #8A95A8;
+  border: 1px solid rgba(74, 85, 104, 0.2);
 }
+
+/* ── Navigation ─────────────────────────────────────────────────────────────── */
 
 /* Nav pill indicator */
 .nav-indicator {
@@ -220,6 +303,8 @@ body {
 .bottom-nav-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* ── Misc ───────────────────────────────────────────────────────────────────── */
 
 /* Tap highlight suppression */
 a, button { -webkit-tap-highlight-color: transparent; }
@@ -245,4 +330,31 @@ a, button { -webkit-tap-highlight-color: transparent; }
 /* Page entry animation */
 .page-enter {
   animation: fadeInUp 0.35s ease both;
+}
+
+/* Card press feel */
+.card-press {
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+.card-press:active {
+  transform: scale(0.98);
+  filter: brightness(1.1);
+}
+
+/* Hide scrollbar but keep scroll */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ── Live ticker marquee ────────────────────────────────────────────────────── */
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  white-space: nowrap;
+  width: max-content;
+  animation: marquee 24s linear infinite;
 }

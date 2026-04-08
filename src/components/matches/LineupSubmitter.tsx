@@ -285,7 +285,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                   onClick={() => togglePlayer(player.id)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition border ${
                     isIn
-                      ? 'border-yellow-400/40 bg-yellow-400/8'
+                      ? 'border-[rgba(63,239,180,0.35)] bg-[rgba(63,239,180,0.06)]'
                       : 'border-gray-800 bg-gray-900 hover:border-gray-700'
                   }`}
                 >
@@ -324,7 +324,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                     })()}
                     {/* Bowling overs assigned */}
                     {isBowler && (
-                      <p className="text-[10px] text-yellow-400 leading-none">
+                      <p className="text-[10px] text-[#3FEFB4] leading-none">
                         Ov {bowlingOrder.map((b, i) => b === player.id ? i + 1 : null).filter(Boolean).join('+')}
                       </p>
                     )}
@@ -332,7 +332,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
 
                   {/* Tick */}
                   <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                    isIn ? 'border-yellow-400 bg-yellow-400' : 'border-gray-600'
+                    isIn ? 'border-[#3FEFB4] bg-[#3FEFB4]' : 'border-gray-600'
                   }`}>
                     {isIn && <span className="text-gray-950 text-xs font-black leading-none">✓</span>}
                   </div>
@@ -388,7 +388,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                               overCount > 0
                                 ? overCount >= maxOversPerBowler
                                   ? 'bg-orange-400/20 text-orange-300'
-                                  : 'bg-yellow-400/20 text-yellow-300'
+                                  : 'bg-[rgba(63,239,180,0.15)] text-[#3FEFB4]'
                                 : 'bg-gray-800 text-gray-500 hover:text-gray-300'
                             }`}
                             title={overCount >= maxOversPerBowler ? 'Click to remove from bowling' : overCount > 0 ? `Click to add another over (max ${maxOversPerBowler})` : 'Assign to bowl'}
@@ -437,7 +437,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                     key={i}
                     className="flex items-center gap-3 px-3 py-2 bg-gray-900 rounded-lg border border-gray-800"
                   >
-                    <span className="text-yellow-400/50 text-xs font-mono w-10 flex-shrink-0">
+                    <span className="text-xs font-mono w-10 flex-shrink-0" style={{ color: 'rgba(63,239,180,0.5)' }}>
                       Over {i + 1}
                     </span>
 
@@ -485,7 +485,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
                   onClick={() => setTossChoice(choice)}
                   className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition ${
                     tossChoice === choice
-                      ? 'bg-yellow-400 text-gray-950'
+                      ? 'bg-[#3FEFB4] text-[#0B0E14]'
                       : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                   }`}
                 >
@@ -504,7 +504,7 @@ export default function LineupSubmitter({ matchId, myTeamId, squad, existingLine
             <button
               onClick={handleSubmit}
               disabled={loading || !readyToSubmit}
-              className="w-full py-3 bg-yellow-400 text-gray-950 font-bold rounded-xl hover:bg-yellow-300 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-[#3FEFB4] text-[#0B0E14] font-bold rounded-xl hover:bg-[#5FFFCA] transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading
                 ? 'Submitting…'

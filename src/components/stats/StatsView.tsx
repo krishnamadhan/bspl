@@ -34,7 +34,7 @@ const ROLE_BADGE: Record<string, { label: string; cls: string }> = {
 }
 
 const RANK_META = [
-  { border: 'border-yellow-400/60', bg: 'bg-yellow-400/8',  num: 'text-yellow-400', label: '🥇' },
+  { border: 'border-[rgba(63,239,180,0.5)]', bg: 'bg-[rgba(63,239,180,0.06)]', num: 'text-[#3FEFB4]', label: '🥇' },
   { border: 'border-gray-400/40',   bg: 'bg-gray-400/5',    num: 'text-gray-300',   label: '🥈' },
   { border: 'border-amber-700/50',  bg: 'bg-amber-700/8',   num: 'text-amber-600',  label: '🥉' },
 ]

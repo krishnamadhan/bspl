@@ -63,7 +63,7 @@ const ROLE_ICON: Record<PlayerRole, string> = {
 }
 
 const TIER_STYLE: Record<PriceTier, string> = {
-  elite:   'text-yellow-400 bg-yellow-400/10 border-yellow-400/30',
+  elite:   'text-[#3FEFB4] bg-[rgba(63,239,180,0.1)] border-[rgba(63,239,180,0.3)]',
   premium: 'text-orange-400 bg-orange-400/10 border-orange-400/30',
   good:    'text-green-400  bg-green-400/10  border-green-400/30',
   value:   'text-blue-400   bg-blue-400/10   border-blue-400/30',
@@ -305,7 +305,7 @@ export default function DraftBoard({
               <div className="flex items-center gap-4">
                 <div>
                   <p className="text-[10px] text-gray-500 uppercase tracking-wide">Budget left</p>
-                  <p className={`text-sm font-bold leading-none mt-0.5 ${budgetLeft < 10 ? 'text-red-400' : 'text-yellow-400'}`}>
+                  <p className={`text-sm font-bold leading-none mt-0.5 ${budgetLeft < 10 ? 'text-red-400' : 'text-[#3FEFB4]'}`}>
                     Rs{budgetLeft.toFixed(1)}Cr
                   </p>
                 </div>
@@ -330,7 +330,7 @@ export default function DraftBoard({
             {/* Budget progress bar */}
             <div className="mt-2 w-full bg-gray-800 rounded-full h-0.5">
               <div
-                className={`h-0.5 rounded-full transition-all duration-300 ${budgetPct > 90 ? 'bg-red-500' : budgetPct > 70 ? 'bg-yellow-400' : 'bg-green-400'}`}
+                className={`h-0.5 rounded-full transition-all duration-300 ${budgetPct > 90 ? 'bg-red-500' : budgetPct > 70 ? 'bg-[#F7A325]' : 'bg-green-400'}`}
                 style={{ width: `${budgetPct}%` }}
               />
             </div>
@@ -342,7 +342,7 @@ export default function DraftBoard({
             <h1 className="text-2xl font-bold">Draft</h1>
             <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
               season.status === 'draft_open'
-                ? 'bg-yellow-400 text-gray-950'
+                ? 'bg-[#3FEFB4] text-[#0B0E14]'
                 : 'bg-gray-700 text-gray-300'
             }`}>
               {statusLabel}
@@ -377,7 +377,7 @@ export default function DraftBoard({
         <div className="flex flex-wrap gap-1.5">
           {([
             { key: 'all',     label: 'All',           cls: 'border-gray-600 text-gray-300' },
-            { key: 'elite',   label: '⚡ Elite',       cls: 'border-yellow-400/50 text-yellow-300' },
+            { key: 'elite',   label: '⚡ Elite',       cls: 'border-[rgba(63,239,180,0.5)] text-[#3FEFB4]' },
             { key: 'premium', label: '🔥 Premium',     cls: 'border-orange-400/50 text-orange-300' },
             { key: 'good',    label: '✅ Good',        cls: 'border-green-400/50 text-green-300' },
             { key: 'value',   label: '💎 Value',       cls: 'border-blue-400/50 text-blue-300' },
@@ -409,12 +409,12 @@ export default function DraftBoard({
             placeholder="Search player…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400 w-36"
+            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#3FEFB4] w-36"
           />
           <select
             value={roleFilter}
             onChange={e => setRole(e.target.value)}
-            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-yellow-400"
+            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#3FEFB4]"
           >
             <option value="all">All Roles</option>
             <option value="batsman">🏏 Batsmen</option>
@@ -425,7 +425,7 @@ export default function DraftBoard({
           <select
             value={teamFilter}
             onChange={e => setTeam(e.target.value)}
-            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-yellow-400"
+            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#3FEFB4]"
           >
             <option value="all">All IPL Teams</option>
             {iplTeams.map(t => <option key={t} value={t}>{t}</option>)}
@@ -433,7 +433,7 @@ export default function DraftBoard({
           <select
             value={sortBy}
             onChange={e => setSort(e.target.value as typeof sortBy)}
-            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-yellow-400"
+            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#3FEFB4]"
           >
             <option value="price">↓ Price</option>
             <option value="sr">↓ Bat SR</option>
@@ -445,7 +445,7 @@ export default function DraftBoard({
               onClick={() => setShowOwned(v => !v)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
                 showOwned
-                  ? 'bg-yellow-400/10 border-yellow-400/30 text-yellow-300'
+                  ? 'bg-[rgba(63,239,180,0.1)] border-[rgba(63,239,180,0.3)] text-[#3FEFB4]'
                   : 'bg-gray-900 border-gray-700 text-gray-500 hover:text-gray-300'
               }`}
             >
@@ -484,7 +484,7 @@ export default function DraftBoard({
                 key={player.id}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 border transition-all duration-300 ${
                   justPicked   ? 'bg-green-400/15 border-green-400/60 scale-[1.01]'
-                  : inSquad    ? 'bg-yellow-400/5 border-yellow-400/30'
+                  : inSquad    ? 'bg-[rgba(63,239,180,0.04)] border-[rgba(63,239,180,0.25)]'
                   : takenOther ? 'bg-gray-900 border-gray-800 opacity-40'
                   : 'bg-gray-900 border-gray-800 hover:border-gray-700'
                 }`}
@@ -536,12 +536,12 @@ export default function DraftBoard({
                       loading
                         ? 'bg-gray-700 text-gray-500 cursor-wait'
                         : inSquad
-                          ? 'bg-yellow-400/15 text-yellow-400 border border-yellow-400/30 hover:bg-red-500/15 hover:text-red-400 hover:border-red-400/30'
+                          ? 'bg-[rgba(63,239,180,0.12)] text-[#3FEFB4] border border-[rgba(63,239,180,0.3)] hover:bg-red-500/15 hover:text-red-400 hover:border-red-400/30'
                           : takenOther
                             ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
                             : !canAfford || full || capped
                               ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                              : 'bg-yellow-400 text-gray-950 hover:bg-yellow-300'
+                              : 'bg-[#3FEFB4] text-[#0B0E14] hover:bg-[#5FFFCA]'
                     }`}
                   >
                     {loading     ? '…'
@@ -553,7 +553,7 @@ export default function DraftBoard({
                     :              '+ Add'}
                   </button>
                 ) : (
-                  inSquad && <span className="text-xs text-yellow-400 shrink-0">In Squad</span>
+                  inSquad && <span className="text-xs text-[#3FEFB4] shrink-0">In Squad</span>
                 )}
               </div>
             )
@@ -595,7 +595,7 @@ export default function DraftBoard({
             <div className="w-full bg-gray-800 rounded-full h-1.5">
               <div
                 className={`h-1.5 rounded-full transition-all duration-300 ${
-                  budgetPct > 90 ? 'bg-red-500' : budgetPct > 70 ? 'bg-yellow-400' : 'bg-green-400'
+                  budgetPct > 90 ? 'bg-red-500' : budgetPct > 70 ? 'bg-[#F7A325]' : 'bg-green-400'
                 }`}
                 style={{ width: `${budgetPct}%` }}
               />

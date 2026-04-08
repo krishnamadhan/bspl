@@ -124,7 +124,7 @@ export default async function StandingsPage() {
         {isPlayoffs && (
           <span
             className="text-xs font-black px-3 py-1.5 rounded-full"
-            style={{ background: 'rgba(250,204,21,0.15)', color: '#facc15', border: '1px solid rgba(250,204,21,0.3)' }}
+            style={{ background: 'rgba(63,239,180,0.12)', color: '#3FEFB4', border: '1px solid rgba(63,239,180,0.25)' }}
           >
             🏆 PLAYOFFS
           </span>
@@ -134,8 +134,8 @@ export default async function StandingsPage() {
       {/* Frozen notice */}
       {isPlayoffs && (
         <div
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-yellow-300"
-          style={{ background: 'rgba(250,204,21,0.06)', border: '1px solid rgba(250,204,21,0.15)' }}
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
+          style={{ color: '#3FEFB4', background: 'rgba(63,239,180,0.06)', border: '1px solid rgba(63,239,180,0.15)' }}
         >
           <span className="text-base">🔒</span>
           <span>League phase complete. Top teams qualified for playoffs.</span>
@@ -179,13 +179,13 @@ export default async function StandingsPage() {
                   {isFirstElim && standings.length > 4 && (
                     <div
                       className="flex items-center gap-3 px-4 py-2"
-                      style={{ borderTop: '1px solid rgba(250,204,21,0.1)' }}
+                      style={{ borderTop: '1px solid rgba(255,59,59,0.1)' }}
                     >
-                      <div className="flex-1 h-px" style={{ background: 'rgba(250,204,21,0.1)' }} />
-                      <span className="text-[10px] text-yellow-400/30 font-black uppercase tracking-widest whitespace-nowrap">
+                      <div className="flex-1 h-px" style={{ background: 'rgba(255,59,59,0.1)' }} />
+                      <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap" style={{ color: 'rgba(255,59,59,0.4)' }}>
                         Elimination zone
                       </span>
-                      <div className="flex-1 h-px" style={{ background: 'rgba(250,204,21,0.1)' }} />
+                      <div className="flex-1 h-px" style={{ background: 'rgba(255,59,59,0.1)' }} />
                     </div>
                   )}
 
@@ -195,9 +195,9 @@ export default async function StandingsPage() {
                     style={{
                       borderBottom: '1px solid rgba(255,255,255,0.04)',
                       background: isMyTeam
-                        ? 'rgba(250,204,21,0.04)'
+                        ? 'rgba(63,239,180,0.06)'
                         : isQualifier
-                        ? 'rgba(250,204,21,0.012)'
+                        ? 'rgba(63,239,180,0.02)'
                         : undefined,
                     }}
                   >
@@ -206,7 +206,7 @@ export default async function StandingsPage() {
                       {i < 3 ? (
                         <span className="text-base leading-none">{medals[i]}</span>
                       ) : (
-                        <span className={`text-sm font-black ${isQualifier ? 'text-yellow-400' : 'text-gray-600'}`}>
+                        <span className={`text-sm font-black ${isQualifier ? 'text-[#3FEFB4]' : 'text-gray-600'}`}>
                           {i + 1}
                         </span>
                       )}
@@ -224,15 +224,15 @@ export default async function StandingsPage() {
                         {row.team?.name?.[0] ?? '?'}
                       </div>
                       <div className="min-w-0">
-                        <span className={`text-sm font-bold truncate block group-hover:text-yellow-400 transition-colors ${isMyTeam ? 'text-yellow-400' : 'text-gray-100'}`}>
+                        <span className={`text-sm font-bold truncate block group-hover:text-[#3FEFB4] transition-colors ${isMyTeam ? 'text-[#3FEFB4]' : 'text-gray-100'}`}>
                           {row.team?.name ?? '—'}
                         </span>
                         {isMyTeam && (
-                          <span className="text-[9px] text-yellow-400/50 font-bold">YOU</span>
+                          <span className="text-[9px] font-bold" style={{ color: 'rgba(63,239,180,0.6)' }}>YOU</span>
                         )}
                       </div>
                       {isQualifier && (
-                        <span className="text-[9px] font-black text-yellow-400/40 hidden sm:block ml-1">Q</span>
+                        <span className="text-[9px] font-black hidden sm:block ml-1" style={{ color: 'rgba(63,239,180,0.5)' }}>Q</span>
                       )}
                     </div>
 
@@ -245,7 +245,7 @@ export default async function StandingsPage() {
                     <div className="flex items-center justify-center">
                       <span
                         className="font-black text-base tabular-nums"
-                        style={{ color: isQualifier ? '#facc15' : '#6b7280' }}
+                        style={{ color: isQualifier ? '#3FEFB4' : '#6b7280' }}
                       >
                         {row.points}
                       </span>
@@ -312,19 +312,19 @@ export default async function StandingsPage() {
                   className="block rounded-2xl px-4 py-4 transition-all hover:scale-[1.015] hover:-translate-y-0.5"
                   style={{
                     background: isFinal
-                      ? 'linear-gradient(135deg, rgba(250,204,21,0.07) 0%, rgba(251,146,60,0.05) 100%)'
+                      ? 'linear-gradient(135deg, rgba(63,239,180,0.07) 0%, rgba(0,196,140,0.04) 100%)'
                       : 'var(--card-bg)',
                     border: isFinal
-                      ? '1px solid rgba(250,204,21,0.25)'
+                      ? '1px solid rgba(63,239,180,0.2)'
                       : '1px solid var(--card-border)',
-                    boxShadow: isFinal ? '0 0 20px rgba(250,204,21,0.07)' : 'none',
+                    boxShadow: isFinal ? '0 0 20px rgba(63,239,180,0.07)' : 'none',
                   }}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span
                       className="text-[10px] font-black px-2 py-1 rounded-lg"
                       style={isFinal
-                        ? { background: 'rgba(250,204,21,0.15)', color: '#facc15', border: '1px solid rgba(250,204,21,0.3)' }
+                        ? { background: 'rgba(63,239,180,0.12)', color: '#3FEFB4', border: '1px solid rgba(63,239,180,0.25)' }
                         : { background: 'rgba(255,255,255,0.05)', color: '#9ca3af' }
                       }
                     >
@@ -334,7 +334,7 @@ export default async function StandingsPage() {
                       className="text-[10px] font-bold px-2 py-1 rounded-full"
                       style={m.status === 'completed'
                         ? { background: 'rgba(74,222,128,0.1)', color: '#4ade80' }
-                        : { background: 'rgba(250,204,21,0.1)', color: '#facc15' }
+                        : { background: 'rgba(247,163,37,0.12)', color: '#F7A325' }
                       }
                     >
                       {m.status === 'completed' ? 'Full Time' : m.status}
@@ -359,7 +359,7 @@ export default async function StandingsPage() {
                           {team?.name ?? '—'}
                         </span>
                         {m.winner_team_id === team?.id && (
-                          <span className="text-yellow-400 text-sm">✓</span>
+                          <span className="text-[#3FEFB4] text-sm">✓</span>
                         )}
                       </div>
                     ))}

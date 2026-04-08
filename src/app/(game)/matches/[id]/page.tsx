@@ -19,7 +19,7 @@ const COND: Record<string, { label: string; color: string; desc: string }> = {
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   scheduled:   { label: 'Scheduled',   cls: 'bg-gray-700 text-gray-300' },
-  lineup_open: { label: 'Lineup Open', cls: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' },
+  lineup_open: { label: 'Lineup Open', cls: 'bg-[rgba(247,163,37,0.15)] text-[#F7A325] border border-[rgba(247,163,37,0.3)]' },
   live:        { label: 'LIVE',        cls: 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse' },
   completed:   { label: 'Completed',   cls: 'bg-green-500/20 text-green-300' },
 }
@@ -126,7 +126,7 @@ const BALL_STYLE: Record<string, string> = {
   '4':  'bg-blue-700/80 text-white font-black border border-blue-500/50',
   '6':  'bg-green-700/80 text-white font-black border border-green-500/50',
   'W':  'bg-red-700/80 text-white font-black border border-red-500/50',
-  'Wd': 'bg-yellow-800/60 text-yellow-300 border border-yellow-700/50',
+  'Wd': 'bg-[rgba(247,163,37,0.15)] text-[#F7A325] border border-[rgba(247,163,37,0.3)]',
   'Nb': 'bg-orange-800/60 text-orange-300 border border-orange-700/50',
 }
 
@@ -251,7 +251,7 @@ function InningsCard({
                     <td className="text-center py-2 text-gray-500 tabular-nums text-xs">{b.balls}</td>
                     <td className="text-center py-2 text-gray-600 text-xs hidden sm:table-cell tabular-nums">{b.fours}</td>
                     <td className="text-center py-2 text-gray-600 text-xs hidden sm:table-cell tabular-nums">{b.sixes}</td>
-                    <td className="text-center py-2 text-xs tabular-nums" style={{ color: b.sr >= 200 ? '#4ade80' : b.sr >= 130 ? '#facc15' : '#9ca3af' }}>
+                    <td className="text-center py-2 text-xs tabular-nums" style={{ color: b.sr >= 200 ? '#4ade80' : b.sr >= 130 ? '#F7A325' : '#9ca3af' }}>
                       {b.sr}
                     </td>
                   </tr>
@@ -285,11 +285,11 @@ function InningsCard({
                     <td className="text-center py-2 text-gray-500 text-xs tabular-nums">{b.overs}</td>
                     <td className="text-center py-2 text-gray-400 tabular-nums">{b.runs}</td>
                     <td className="text-center py-2 tabular-nums">
-                      <span className={`font-black text-sm ${b.wickets > 0 ? 'text-yellow-400' : 'text-gray-600'}`}>
+                      <span className={`font-black text-sm ${b.wickets > 0 ? 'text-[#3FEFB4]' : 'text-gray-600'}`}>
                         {b.wickets}
                       </span>
                     </td>
-                    <td className="text-center py-2 text-xs tabular-nums" style={{ color: b.econ <= 8 ? '#4ade80' : b.econ <= 12 ? '#facc15' : '#f87171' }}>
+                    <td className="text-center py-2 text-xs tabular-nums" style={{ color: b.econ <= 8 ? '#4ade80' : b.econ <= 12 ? '#F7A325' : '#f87171' }}>
                       {b.econ.toFixed(1)}
                     </td>
                     <td className="text-center py-2 text-gray-600 text-xs hidden sm:table-cell tabular-nums">{b.wides || '—'}</td>
@@ -523,7 +523,7 @@ export default async function MatchDetailPage({
                   >
                     {batFirst?.name?.[0] ?? '?'}
                   </div>
-                  <p className="font-bold text-gray-200 text-sm group-hover:text-yellow-400 transition-colors">{batFirst?.name}</p>
+                  <p className="font-bold text-gray-200 text-sm group-hover:text-[#3FEFB4] transition-colors">{batFirst?.name}</p>
                 </Link>
                 <p className="font-black text-3xl tabular-nums text-white mt-2">
                   {inn1?.total_runs ?? '—'}<span className="text-gray-500 text-xl font-bold">/{inn1?.total_wickets ?? '—'}</span>
@@ -550,7 +550,7 @@ export default async function MatchDetailPage({
                   >
                     {batSecond?.name?.[0] ?? '?'}
                   </div>
-                  <p className="font-bold text-gray-200 text-sm group-hover:text-yellow-400 transition-colors">{batSecond?.name}</p>
+                  <p className="font-bold text-gray-200 text-sm group-hover:text-[#3FEFB4] transition-colors">{batSecond?.name}</p>
                 </Link>
                 <p className="font-black text-3xl tabular-nums text-white mt-2">
                   {inn2?.total_runs ?? '—'}<span className="text-gray-500 text-xl font-bold">/{inn2?.total_wickets ?? '—'}</span>
@@ -703,9 +703,9 @@ export default async function MatchDetailPage({
                     {team?.name?.[0] ?? '?'}
                   </div>
                   {team?.id === myTeam.id ? (
-                    <p className="font-black text-yellow-400">{team?.name}</p>
+                    <p className="font-black text-[#3FEFB4]">{team?.name}</p>
                   ) : (
-                    <Link href={`/teams/${team?.id}`} className="font-bold text-white hover:text-yellow-400 transition-colors">
+                    <Link href={`/teams/${team?.id}`} className="font-bold text-white hover:text-[#3FEFB4] transition-colors">
                       {team?.name}
                     </Link>
                   )}
@@ -797,7 +797,7 @@ export default async function MatchDetailPage({
                   >
                     {team?.name?.[0] ?? '?'}
                   </div>
-                  <p className={`font-bold text-sm group-hover:text-yellow-400 transition-colors ${team?.id === myTeam?.id ? 'text-yellow-400' : 'text-white'}`}>
+                  <p className={`font-bold text-sm group-hover:text-[#3FEFB4] transition-colors ${team?.id === myTeam?.id ? 'text-[#3FEFB4]' : 'text-white'}`}>
                     {team?.name ?? '—'}
                   </p>
                 </Link>
@@ -827,8 +827,8 @@ export default async function MatchDetailPage({
 
           {rawMatch.status === 'lineup_open' && !amPlaying && (
             <div
-              className="rounded-xl px-4 py-3 text-sm text-yellow-300/80"
-              style={{ background: 'rgba(250,204,21,0.06)', border: '1px solid rgba(250,204,21,0.15)' }}
+              className="rounded-xl px-4 py-3 text-sm"
+              style={{ color: 'rgba(247,163,37,0.85)', background: 'rgba(247,163,37,0.06)', border: '1px solid rgba(247,163,37,0.18)' }}
             >
               Lineup submission open. Check back soon for the live match.
             </div>
