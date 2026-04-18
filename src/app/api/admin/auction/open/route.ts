@@ -36,6 +36,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Player not found' }, { status: 404 })
   }
 
+  // Prevent opening an auction for a player already exclusively owned by a human team
+  const { data: humanTeams } = await db
+    .from('bspl_teams')
+    .select('id')
+    .eq('season_id', season_id)
+    .eq('is_bot', false)
+
+  const humanTeamIds = (humanTeams ?? []).map((t: { id: string }) => t.id)
+  if (humanTeamIds.length > 0) {
+    const { data: alreadyOwned } = await db
+      .from('bspl_rosters')
+      .select('team_id')
+      .eq('player_id', player_id)
+      .in('team_id', humanTeamIds)
+      .limit(1)
+      .maybeSingle()
+
+    if (alreadyOwned) {
+      // Look up owner team name for a helpful error message
+      const { data: ownerTeam } = await db
+        .from('bspl_teams')
+        .select('name')
+        .eq('id', alreadyOwned.team_id)
+        .single()
+      return NextResponse.json(
+        { error: `${player.name} is already exclusively owned by ${ownerTeam?.name ?? 'another team'} this season` },
+        { status: 409 },
+      )
+    }
+  }
+
   if (base_price != null && (isNaN(base_price) || base_price <= 0 || base_price > 1000)) {
     return NextResponse.json({ error: 'base_price must be a positive number ≤ 1000 Cr' }, { status: 400 })
   }

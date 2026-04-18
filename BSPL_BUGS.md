@@ -1,7 +1,7 @@
 # BSPL Bug Tracker
 
 Session-persistent bug log. Updated as bugs are found and fixed.
-Last updated: 2026-03-10 (Session 7)
+Last updated: 2026-04-18 (Session 8)
 
 ---
 
@@ -70,6 +70,28 @@ Last updated: 2026-03-10 (Session 7)
 ## FIXES APPLIED SESSION 7 (2026-03-10)
 1. `engine.ts` — Reverted wide ball logging (was ball_number 10+, violates DB constraint)
 2. `admin/page.tsx` — Added "Finalize All" bulk button for multiple stuck live matches
+
+## FIXES APPLIED SESSION 8 (2026-04-18) — Auction system
+
+### BUG-08 🟢 Auction close always fails 409 when any bot team has the player
+**Root Cause**: `api/admin/auction/close/route.ts` — the "global uniqueness check" queried ALL season roster entries (including bot teams). Since bots use FPL-style non-exclusive draft, any bot team that drafted the auctioned player triggered a false 409 and the auction could never be closed as SOLD.
+**Fix**: Changed ownership check to only query human (non-bot) team rosters via `.eq('is_bot', false)` filter on `bspl_teams`. Bot rosters are intentionally shared and exempt from the exclusivity constraint.
+
+### BUG-09 🟢 Budget deducted even if winning team already owns the player
+**Root Cause**: `api/admin/auction/close/route.ts` — the roster insert was skipped via `if (!existing)` when the winner already had the player, but the budget deduction ran unconditionally after. A team that won an auction for a player they had already drafted would lose budget without gaining the player.
+**Fix**: Moved the "already in winner's roster" check to the top of the sold path and return 409 immediately. Roster insert is now unconditional (no silent skip) since this case is blocked upfront.
+
+### BUG-10 🟢 Auction can be opened for a player already exclusively owned
+**Root Cause**: `api/admin/auction/open/route.ts` — no check that the player wasn't already in a human team's roster. Admin could open an auction for an exclusively-owned player, which would always fail at close time.
+**Fix**: Added pre-check in open route: queries human-team rosters for this player before inserting. Returns 409 with helpful "already owned by [Team Name]" message.
+
+### BUG-11 🟢 Stale sold/unsold overlay persists indefinitely after auction ends
+**Root Cause**: `AuctionRoom.tsx` — the poll fetched the most recently opened auction regardless of status or age. A player sold hours (or days) ago would show the SOLD overlay on every page load until a new auction was opened.
+**Fix**: Poll now only returns auctions that are either `status=open` OR closed within the last 5 minutes. After 5 minutes, `data` returns null and the idle "waiting" state is shown.
+
+### BUG-12 🟢 current_bid displayed as raw number in admin panel
+**Root Cause**: `admin/page.tsx` — `{auctionOpen.current_bid} Cr` displayed the raw DB value without decimal formatting. Could show "10.5000000001 Cr" from floating point or "10 Cr" inconsistently vs "10.0 Cr" in the AuctionRoom.
+**Fix**: Applied the same `n % 1 === 0 ? n.toFixed(0) : n.toFixed(1)` formatting in the admin bid display and confirm dialog.
 
 ---
 

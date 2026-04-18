@@ -708,7 +708,7 @@ export default function AdminPage() {
     setConfirm({
       title: isSold ? 'Confirm Sale' : 'Mark Unsold',
       body: isSold
-        ? `Sell ${auctionOpen.player_name ?? 'player'} to ${auctionOpen.current_bidder_name ?? 'highest bidder'} for ${auctionOpen.current_bid} Cr?`
+        ? `Sell ${auctionOpen.player_name ?? 'player'} to ${auctionOpen.current_bidder_name ?? 'highest bidder'} for ${Number(auctionOpen.current_bid) % 1 === 0 ? Number(auctionOpen.current_bid).toFixed(0) : Number(auctionOpen.current_bid).toFixed(1)} Cr?`
         : `Mark ${auctionOpen.player_name ?? 'player'} as unsold? They'll return to the draft pool.`,
       label: isSold ? 'Sold ✓' : 'Unsold ✗',
       variant: isSold ? 'yellow' : 'red',
@@ -1355,7 +1355,7 @@ export default function AdminPage() {
                     <p className="text-gray-400 text-sm capitalize">{auctionOpen.player_role} · {auctionOpen.player_ipl_team}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-yellow-400 text-2xl font-bold">{auctionOpen.current_bid} Cr</p>
+                    <p className="text-yellow-400 text-2xl font-bold">{Number(auctionOpen.current_bid) % 1 === 0 ? Number(auctionOpen.current_bid).toFixed(0) : Number(auctionOpen.current_bid).toFixed(1)} Cr</p>
                     {auctionOpen.current_bidder_name
                       ? <p className="text-gray-400 text-xs">by {auctionOpen.current_bidder_name}</p>
                       : <p className="text-gray-600 text-xs">no bids yet</p>
@@ -1439,7 +1439,7 @@ export default function AdminPage() {
                       <span className="font-medium">{s.player_name}</span>
                       <div className="flex items-center gap-3 text-xs text-gray-400">
                         <span>{s.winning_team_name}</span>
-                        <span className="text-yellow-400 font-semibold">{s.winning_bid} Cr</span>
+                        <span className="text-yellow-400 font-semibold">{s.winning_bid % 1 === 0 ? s.winning_bid.toFixed(0) : s.winning_bid.toFixed(1)} Cr</span>
                       </div>
                     </div>
                   ))}

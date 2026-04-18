@@ -42,27 +42,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Winning team not found' }, { status: 404 })
     }
 
-    // Global uniqueness check — player must not already be in another team's roster this season
-    const { data: seasonTeams } = await db
+    // Check if player is already in the WINNER's own roster (e.g. drafted earlier).
+    // If so, reject — the admin should mark unsold and remove from draft first.
+    const { data: alreadyInWinner } = await db
+      .from('bspl_rosters')
+      .select('player_id')
+      .eq('team_id', auction.current_bidder_team_id)
+      .eq('player_id', auction.player_id)
+      .maybeSingle()
+
+    if (alreadyInWinner) {
+      return NextResponse.json(
+        { error: 'Winning team already has this player in their roster' },
+        { status: 409 },
+      )
+    }
+
+    // Exclusivity check — player must not already be in another HUMAN team's roster this season.
+    // Bot teams use non-exclusive FPL-style draft so their rosters are intentionally shared —
+    // excluding is_bot=true teams prevents false 409s from bot draft picks.
+    const { data: humanTeams } = await db
       .from('bspl_teams')
       .select('id')
       .eq('season_id', auction.season_id)
+      .eq('is_bot', false)
+      .neq('id', auction.current_bidder_team_id)
 
-    const seasonTeamIds = (seasonTeams ?? []).map((t: { id: string }) => t.id)
-    const { data: alreadyOwned } = await db
-      .from('bspl_rosters')
-      .select('team_id')
-      .eq('player_id', auction.player_id)
-      .in('team_id', seasonTeamIds)
-      .neq('team_id', auction.current_bidder_team_id)
-      .limit(1)
-      .maybeSingle()
+    const humanTeamIds = (humanTeams ?? []).map((t: { id: string }) => t.id)
 
-    if (alreadyOwned) {
-      return NextResponse.json(
-        { error: 'Player is already owned by another team in this season' },
-        { status: 409 },
-      )
+    if (humanTeamIds.length > 0) {
+      const { data: alreadyOwned } = await db
+        .from('bspl_rosters')
+        .select('team_id')
+        .eq('player_id', auction.player_id)
+        .in('team_id', humanTeamIds)
+        .limit(1)
+        .maybeSingle()
+
+      if (alreadyOwned) {
+        return NextResponse.json(
+          { error: 'Player is already exclusively owned by another team in this season' },
+          { status: 409 },
+        )
+      }
     }
 
     // Close the auction first
@@ -78,26 +100,18 @@ export async function POST(req: NextRequest) {
 
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
 
-    // Add player to winner's roster (skip if somehow already there)
-    const { data: existing } = await db
+    // Add player to winner's roster
+    const { error: rosterErr } = await db
       .from('bspl_rosters')
-      .select('player_id')
-      .eq('team_id', auction.current_bidder_team_id)
-      .eq('player_id', auction.player_id)
-      .maybeSingle()
+      .insert({
+        team_id: auction.current_bidder_team_id,
+        player_id: auction.player_id,
+        purchase_price: auction.current_bid,
+      })
 
-    if (!existing) {
-      const { error: rosterErr } = await db
-        .from('bspl_rosters')
-        .insert({
-          team_id: auction.current_bidder_team_id,
-          player_id: auction.player_id,
-          purchase_price: auction.current_bid,
-        })
-      if (rosterErr) return NextResponse.json({ error: rosterErr.message }, { status: 500 })
-    }
+    if (rosterErr) return NextResponse.json({ error: rosterErr.message }, { status: 500 })
 
-    // Deduct winning bid — floor at 0 (team may have spent budget on draft picks)
+    // Deduct winning bid — floor at 0
     const newBudget = Math.max(0, Number(winnerTeam.budget_remaining) - Number(auction.current_bid))
     const { error: budgetErr } = await db
       .from('bspl_teams')

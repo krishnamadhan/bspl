@@ -123,10 +123,15 @@ export default function AuctionRoom({
     const supabase = createClient()
 
     const poll = async () => {
+      // Only fetch open auctions, or sold/unsold ones closed in the last 5 minutes.
+      // This prevents stale sold/unsold overlays from showing on page load or after
+      // a long idle period when the admin hasn't opened a new player yet.
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
       const { data } = await supabase
         .from('bspl_auction')
         .select('*')
         .eq('season_id', seasonId)
+        .or(`status.eq.open,closed_at.gte.${fiveMinAgo}`)
         .order('opened_at', { ascending: false })
         .limit(1)
         .maybeSingle()
