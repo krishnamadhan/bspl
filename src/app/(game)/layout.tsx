@@ -12,7 +12,7 @@ export default async function GameLayout({ children }: { children: React.ReactNo
     .from('profiles')
     .select('nickname, is_admin')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   const { data: liveMatches } = await supabase
     .from('bspl_matches')

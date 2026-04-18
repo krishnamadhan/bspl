@@ -253,7 +253,7 @@ export default function AdminPage() {
     if (!supabase) return
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { setAuthState('denied'); return }
-      const { data: p } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
+      const { data: p } = await supabase.from('profiles').select('is_admin').eq('id', user.id).maybeSingle()
       setAuthState(p?.is_admin ? 'ok' : 'denied')
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps

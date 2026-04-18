@@ -23,7 +23,7 @@ export async function requireAdmin(): Promise<{ id: string } | null> {
     .from('profiles')
     .select('is_admin')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   return profile?.is_admin ? user : null
 }

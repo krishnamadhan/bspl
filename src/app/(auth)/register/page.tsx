@@ -19,6 +19,8 @@ export default function RegisterPage() {
     setError(null)
 
     const supabase = createClient()
+
+    // 1. Create auth user
     const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
 
     if (signUpError || !data.user) {
@@ -27,15 +29,19 @@ export default function RegisterPage() {
       return
     }
 
-    // Create profile
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({ id: data.user.id, nickname, is_admin: false })
+    // 2. Create profile via server-side route (bypasses RLS, works even when
+    //    email confirmation is required and no client session is active yet)
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname }),
+    })
 
-    if (profileError) {
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
       // Roll back — sign out so the orphaned auth user can't log in without a profile
       await supabase.auth.signOut()
-      setError(profileError.message)
+      setError(body.error ?? 'Failed to create profile')
       setLoading(false)
       return
     }

@@ -40,7 +40,7 @@ export default async function DashboardPage() {
   if (!user) redirect('/login')
 
   const [{ data: profile }, { data: season }] = await Promise.all([
-    supabase.from('profiles').select('nickname, is_admin').eq('id', user.id).single(),
+    supabase.from('profiles').select('nickname, is_admin').eq('id', user.id).maybeSingle(),
     supabase.from('bspl_seasons')
       .select('id, name, status, budget_cr, min_squad_size, max_squad_size')
       .order('created_at', { ascending: false }).limit(1).maybeSingle(),
