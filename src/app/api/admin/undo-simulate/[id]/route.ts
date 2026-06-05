@@ -311,6 +311,14 @@ export async function POST(
     return NextResponse.json({ error: `Failed to delete innings: ${innDelErr.message}` }, { status: 500 })
   }
 
+  // ── 7b. Delete fantasy scores for this match ─────────────────────────────
+  // bspl_fantasy_scores rows are keyed by (season_id, match_id, team_id, player_id).
+  // Ignore errors: table may not exist in all DB deployments (optional feature).
+  await db
+    .from('bspl_fantasy_scores')
+    .delete()
+    .eq('match_id', matchId)
+
   // ── 8. Reset match to lineup_open ────────────────────────────────────────
   const { error: resetErr } = await db
     .from('bspl_matches')

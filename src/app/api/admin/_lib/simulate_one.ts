@@ -493,7 +493,12 @@ export async function simulateOne(
       const { error: fantasyErr } = await db.from('bspl_fantasy_scores').upsert(fantasyUpserts, {
         onConflict: 'season_id,match_id,team_id,player_id',
       })
-      if (fantasyErr) throw new Error(`Fantasy scores upsert failed: ${fantasyErr.message}`)
+      // Treat fantasy-scores failure as non-fatal: table may not exist in all
+      // deployments (it is optional). Match is already marked completed by the
+      // time we get here, so we must not throw and leave it in a bad state.
+      if (fantasyErr) {
+        console.warn(`Fantasy scores upsert skipped: ${fantasyErr.message}`)
+      }
     }
   }
 

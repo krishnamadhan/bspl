@@ -76,9 +76,13 @@ export function homeGroundBoost(player: Player, venueId: string): number {
 export function rrrPressureModifier(runsNeeded: number, ballsLeft: number): number {
   if (ballsLeft <= 0) return 1.0
   const rrr = (runsNeeded / ballsLeft) * 6
-  if (rrr <= 12) return 1.0
-  if (rrr <= 18) return 0.95
-  if (rrr <= 24) return 0.90
+  // Raised thresholds: typical T5 target is ~11 RPO so anything ≤15 should be
+  // reachable without penalty.  The old threshold of 12 penalised normal chases
+  // the moment the batting team fell even slightly behind, causing the observed
+  // low chase-win rate (BUG-04).
+  if (rrr <= 15) return 1.0
+  if (rrr <= 21) return 0.95
+  if (rrr <= 27) return 0.90
   return 0.85
 }
 
@@ -131,8 +135,8 @@ export function rrrPressureWithExperience(
 ): number {
   const base = rrrPressureModifier(runsNeeded, ballsLeft)
   if (base >= 1.0) return 1.0
-  // Elite players absorb more of the pressure penalty
-  const calm = priceCr >= 18 ? 0.65 : priceCr >= 14 ? 0.50 : priceCr >= 10 ? 0.30 : priceCr >= 6 ? 0.10 : 0.0
+  // Elite players absorb more of the pressure penalty (higher calm = smaller penalty)
+  const calm = priceCr >= 18 ? 0.70 : priceCr >= 14 ? 0.55 : priceCr >= 10 ? 0.35 : priceCr >= 6 ? 0.15 : 0.0
   return base + (1.0 - base) * calm
 }
 

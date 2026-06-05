@@ -264,10 +264,12 @@ effectiveBattingSR = base_sr
 
 | Required Run Rate | SR multiplier |
 |-------------------|--------------|
-| ≤ 12 RPO | ×1.00 (no pressure) |
-| 13–18 RPO | ×0.95 |
-| 19–24 RPO | ×0.90 |
-| > 24 RPO | ×0.85 |
+| ≤ 15 RPO | ×1.00 (no pressure) |
+| 16–21 RPO | ×0.95 |
+| 22–27 RPO | ×0.90 |
+| > 27 RPO | ×0.85 |
+
+*Note: thresholds were raised from 12/18/24 to 15/21/27 in Session 9 (BUG-04 fix). The old ≤12 threshold penalised normal T5 chases (avg target ~11 RPO) the moment the batting team fell one ball behind.*
 
 ### Effective Bowler Wicket Probability
 ```

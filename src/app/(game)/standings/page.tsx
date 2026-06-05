@@ -167,8 +167,10 @@ export default async function StandingsPage() {
             </div>
 
             {standings.map((row, i) => {
-              const isQualifier = i < 4
-              const isFirstElim = i === 4
+              // Qualifier spots: IPL format (4+ teams) → top 4; direct final (2–3 teams) → top 2
+              const qualifierCount = standings.length >= 4 ? 4 : 2
+              const isQualifier = i < qualifierCount
+              const isFirstElim = standings.length > qualifierCount && i === qualifierCount
               const isMyTeam    = row.team_id === myTeamId
               const nrr         = Number(row.nrr ?? 0)
               const form        = [...(formGuide[row.team_id] ?? [])].reverse()
@@ -176,7 +178,7 @@ export default async function StandingsPage() {
 
               return (
                 <React.Fragment key={row.team_id}>
-                  {isFirstElim && standings.length > 4 && (
+                  {isFirstElim && (
                     <div
                       className="flex items-center gap-3 px-4 py-2"
                       style={{ borderTop: '1px solid rgba(255,59,59,0.1)' }}

@@ -44,11 +44,13 @@ Last updated: 2026-04-18 (Session 8)
 
 ## DATA QUALITY ISSUES (not code bugs)
 
-### BUG-04 🔴 Low Chase Win Rate (33.3% vs expected 45–55%)
-**Status**: Under investigation. Partially explained by BUG-01 (teams with non-bowlers). Expect improvement in new seasons after BUG-01 fix.
+### BUG-04 🟢 Low Chase Win Rate (33.3% vs expected 45–55%)
+**Root Cause**: `rrrPressureModifier` in `formulas.ts` used a threshold of ≤12 RPO for "no pressure". A typical T5 target is ~11 RPO, so if the batting team fell even 2-3 runs behind after 1 over, they crossed the 13+ RPO boundary and got a 0.95 SR penalty. This compounded through the innings, making already-hard chases nearly impossible.
+**Fix (Session 9)**: Raised RRR thresholds from `12/18/24` to `15/21/27`. At 15 RPO, the batting team needs ~12-13 runs per over — a genuinely difficult but not impossible scenario. Also slightly increased the `rrrPressureWithExperience` calm factors (0.65→0.70 for Legend tier, 0.50→0.55 for Star, 0.30→0.35 for A-tier) so elite chasers absorb more pressure.
 
-### BUG-05 🔴 Low Wickets Per Innings (1.60 vs expected 2–4)
-**Status**: Directly caused by BUG-01. Expect improvement in new seasons.
+### BUG-05 🟢 Low Wickets Per Innings (1.60 vs expected 2–4)
+**Root Cause**: Directly caused by BUG-01 (non-bowlers bowling). Now fixed by BUG-01 fix + `FORMAT_WICKET_BOOST` already at 2.0× for T5.
+**Status**: Expected to be resolved with new seasons after BUG-01 fix. No additional engine change needed.
 
 ---
 
@@ -70,6 +72,26 @@ Last updated: 2026-04-18 (Session 8)
 ## FIXES APPLIED SESSION 7 (2026-03-10)
 1. `engine.ts` — Reverted wide ball logging (was ball_number 10+, violates DB constraint)
 2. `admin/page.tsx` — Added "Finalize All" bulk button for multiple stuck live matches
+
+## FIXES APPLIED SESSION 9 (2026-06-05) — Simulation calibration + code review
+
+### BUG-13 🟢 undo-simulate missing fantasy_scores cleanup
+**Root Cause**: `undo-simulate/route.ts` reversed `bspl_player_stats` and `bspl_points` but did not delete `bspl_fantasy_scores` rows for the match. Re-simulating after undo would upsert new scores on top but old rows for players who didn't bat/bowl the second time would persist.
+**Fix**: Added `.delete()` on `bspl_fantasy_scores` where `match_id = matchId` at the end of step 7.
+
+### BUG-14 🟢 Fantasy scores upsert crashing simulation on missing table
+**Root Cause**: `simulate_one.ts` threw if `bspl_fantasy_scores` upsert failed (table may not exist in all deployments). The throw after `completed` was set would leave the match in a bad state — completed with correct innings but no stats/points.
+**Fix**: Changed `throw new Error(...)` to `console.warn(...)` for the fantasy scores step. Match marked completed before this step runs anyway, so non-fatal treatment is safe.
+
+### BUG-15 🟢 Standings qualifier highlight wrong for <4 team leagues
+**Root Cause**: `standings/page.tsx` hard-coded `i < 4` as the qualifier threshold regardless of team count. In a 3-team league (Direct Final), only top 2 qualify, so teams 3 showed a green "Q" indicator incorrectly.
+**Fix**: Computed `qualifierCount = standings.length >= 4 ? 4 : 2` and used that for both `isQualifier` and `isFirstElim`.
+
+1. `formulas.ts` — RRR pressure thresholds raised (12/18/24 → 15/21/27); calm factors increased for elite batters
+2. `simulate_one.ts` — Fantasy scores upsert made non-fatal (warn instead of throw)
+3. `undo-simulate/[id]/route.ts` — Added fantasy_scores cleanup on undo
+4. `standings/page.tsx` — Qualifier threshold computed dynamically from team count
+5. `SIMULATION_LOGIC.md` — Updated RRR pressure table to reflect new thresholds
 
 ## FIXES APPLIED SESSION 8 (2026-04-18) — Auction system
 
