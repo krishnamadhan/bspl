@@ -228,39 +228,37 @@ export async function simulateOne(
   }
 
   // ── 9b. Insert ball logs ───────────────────────────────────────────────────
-  if (result.innings1.ball_log.length > 0) {
-    const { error: ballErr1 } = await db.from('bspl_ball_log').insert(
-      result.innings1.ball_log.map(b => ({
-        innings_id:  inn1Row.id,
-        over_number: b.over,
-        ball_number: b.ball,
-        batsman_id:  b.batsman_id,
-        bowler_id:   b.bowler_id,
-        outcome:     b.outcome,
-        runs_scored: b.runs,
-        is_wicket:   b.is_wicket,
-        wicket_type: b.wicket_type,
-      }))
-    )
-    if (ballErr1) throw new Error(`Failed to insert ball log 1: ${ballErr1.message}`)
+  // ball_number 0 = wide. Requires supabase/wide_balls_migration.sql to have been applied.
+  // If the old constraint (1–6) is still in place, automatically falls back to legal-only.
+  const toBallRow = (inningsId: string, b: typeof result.innings1.ball_log[0]) => ({
+    innings_id:  inningsId,
+    over_number: b.over,
+    ball_number: b.ball,
+    batsman_id:  b.batsman_id,
+    bowler_id:   b.bowler_id,
+    outcome:     b.outcome,
+    runs_scored: b.runs,
+    is_wicket:   b.is_wicket,
+    wicket_type: b.wicket_type,
+  })
+
+  async function insertBallLog(inningsId: string, logs: typeof result.innings1.ball_log, label: string) {
+    if (logs.length === 0) return
+    const { error } = await db.from('bspl_ball_log').insert(logs.map(b => toBallRow(inningsId, b)))
+    if (!error) return
+    // '23514' = check_violation — old constraint still in place; retry without wides
+    if (error.code === '23514') {
+      const legalOnly = logs.filter(b => b.ball >= 1)
+      const { error: e2 } = await db.from('bspl_ball_log').insert(legalOnly.map(b => toBallRow(inningsId, b)))
+      if (e2) throw new Error(`Failed to insert ball log ${label} (legal-only fallback): ${e2.message}`)
+      console.warn(`[simulate] wide_balls_migration.sql not applied — wides excluded from ball_log for innings ${label}`)
+      return
+    }
+    throw new Error(`Failed to insert ball log ${label}: ${error.message}`)
   }
 
-  if (result.innings2.ball_log.length > 0) {
-    const { error: ballErr2 } = await db.from('bspl_ball_log').insert(
-      result.innings2.ball_log.map(b => ({
-        innings_id:  inn2Row.id,
-        over_number: b.over,
-        ball_number: b.ball,
-        batsman_id:  b.batsman_id,
-        bowler_id:   b.bowler_id,
-        outcome:     b.outcome,
-        runs_scored: b.runs,
-        is_wicket:   b.is_wicket,
-        wicket_type: b.wicket_type,
-      }))
-    )
-    if (ballErr2) throw new Error(`Failed to insert ball log 2: ${ballErr2.message}`)
-  }
+  await insertBallLog(inn1Row.id, result.innings1.ball_log, '1')
+  await insertBallLog(inn2Row.id, result.innings2.ball_log, '2')
 
   // ── 9c. Update match to completed ─────────────────────────────────────────
   // Only mark completed after innings + ball_log are persisted. MatchReplay

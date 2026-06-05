@@ -191,8 +191,8 @@ function simulateInnings(
         extras += 1
         bowlerStats[effectiveBowlerId].wides++
         bowlerStats[effectiveBowlerId].runs += 1
-        // Wides are not logged to bspl_ball_log (DB constraint allows ball_number 1–6 only).
-        // Wide runs are tracked in innings.extras; bowling scorecard includes wides column.
+        // ball_number 0 = wide (see supabase/wide_balls_migration.sql — constraint changed 0–10)
+        ballLogs.push({ over, ball: 0, batsman_id: striker, bowler_id: effectiveBowlerId, outcome: 'Wd', runs: 1, is_wicket: false, wicket_type: null })
         continue
       }
 
